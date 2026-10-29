@@ -25,7 +25,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
     e.preventDefault();
     
     if (!playerName.trim()) {
-      setError('Please enter your name');
+      setError('Digite seu nome');
       return;
     }
     
@@ -33,7 +33,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
       onCreateGame(playerName.trim(), isExtended, enableSpecialBuild, mapType, autoSetup, isCitiesAndKnights);
     } else if (mode === 'join') {
       if (!gameCode.trim()) {
-        setError('Please enter a game code');
+        setError('Digite o código da partida');
         return;
       }
       onJoinGame(gameCode.trim().toUpperCase(), playerName.trim());
@@ -69,14 +69,14 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
         className="rules-btn"
         onClick={() => setShowRules(true)}
       >
-        📜 Rules
+        📜 Regras
       </button>
 
 
       <div className="lobby-content">
         <div className="lobby-header">
           <h1>CATAN</h1>
-          <p className="subtitle">Online Multiplayer</p>
+          <p className="subtitle">Multijogador Online</p>
         </div>
 
         {mode === null ? (
@@ -87,7 +87,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
               disabled={!connected}
             >
               <span className="btn-icon">🏝️</span>
-              {connected ? 'Create New Game' : 'Connecting...'}
+              {connected ? 'Criar Nova Partida' : 'Conectando...'}
             </button>
             
             <button 
@@ -96,7 +96,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
               disabled={!connected}
             >
               <span className="btn-icon">🚢</span>
-              {connected ? 'Join Game' : 'Connecting...'}
+              {connected ? 'Entrar na Partida' : 'Conectando...'}
             </button>
 
             <button 
@@ -107,7 +107,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
               }}
             >
               <span className="btn-icon">⚙️</span>
-              Server Settings
+              Configurações do Servidor
             </button>
           </div>
         ) : (
@@ -117,19 +117,19 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
               className="back-btn"
               onClick={() => { setMode(null); setError(null); }}
             >
-              ← Back
+              ← Voltar
             </button>
             
-            <h2>{mode === 'create' ? 'Create New Game' : 'Join Game'}</h2>
+            <h2>{mode === 'create' ? 'Criar Nova Partida' : 'Entrar na Partida'}</h2>
             
             <div className="form-group">
-              <label htmlFor="playerName">Your Name</label>
+              <label htmlFor="playerName">Seu Nome</label>
               <input
                 id="playerName"
                 type="text"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="Enter your name"
+                placeholder="Digite seu nome"
                 maxLength={20}
                 autoFocus
               />
@@ -138,7 +138,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
             {mode === 'create' && (
               <>
                 <div className="form-group game-mode-group">
-                  <label>Game Mode</label>
+                  <label>Modo de Jogo</label>
                   <div className="game-mode-options">
                     <button
                       type="button"
@@ -146,8 +146,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                       onClick={() => setIsExtended(false)}
                     >
                       <span className="mode-icon">🎲</span>
-                      <span className="mode-label">Standard</span>
-                      <span className="mode-desc">2-4 Players</span>
+                      <span className="mode-label">Padrão</span>
+                      <span className="mode-desc">2-4 Jogadores</span>
                     </button>
                     <button
                       type="button"
@@ -155,8 +155,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                       onClick={() => setIsExtended(true)}
                     >
                       <span className="mode-icon">👥</span>
-                      <span className="mode-label">Extended</span>
-                      <span className="mode-desc">5-8 Players</span>
+                      <span className="mode-label">Estendido</span>
+                      <span className="mode-desc">5-8 Jogadores</span>
                     </button>
                   </div>
                 </div>
@@ -171,8 +171,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                         onChange={(e) => setEnableSpecialBuild(e.target.checked)}
                       />
                       <span className="checkbox-text">
-                        <span className="checkbox-title">🏗️ Special Building Phase</span>
-                        <span className="checkbox-desc">Allow all players to build after each turn</span>
+                        <span className="checkbox-title">🏗️ Fase de Construção Especial</span>
+                        <span className="checkbox-desc">Permite que todos os jogadores construam após cada turno</span>
                       </span>
                     </label>
                   </div>
@@ -180,7 +180,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                 
                 {/* Map Type Selection */}
                 <div className="form-group game-mode-group">
-                  <label>Map Type</label>
+                  <label>Tipo de Mapa</label>
                   <div className="game-mode-options">
                     <button
                       type="button"
@@ -188,8 +188,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                       onClick={() => setMapType('standard')}
                     >
                       <span className="mode-icon">🗺️</span>
-                      <span className="mode-label">Standard</span>
-                      <span className="mode-desc">Beginner Layout</span>
+                      <span className="mode-label">Padrão</span>
+                      <span className="mode-desc">Layout para Iniciantes</span>
                     </button>
                     <button
                       type="button"
@@ -197,8 +197,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                       onClick={() => setMapType('random')}
                     >
                       <span className="mode-icon">🎲</span>
-                      <span className="mode-label">Random</span>
-                      <span className="mode-desc">Variable Board</span>
+                      <span className="mode-label">Aleatório</span>
+                      <span className="mode-desc">Tabuleiro Variável</span>
                     </button>
                   </div>
                 </div>
@@ -212,8 +212,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                       onChange={(e) => setAutoSetup(e.target.checked)}
                     />
                     <span className="checkbox-text">
-                      <span className="checkbox-title">⚡ Quick Start (Auto-Setup)</span>
-                      <span className="checkbox-desc">Automatically place initial settlements</span>
+                      <span className="checkbox-title">⚡ Início Rápido (Preparação Automática)</span>
+                      <span className="checkbox-desc">Posiciona as aldeias iniciais automaticamente</span>
                     </span>
                   </label>
                 </div>
@@ -227,8 +227,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                       onChange={(e) => setIsCitiesAndKnights(e.target.checked)}
                     />
                     <span className="checkbox-text">
-                      <span className="checkbox-title">🏰 Cities & Knights Expansion</span>
-                      <span className="checkbox-desc">Play with Commodities, Knights, and Barbarians</span>
+                      <span className="checkbox-title">🏰 Expansão Cidades e Cavaleiros</span>
+                      <span className="checkbox-desc">Jogue com Mercadorias, Cavaleiros e Bárbaros</span>
                     </span>
                   </label>
                 </div>
@@ -237,13 +237,13 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
             
             {mode === 'join' && (
               <div className="form-group">
-                <label htmlFor="gameCode">Game Code</label>
+                <label htmlFor="gameCode">Código da Partida</label>
                 <input
                   id="gameCode"
                   type="text"
                   value={gameCode}
                   onChange={(e) => setGameCode(e.target.value.toUpperCase())}
-                  placeholder="Enter 6-letter code"
+                  placeholder="Digite o código de 6 letras"
                   maxLength={6}
                   className="code-input"
                 />
@@ -253,14 +253,14 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
             {error && <div className="error-message">{error}</div>}
             
             <button type="submit" className="submit-btn">
-              {mode === 'create' ? 'Create Game' : 'Join Game'}
+              {mode === 'create' ? 'Criar Partida' : 'Entrar na Partida'}
             </button>
           </form>
         )}
 
         <div className="lobby-footer">
-          <p>2-8 Players • First to 10 Victory Points Wins</p>
-          <p className="credits">Created by <span className="creator-name">TaShUOP</span></p>
+          <p>2-8 Jogadores • Vence quem chegar primeiro a 10 Pontos de Vitória</p>
+          <p className="credits">Criado por <span className="creator-name">TaShUOP</span></p>
         </div>
       </div>
       
@@ -275,13 +275,13 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
             
             <div className="rules-header settings-header">
               <h2 className="settings-title">
-                <span className="settings-icon">⚡</span> Server Config
+                <span className="settings-icon">⚡</span> Configuração do Servidor
               </h2>
             </div>
             
             <div className="rules-container settings-container">
               <div className="form-group settings-group">
-                <label className="settings-label">Custom Backend URL</label>
+                <label className="settings-label">Endereço Personalizado do Servidor</label>
                 <div className="settings-input-wrapper">
                   <div className="settings-input-icon">🌐</div>
                   <input
@@ -293,13 +293,13 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                   />
                 </div>
                 <p className="settings-hint">
-                  Specify a custom server address to play on a private instance.
+                  Informe o endereço de um servidor personalizado para jogar em uma instância privada.
                 </p>
               </div>
 
 
               <button className="submit-btn settings-save-btn" onClick={handleSaveSettings}>
-                Save & Reconnect
+                Salvar e Reconectar
               </button>
             </div>
           </div>

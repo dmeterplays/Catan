@@ -85,19 +85,19 @@ function App() {
     });
     
     newSocket.on('playerJoined', ({ playerName }) => {
-      addNotification(`${playerName} joined the game`);
+      addNotification(`${playerName} entrou na partida`);
     });
     
     newSocket.on('playerDisconnected', ({ playerName }) => {
-      addNotification(`${playerName} disconnected`);
+      addNotification(`${playerName} desconectou`);
     });
     
     newSocket.on('playerReconnected', ({ playerName }) => {
-      addNotification(`${playerName} reconnected`);
+      addNotification(`${playerName} reconectou`);
     });
     
     newSocket.on('gameStarted', () => {
-      addNotification('Game started! Place your first settlement.');
+      addNotification('Partida iniciada! Posicione sua primeira aldeia.');
     });
     
     newSocket.on('diceRolled', ({ roll, playerId: rollerId }) => {
@@ -113,11 +113,11 @@ function App() {
     });
     
     newSocket.on('tradeAccepted', ({ by }) => {
-      addNotification('Trade completed!');
+      addNotification('Troca concluída!');
     });
     
     newSocket.on('tradeCancelled', () => {
-      addNotification('Trade cancelled');
+      addNotification('Troca cancelada');
     });
     
     setSocket(newSocket);
@@ -225,14 +225,14 @@ function App() {
         <div className="loading-content">
           <h1>CATAN</h1>
           <div className="server-full-icon">🏰</div>
-          <h2>Server at Capacity</h2>
-          <p>Too many players are currently online!</p>
-          <p className="server-full-hint">Please try again in a few minutes.</p>
+          <h2>Servidor Lotado</h2>
+          <p>Há jogadores demais online no momento!</p>
+          <p className="server-full-hint">Tente novamente em alguns minutos.</p>
           <button 
             className="retry-btn"
             onClick={() => window.location.reload()}
           >
-            🔄 Try Again
+            🔄 Tentar Novamente
           </button>
         </div>
       </div>

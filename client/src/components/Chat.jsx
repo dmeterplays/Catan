@@ -18,7 +18,7 @@ function Chat({ messages, onSend, onClose }) {
   };
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
+    return new Date(timestamp).toLocaleTimeString('pt-BR', { 
       hour: '2-digit', 
       minute: '2-digit' 
     });
@@ -33,7 +33,7 @@ function Chat({ messages, onSend, onClose }) {
       
       <div className="chat-messages">
         {messages.length === 0 && (
-          <div className="no-messages">No messages yet</div>
+          <div className="no-messages">Nenhuma mensagem ainda</div>
         )}
         {messages.map((msg, idx) => (
           <div key={idx} className="chat-message">
@@ -55,10 +55,10 @@ function Chat({ messages, onSend, onClose }) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message..."
+          placeholder="Digite uma mensagem..."
           maxLength={200}
         />
-        <button type="submit">Send</button>
+        <button type="submit">Enviar</button>
       </form>
     </div>
   );

@@ -6,208 +6,208 @@ function RulesModal({ onClose }) {
 
   const sections = {
     overview: {
-      title: '🎯 Game Overview',
+      title: '🎯 Visão Geral',
       content: `
-**Objective:** Be the first player to reach **10 Victory Points** by building settlements, cities, and earning special achievements.
+**Objetivo:** Seja o primeiro jogador a chegar a **10 Pontos de Vitória** construindo aldeias, cidades e conquistando bônus especiais.
 
-**Players:** 2-8 players (5-8 player mode uses the extension rules)
+**Jogadores:** 2-8 jogadores (o modo de 5-8 jogadores usa as regras da extensão)
 
-**Victory Points are earned from:**
-• Settlements: 1 VP each
-• Cities: 2 VP each
-• Longest Road (5+ roads): 2 VP
-• Largest Army (3+ knights): 2 VP
-• Victory Point development cards: 1 VP each (hidden until winning)
+**Pontos de Vitória (PV) são ganhos com:**
+• Aldeias: 1 PV cada
+• Cidades: 2 PV cada
+• Maior Estrada (5 ou mais trechos): 2 PV
+• Maior Exército (3 ou mais cavaleiros): 2 PV
+• Cartas de desenvolvimento de Ponto de Vitória: 1 PV cada (ocultas até a vitória)
       `
     },
     setup: {
-      title: '🏗️ Setup Phase',
+      title: '🏗️ Preparação',
       content: `
-**Initial Placement (in turn order):**
+**Posicionamento Inicial (na ordem dos turnos):**
 
-**Round 1:** Each player places 1 settlement + 1 road
-**Round 2:** Each player places 1 settlement + 1 road (reverse order)
+**Rodada 1:** Cada jogador posiciona 1 aldeia + 1 estrada
+**Rodada 2:** Cada jogador posiciona 1 aldeia + 1 estrada (em ordem inversa)
 
-**Placement Rules:**
-• Settlements must be placed on intersections (where 3 hexes meet)
-• Roads must connect to your just-placed settlement
-• **Distance Rule:** No two settlements can be on adjacent intersections
-• After Round 2, you receive starting resources from your second settlement's adjacent hexes
+**Regras de Posicionamento:**
+• As aldeias devem ficar em cruzamentos (onde 3 hexágonos se encontram)
+• As estradas devem se ligar à aldeia que você acabou de posicionar
+• **Regra da Distância:** duas aldeias nunca podem ficar em cruzamentos vizinhos
+• Depois da Rodada 2, você recebe recursos iniciais dos hexágonos vizinhos da sua segunda aldeia
       `
     },
     turn: {
-      title: '🎲 Turn Structure',
+      title: '🎲 Estrutura do Turno',
       content: `
-**1. Roll Dice**
-• The sum of two dice determines which hexes produce resources
-• All players with settlements/cities adjacent to those hexes receive resources
-• Settlements: 1 resource per hex
-• Cities: 2 resources per hex
+**1. Rolar os Dados**
+• A soma dos dois dados define quais hexágonos produzem recursos
+• Todos os jogadores com aldeias/cidades ao lado desses hexágonos recebem recursos
+• Aldeias: 1 recurso por hexágono
+• Cidades: 2 recursos por hexágono
 
-**2. Trade (optional)**
-• Trade with other players (negotiate any deal)
-• Trade with the bank at 4:1 ratio
-• Trade with ports at 3:1 (generic) or 2:1 (specific resource)
+**2. Trocar (opcional)**
+• Troque com outros jogadores (negocie qualquer acordo)
+• Troque com o banco na proporção de 4:1
+• Troque nos portos a 3:1 (genérico) ou 2:1 (recurso específico)
 
-**3. Build (optional)**
-• Build roads, settlements, cities
-• Buy development cards
-• Play ONE development card per turn
+**3. Construir (opcional)**
+• Construa estradas, aldeias e cidades
+• Compre cartas de desenvolvimento
+• Jogue UMA carta de desenvolvimento por turno
 
-**4. End Turn**
-• Click "End Turn" to pass to the next player
+**4. Encerrar o Turno**
+• Clique em "Encerrar Turno" para passar a vez ao próximo jogador
       `
     },
     building: {
-      title: '🏠 Building Costs',
+      title: '🏠 Custos de Construção',
       content: `
-**Road** (worth 0 VP)
-🧱 1 Brick + 🪵 1 Lumber
-• Must connect to your roads, settlements, or cities
-• Max 15 roads per player
+**Estrada** (vale 0 PV)
+🧱 1 Tijolo + 🪵 1 Madeira
+• Deve se ligar às suas estradas, aldeias ou cidades
+• Máximo de 15 estradas por jogador
 
-**Settlement** (worth 1 VP)
-🧱 1 Brick + 🪵 1 Lumber + 🐑 1 Wool + 🌾 1 Grain
-• Must be built on empty intersections
-• Must connect to one of your roads
-• Cannot be adjacent to another settlement/city
-• Max 5 settlements per player
+**Aldeia** (vale 1 PV)
+🧱 1 Tijolo + 🪵 1 Madeira + 🐑 1 Lã + 🌾 1 Trigo
+• Deve ser construída em cruzamentos vazios
+• Deve se ligar a uma de suas estradas
+• Não pode ficar ao lado de outra aldeia/cidade
+• Máximo de 5 aldeias por jogador
 
-**City** (worth 2 VP)
-🪨 3 Ore + 🌾 2 Grain
-• Upgrade an existing settlement
-• Produces double resources (2 instead of 1)
-• Max 4 cities per player
+**Cidade** (vale 2 PV)
+🪨 3 Minérios + 🌾 2 Trigos
+• Melhora uma aldeia que você já tenha
+• Produz o dobro de recursos (2 em vez de 1)
+• Máximo de 4 cidades por jogador
 
-**Development Card**
-🐑 1 Wool + 🌾 1 Grain + 🪨 1 Ore
-• Draw from the deck (cards are hidden)
-• Cannot play a card the same turn you buy it
+**Carta de Desenvolvimento**
+🐑 1 Lã + 🌾 1 Trigo + 🪨 1 Minério
+• Compre do baralho (as cartas ficam ocultas)
+• Não é possível jogar uma carta no mesmo turno em que ela foi comprada
       `
     },
     devCards: {
-      title: '🃏 Development Cards',
+      title: '🃏 Cartas de Desenvolvimento',
       content: `
-**Knight (14 cards)**
-• Move the robber to any hex
-• Steal 1 random resource from a player adjacent to the robber
-• Counts toward Largest Army
+**Cavaleiro (14 cartas)**
+• Mova o ladrão para qualquer hexágono
+• Roube 1 recurso aleatório de um jogador vizinho ao ladrão
+• Conta para o Maior Exército
 
-**Victory Point (5 cards)**
-• Secretly worth 1 VP each
-• Hidden from other players until you win
-• Chapel, Library, Market, Palace, University
+**Ponto de Vitória (5 cartas)**
+• Vale 1 PV em segredo
+• Fica oculta dos outros jogadores até você vencer
+• Capela, Biblioteca, Mercado, Palácio, Universidade
 
-**Road Building (2 cards)**
-• Build 2 roads for free immediately
+**Construção de Estradas (2 cartas)**
+• Construa 2 estradas de graça imediatamente
 
-**Year of Plenty (2 cards)**
-• Take any 2 resources from the bank
+**Ano da Abundância (2 cartas)**
+• Pegue 2 recursos quaisquer do banco
 
-**Monopoly (2 cards)**
-• Name 1 resource type
-• All other players must give you all of that resource
+**Monopólio (2 cartas)**
+• Escolha 1 tipo de recurso
+• Todos os outros jogadores devem entregar a você todas as cartas desse recurso
       `
     },
     robber: {
-      title: '🥷 The Robber',
+      title: '🥷 O Ladrão',
       content: `
-**When a 7 is rolled:**
-1. All players with more than 7 cards must discard half (rounded down)
-2. The player who rolled moves the robber to any hex (except current location)
-3. That player steals 1 random card from any player with a settlement/city adjacent to the robber's new hex
+**Quando sai um 7:**
+1. Todos os jogadores com mais de 7 cartas devem descartar metade (arredondando para baixo)
+2. Quem rolou move o ladrão para qualquer hexágono (exceto o atual)
+3. Essa pessoa rouba 1 carta aleatória de qualquer jogador com aldeia/cidade ao lado do novo hexágono do ladrão
 
-**The Robber blocks production:**
-• Hexes with the robber do NOT produce resources when their number is rolled
+**O Ladrão bloqueia a produção:**
+• Hexágonos com o ladrão NÃO produzem recursos quando o número deles sai
 
-**Knight Cards:**
-• Playing a knight lets you move the robber (same as rolling a 7, but no discarding)
+**Cartas de Cavaleiro:**
+• Jogar um cavaleiro permite mover o ladrão (igual a tirar 7, mas sem descarte)
       `
     },
     ports: {
-      title: '⚓ Trading & Ports',
+      title: '⚓ Trocas e Portos',
       content: `
-**Bank Trading:**
-• Default: 4 of same resource → 1 of any other resource
+**Troca com o Banco:**
+• Padrão: 4 cartas iguais → 1 de qualquer outro recurso
 
-**Port Trading:**
-• Build a settlement/city on a port intersection to use it
-• **Generic Port (3:1):** 3 of any same resource → 1 of any other
-• **Specific Ports (2:1):** 2 of that resource → 1 of any other
+**Troca nos Portos:**
+• Construa uma aldeia/cidade em um cruzamento de porto para usá-lo
+• **Porto Genérico (3:1):** 3 cartas iguais de qualquer recurso → 1 de qualquer outro
+• **Portos Específicos (2:1):** 2 cartas daquele recurso → 1 de qualquer outro
 
-**Port Types:**
-• 🧱 Brick Port (2:1)
-• 🪵 Lumber Port (2:1)
-• 🐑 Wool Port (2:1)
-• 🌾 Grain Port (2:1)
-• 🪨 Ore Port (2:1)
-• ⚓ Generic Port (3:1)
+**Tipos de Porto:**
+• 🧱 Porto de Tijolo (2:1)
+• 🪵 Porto de Madeira (2:1)
+• 🐑 Porto de Lã (2:1)
+• 🌾 Porto de Trigo (2:1)
+• 🪨 Porto de Minério (2:1)
+• ⚓ Porto Genérico (3:1)
 
-**Player Trading:**
-• On your turn, propose trades to other players
-• Any resources can be exchanged
-• Other players can accept or decline
+**Troca entre Jogadores:**
+• No seu turno, proponha trocas aos outros jogadores
+• Quaisquer recursos podem ser trocados
+• Os outros jogadores podem aceitar ou recusar
       `
     },
     special: {
-      title: '🏆 Special Achievements',
+      title: '🏆 Conquistas Especiais',
       content: `
-**Longest Road (2 VP)**
-• First player to build a continuous road of 5+ segments
-• If another player builds a longer road, they take the achievement
-• Roads must be connected (settlements/cities don't break the chain)
-• Branches count - only the longest single path matters
+**Maior Estrada (2 PV)**
+• O primeiro jogador a construir uma estrada contínua de 5 ou mais trechos
+• Se outro jogador construir uma estrada maior, ele toma a conquista
+• As estradas precisam estar ligadas (aldeias/cidades não quebram a sequência)
+• Ramificações contam - só importa o maior caminho único
 
-**Largest Army (2 VP)**
-• First player to play 3+ Knight cards
-• If another player plays more knights, they take the achievement
-• Only counts played knights, not cards in hand
+**Maior Exército (2 PV)**
+• O primeiro jogador a jogar 3 ou mais cartas de Cavaleiro
+• Se outro jogador jogar mais cavaleiros, ele toma a conquista
+• Só contam os cavaleiros jogados, não as cartas na mão
       `
     },
     extension: {
-      title: '👥 5-8 Player Extension',
+      title: '👥 Extensão de 5-8 Jogadores',
       content: `
-**What's Different:**
-• Larger board with more hexes and ports
-• 4 additional player colors: Green, Purple, Coral, and Steel Blue
-• Larger board with more hexes, ports, and resource cards
-• Additional development cards
+**O Que Muda:**
+• Tabuleiro maior, com mais hexágonos e portos
+• 4 cores de jogador adicionais: Verde, Roxo, Coral e Azul-aço
+• Mais cartas de recurso
+• Cartas de desenvolvimento adicionais
 
-**Special Building Phase:**
-After each player's turn ends, there is a Special Building Phase where ALL other players may:
-• Build roads, settlements, or cities
-• Buy development cards (but not play them)
-• **Cannot trade** during this phase
+**Fase de Construção Especial:**
+Depois do fim do turno de cada jogador, acontece uma Fase de Construção Especial em que TODOS os outros jogadores podem:
+• Construir estradas, aldeias ou cidades
+• Comprar cartas de desenvolvimento (mas não jogá-las)
+• **Não podem trocar** durante esta fase
 
-This ensures players don't accumulate too many cards between turns.
+Isso evita que os jogadores acumulem cartas demais entre os turnos.
 
-**Strategy Tip:**
-With more players, resources become more scarce. Focus on building efficiently and getting good port access early!
+**Dica de Estratégia:**
+Com mais jogadores, os recursos ficam mais escassos. Concentre-se em construir com eficiência e em conseguir bons portos logo no início!
       `
     },
     citiesAndKnights: {
-      title: '⚔️ Cities & Knights',
+      title: '⚔️ Cidades e Cavaleiros',
       content: `
-**Commodities**
-• Forests produce 1 Lumber + 1 Paper for Cities
-• Mountains produce 1 Ore + 1 Coin for Cities
-• Pastures produce 1 Wool + 1 Cloth for Cities
+**Mercadorias**
+• Florestas produzem 1 Madeira + 1 Papel para Cidades
+• Montanhas produzem 1 Minério + 1 Moeda para Cidades
+• Pastos produzem 1 Lã + 1 Tecido para Cidades
 
-**City Improvements & Progress Cards**
-• Use commodities to build City Improvements (Science 📗, Politics 📘, Trade 📒)
-• When the Event Die matches your improvement level or lower (on the Red Die), you draw a Progress Card!
-• Progress cards replace standard Development Cards
+**Melhorias da Cidade e Cartas de Progresso**
+• Use mercadorias para construir Melhorias da Cidade (Ciência 📗, Política 📘, Comércio 📒)
+• Quando o Dado de Evento combina com o nível da sua melhoria ou menor (no Dado Vermelho), você saca uma Carta de Progresso!
+• As cartas de progresso substituem as Cartas de Desenvolvimento comuns
 
-**The Barbarians**
-• The Event Die can advance the Barbarian ship
-• When it reaches 7, the Barbarians attack!
-• If players have enough active Knights to defend, the highest contributor earns a Defender of Catan VP
-• If players fail, the lowest contributor's city is pillaged and downgraded to a settlement!
+**Os Bárbaros**
+• O Dado de Evento pode avançar o navio dos Bárbaros
+• Quando ele chega a 7, os Bárbaros atacam!
+• Se os jogadores tiverem cavaleiros ativos suficientes para defender, quem mais contribuiu ganha 1 PV de Defensor de Catan
+• Se os jogadores falharem, a cidade de quem menos contribuiu é saqueada e rebaixada a aldeia!
 
-**Knights**
-• Recruit Knights with Ore + Wool
-• Activate them with Grain (required to defend Catan!)
-• Upgrade them to Strong or Mighty knights for more defense
+**Cavaleiros**
+• Recrute Cavaleiros com Minério + Lã
+• Ative-os com Trigo (necessário para defender Catan!)
+• Promova-os a cavaleiros Fortes ou Poderosos para ter mais defesa
       `
     }
   };
@@ -218,7 +218,7 @@ With more players, resources become more scarce. Focus on building efficiently a
         <button className="rules-close-btn" onClick={onClose}>×</button>
         
         <div className="rules-header">
-          <h2>📜 Catan Rules</h2>
+          <h2>📜 Regras de Catan</h2>
         </div>
         
         <div className="rules-container">

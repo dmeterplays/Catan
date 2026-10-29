@@ -56,17 +56,17 @@ function Confetti({ winner, onBackToLobby }) {
       <div className="winner-banner">
         <div className="winner-trophy">🏆</div>
         <h1 className="winner-text">
-          {winner?.name || 'Someone'} Wins!
+          {winner?.name || 'Alguém'} Venceu!
         </h1>
         <div className="winner-subtitle">
-          Victory achieved with {(winner?.victoryPoints || 10) + (winner?.hiddenVictoryPoints || 0)} points!
+          Vitória conquistada com {(winner?.victoryPoints || 10) + (winner?.hiddenVictoryPoints || 0)} pontos!
         </div>
         <div className="celebration-emojis">
           🎉 🎊 🥳 🎉 🎊
         </div>
         {onBackToLobby && (
           <button className="back-to-lobby-btn" onClick={onBackToLobby}>
-            🏠 Back to Lobby
+            🏠 Voltar ao Menu
           </button>
         )}
       </div>

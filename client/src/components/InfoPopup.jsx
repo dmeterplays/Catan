@@ -1,186 +1,187 @@
 import { useState, useEffect, useCallback } from 'react';
 import './InfoPopup.css';
+import { nomeRecurso } from '../i18n';
 
 // Centralized info data for all game elements
 const INFO_DATA = {
   // Player card symbols
   settlements: {
     icon: '🏠',
-    title: 'Settlements',
-    description: 'Small buildings worth 1 Victory Point each. Produce 1 resource when adjacent hex number is rolled.',
+    title: 'Aldeias',
+    description: 'Pequenas construções que valem 1 Ponto de Vitória cada. Produzem 1 recurso quando sai o número de um hexágono vizinho.',
     cost: '🧱1 🪵1 🐑1 🌾1'
   },
   cities: {
     icon: '🏰',
-    title: 'Cities',
-    description: 'Upgraded settlements worth 2 Victory Points. Produce 2 resources when adjacent hex number is rolled.',
+    title: 'Cidades',
+    description: 'Aldeias melhoradas que valem 2 Pontos de Vitória. Produzem 2 recursos quando sai o número de um hexágono vizinho.',
     cost: '⛏️3 🌾2'
   },
   roads: {
     icon: '━',
-    title: 'Roads',
-    description: 'Connect your settlements and cities. Longest continuous road (5+) earns 2 VP bonus.',
+    title: 'Estradas',
+    description: 'Conectam suas aldeias e cidades. A maior estrada contínua (5 ou mais) rende 2 PV de bônus.',
     cost: '🧱1 🪵1'
   },
   devCards: {
     icon: '📜',
-    title: 'Development Cards',
-    description: 'Special cards with various powers: Knights, Victory Points, Road Building, Year of Plenty, Monopoly.',
+    title: 'Cartas de Desenvolvimento',
+    description: 'Cartas especiais com vários poderes: Cavaleiros, Pontos de Vitória, Construção de Estradas, Ano da Abundância, Monopólio.',
     cost: '⛏️1 🌾1 🐑1'
   },
   victoryPoints: {
     icon: '🏆',
-    title: 'Victory Points',
-    description: 'First player to reach 10 VP wins! Earned from settlements (1), cities (2), longest road (2), largest army (2), and VP cards.',
+    title: 'Pontos de Vitória',
+    description: 'O primeiro jogador a chegar a 10 PV vence! Ganham-se PV com aldeias (1), cidades (2), maior estrada (2), maior exército (2) e cartas de PV.',
   },
   longestRoad: {
     icon: '🛤️',
-    title: 'Longest Road',
-    description: 'Player with the longest continuous road of 5+ segments earns 2 Victory Points.',
+    title: 'Maior Estrada',
+    description: 'O jogador com a maior estrada contínua de 5 ou mais trechos ganha 2 Pontos de Vitória.',
   },
   largestArmy: {
     icon: '⚔️',
-    title: 'Largest Army',
-    description: 'Player who has played 3+ Knight cards (most) earns 2 Victory Points.',
+    title: 'Maior Exército',
+    description: 'O jogador que jogou 3 ou mais cartas de Cavaleiro (o maior número) ganha 2 Pontos de Vitória.',
   },
   knights: {
     icon: '🛡️',
-    title: 'Knights Played',
-    description: 'Number of Knight cards played. 3+ knights can earn Largest Army bonus (2 VP).',
+    title: 'Cavaleiros Jogados',
+    description: 'Número de cartas de Cavaleiro jogadas. 3 ou mais cavaleiros podem render o bônus de Maior Exército (2 PV).',
   },
   
   // Resources
   brick: {
     icon: '🧱',
-    title: 'Brick',
-    description: 'Produced by Hills (brown/red hexes). Used for roads and settlements.',
-    terrain: 'Hills'
+    title: 'Tijolo',
+    description: 'Produzido por Colinas (hexágonos marrons/vermelhos). Usado em estradas e aldeias.',
+    terrain: 'Colinas'
   },
   lumber: {
     icon: '🪵',
-    title: 'Lumber',
-    description: 'Produced by Forests (dark green hexes). Used for roads and settlements.',
-    terrain: 'Forest'
+    title: 'Madeira',
+    description: 'Produzida por Florestas (hexágonos verde-escuros). Usada em estradas e aldeias.',
+    terrain: 'Floresta'
   },
   wool: {
     icon: '🐑',
-    title: 'Wool',
-    description: 'Produced by Pastures (light green hexes). Used for settlements and dev cards.',
-    terrain: 'Pasture'
+    title: 'Lã',
+    description: 'Produzida por Pastos (hexágonos verde-claros). Usada em aldeias e cartas de desenvolvimento.',
+    terrain: 'Pasto'
   },
   grain: {
     icon: '🌾',
-    title: 'Grain',
-    description: 'Produced by Fields (yellow hexes). Used for settlements, cities, and dev cards.',
-    terrain: 'Fields'
+    title: 'Trigo',
+    description: 'Produzido por Campos (hexágonos amarelos). Usado em aldeias, cidades e cartas de desenvolvimento.',
+    terrain: 'Campos'
   },
   ore: {
     icon: '⛏️',
-    title: 'Ore',
-    description: 'Produced by Mountains (gray hexes). Used for cities and dev cards.',
-    terrain: 'Mountains'
+    title: 'Minério',
+    description: 'Produzido por Montanhas (hexágonos cinza). Usado em cidades e cartas de desenvolvimento.',
+    terrain: 'Montanhas'
   },
   
   // Terrain types
   hills: {
     icon: '🧱',
-    title: 'Hills',
-    description: 'Produces Brick when the number token is rolled.',
-    resource: 'Brick'
+    title: 'Colinas',
+    description: 'Produz Tijolo quando sai o número da ficha.',
+    resource: 'Tijolo'
   },
   forest: {
     icon: '🪵',
-    title: 'Forest',
-    description: 'Produces Lumber when the number token is rolled.',
-    resource: 'Lumber'
+    title: 'Floresta',
+    description: 'Produz Madeira quando sai o número da ficha.',
+    resource: 'Madeira'
   },
   pasture: {
     icon: '🐑',
-    title: 'Pasture',
-    description: 'Produces Wool when the number token is rolled.',
-    resource: 'Wool'
+    title: 'Pasto',
+    description: 'Produz Lã quando sai o número da ficha.',
+    resource: 'Lã'
   },
   fields: {
     icon: '🌾',
-    title: 'Fields',
-    description: 'Produces Grain when the number token is rolled.',
-    resource: 'Grain'
+    title: 'Campos',
+    description: 'Produz Trigo quando sai o número da ficha.',
+    resource: 'Trigo'
   },
   mountains: {
     icon: '⛏️',
-    title: 'Mountains',
-    description: 'Produces Ore when the number token is rolled.',
-    resource: 'Ore'
+    title: 'Montanhas',
+    description: 'Produz Minério quando sai o número da ficha.',
+    resource: 'Minério'
   },
   desert: {
     icon: '🏜️',
-    title: 'Desert',
-    description: 'Produces nothing. The robber starts here.',
-    resource: 'None'
+    title: 'Deserto',
+    description: 'Não produz nada. O ladrão começa aqui.',
+    resource: 'Nenhum'
   },
   
   // Port types
   portGeneric: {
     icon: '⚓',
-    title: '3:1 Generic Port',
-    description: 'Trade any 3 of the same resource for 1 of any other resource.',
+    title: 'Porto Genérico 3:1',
+    description: 'Troque 3 cartas iguais de qualquer recurso por 1 de qualquer outro recurso.',
   },
   portBrick: {
     icon: '🧱',
-    title: '2:1 Brick Port',
-    description: 'Trade 2 Brick for 1 of any other resource.',
+    title: 'Porto de Tijolo 2:1',
+    description: 'Troque 2 Tijolos por 1 de qualquer outro recurso.',
   },
   portLumber: {
     icon: '🪵',
-    title: '2:1 Lumber Port',
-    description: 'Trade 2 Lumber for 1 of any other resource.',
+    title: 'Porto de Madeira 2:1',
+    description: 'Troque 2 Madeiras por 1 de qualquer outro recurso.',
   },
   portWool: {
     icon: '🐑',
-    title: '2:1 Wool Port',
-    description: 'Trade 2 Wool for 1 of any other resource.',
+    title: 'Porto de Lã 2:1',
+    description: 'Troque 2 Lãs por 1 de qualquer outro recurso.',
   },
   portGrain: {
     icon: '🌾',
-    title: '2:1 Grain Port',
-    description: 'Trade 2 Grain for 1 of any other resource.',
+    title: 'Porto de Trigo 2:1',
+    description: 'Troque 2 Trigos por 1 de qualquer outro recurso.',
   },
   portOre: {
     icon: '⛏️',
-    title: '2:1 Ore Port',
-    description: 'Trade 2 Ore for 1 of any other resource.',
+    title: 'Porto de Minério 2:1',
+    description: 'Troque 2 Minérios por 1 de qualquer outro recurso.',
   },
   
   // Game elements
   robber: {
     icon: '🥷',
-    title: 'The Robber',
-    description: 'Blocks resource production on this hex. Moved when a 7 is rolled or a Knight is played.',
+    title: 'O Ladrão',
+    description: 'Bloqueia a produção de recursos neste hexágono. É movido quando sai 7 ou quando se joga um Cavaleiro.',
   },
   diceRoll: {
     icon: '🎲',
-    title: 'Dice Roll',
-    description: 'Sum of two dice (2-12). Hexes with this number produce resources. 7 activates the robber.',
+    title: 'Rolagem de Dados',
+    description: 'Soma de dois dados (2-12). Hexágonos com este número produzem recursos. O 7 ativa o ladrão.',
   },
   turnOrder: {
     icon: '🔢',
-    title: 'Turn Order',
-    description: 'The number indicates when this player takes their turn. Randomly determined at game start.',
+    title: 'Ordem dos Turnos',
+    description: 'O número indica quando este jogador joga. É sorteado no início da partida.',
   },
 };
 
 // Number probability info
 const NUMBER_PROBABILITIES = {
-  2: { dots: 1, probability: '2.8%', rolls: '1 in 36' },
-  3: { dots: 2, probability: '5.6%', rolls: '2 in 36' },
-  4: { dots: 3, probability: '8.3%', rolls: '3 in 36' },
-  5: { dots: 4, probability: '11.1%', rolls: '4 in 36' },
-  6: { dots: 5, probability: '13.9%', rolls: '5 in 36' },
-  8: { dots: 5, probability: '13.9%', rolls: '5 in 36' },
-  9: { dots: 4, probability: '11.1%', rolls: '4 in 36' },
-  10: { dots: 3, probability: '8.3%', rolls: '3 in 36' },
-  11: { dots: 2, probability: '5.6%', rolls: '2 in 36' },
-  12: { dots: 1, probability: '2.8%', rolls: '1 in 36' },
+  2: { dots: 1, probability: '2,8%', rolls: '1 em 36' },
+  3: { dots: 2, probability: '5,6%', rolls: '2 em 36' },
+  4: { dots: 3, probability: '8,3%', rolls: '3 em 36' },
+  5: { dots: 4, probability: '11,1%', rolls: '4 em 36' },
+  6: { dots: 5, probability: '13,9%', rolls: '5 em 36' },
+  8: { dots: 5, probability: '13,9%', rolls: '5 em 36' },
+  9: { dots: 4, probability: '11,1%', rolls: '4 em 36' },
+  10: { dots: 3, probability: '8,3%', rolls: '3 em 36' },
+  11: { dots: 2, probability: '5,6%', rolls: '2 em 36' },
+  12: { dots: 1, probability: '2,8%', rolls: '1 em 36' },
 };
 
 function InfoPopup({ position, info, onClose }) {
@@ -221,31 +222,31 @@ function InfoPopup({ position, info, onClose }) {
         <p className="info-popup-description">{info.description}</p>
         {info.cost && (
           <div className="info-popup-cost">
-            <span className="cost-label">Cost:</span> {info.cost}
+            <span className="cost-label">Custo:</span> {info.cost}
           </div>
         )}
         {info.resource && (
           <div className="info-popup-detail">
-            <span className="detail-label">Resource:</span> {info.resource}
+            <span className="detail-label">Recurso:</span> {info.resource}
           </div>
         )}
         {info.terrain && (
           <div className="info-popup-detail">
-            <span className="detail-label">Terrain:</span> {info.terrain}
+            <span className="detail-label">Terreno:</span> {info.terrain}
           </div>
         )}
         {info.number && (
           <div className="info-popup-number">
-            <span className="detail-label">Number Token:</span> {info.number}
+            <span className="detail-label">Ficha de Número:</span> {info.number}
             {NUMBER_PROBABILITIES[info.number] && (
               <span className="probability">
-                ({NUMBER_PROBABILITIES[info.number].probability} chance)
+                ({NUMBER_PROBABILITIES[info.number].probability} de chance)
               </span>
             )}
           </div>
         )}
       </div>
-      <div className="info-popup-hint">Click anywhere to close</div>
+      <div className="info-popup-hint">Clique em qualquer lugar para fechar</div>
     </div>
   );
 }
@@ -280,9 +281,9 @@ export function useInfoPopup() {
     
     const info = {
       icon: resourceIcon,
-      title: hex.terrain.charAt(0).toUpperCase() + hex.terrain.slice(1),
-      description: terrainInfo.description || 'A terrain hex on the board.',
-      resource: hex.resource ? hex.resource.charAt(0).toUpperCase() + hex.resource.slice(1) : 'None',
+      title: terrainInfo.title || (hex.terrain.charAt(0).toUpperCase() + hex.terrain.slice(1)),
+      description: terrainInfo.description || 'Um hexágono de terreno do tabuleiro.',
+      resource: hex.resource ? (nomeRecurso(hex.resource).charAt(0).toUpperCase() + nomeRecurso(hex.resource).slice(1)) : 'Nenhum',
       number: hex.number
     };
     

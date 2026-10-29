@@ -11,17 +11,18 @@ import DiscardModal from './DiscardModal';
 import CardReveal from './CardReveal';
 import InfoPopup, { useInfoPopup, INFO_DATA } from './InfoPopup';
 import Confetti from './Confetti';
+import { nomeRecurso, nomeTrilha } from '../i18n';
 import './GameBoard.css';
 
 const AVAILABLE_COLORS = [
-  { value: '#e63946', label: 'Red' },
-  { value: '#457b9d', label: 'Blue' },
-  { value: '#f4a261', label: 'Orange' },
-  { value: '#2a9d8f', label: 'Teal' },
-  { value: '#6a994e', label: 'Green' },
-  { value: '#9d4edd', label: 'Purple' },
+  { value: '#e63946', label: 'Vermelho' },
+  { value: '#457b9d', label: 'Azul' },
+  { value: '#f4a261', label: 'Laranja' },
+  { value: '#2a9d8f', label: 'Verde-azulado' },
+  { value: '#6a994e', label: 'Verde' },
+  { value: '#9d4edd', label: 'Roxo' },
   { value: '#e07b53', label: 'Coral' },
-  { value: '#4a90d9', label: 'Steel Blue' }
+  { value: '#4a90d9', label: 'Azul-aço' }
 ];
 
 function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeaveGame, addNotification }) {
@@ -112,10 +113,10 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         
         if (gainPlayerId === playerId) {
           // Your own gains
-          addNotification(`🎲 You received: ${gainsList}`);
+          addNotification(`🎲 Você recebeu: ${gainsList}`);
         } else {
           // Other player's gains
-          addNotification(`🎲 ${playerName} received: ${gainsList}`);
+          addNotification(`🎲 ${playerName} recebeu: ${gainsList}`);
         }
       });
     };
@@ -131,9 +132,9 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
     const handleStealResult = ({ type, resource, otherPlayer }) => {
       const icon = resourceIcons[resource] || resource;
       if (type === 'stole') {
-        addNotification(`🥷 You stole ${icon} ${resource} from ${otherPlayer}!`);
+        addNotification(`🥷 Você roubou ${icon} ${nomeRecurso(resource)} de ${otherPlayer}!`);
       } else {
-        addNotification(`😢 ${otherPlayer} stole ${icon} ${resource} from you!`);
+        addNotification(`😢 ${otherPlayer} roubou ${icon} ${nomeRecurso(resource)} de você!`);
       }
     };
     
@@ -147,7 +148,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       const myCard = gameState.lastDrawnProgressCards.find(c => c.playerId === playerId);
       if (myCard) {
         const icon = myCard.track === 'science' ? '📗' : myCard.track === 'politics' ? '📘' : '📒';
-        addNotification(`${icon} You drew a ${myCard.track} progress card!`);
+        addNotification(`${icon} Você sacou uma carta de progresso de ${nomeTrilha(myCard.track)}!`);
       }
     }
   }, [gameState?.diceRoll]);
@@ -156,18 +157,18 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   useEffect(() => {
     const handleSpecialBuildStarted = ({ currentBuilder }) => {
       if (currentBuilder === playerId) {
-        addNotification('🏗️ Special Building Phase - Your turn to build!');
+        addNotification('🏗️ Fase de Construção Especial - Sua vez de construir!');
       }
     };
     
     const handleSpecialBuildNext = ({ currentBuilder }) => {
       if (currentBuilder === playerId) {
-        addNotification('🏗️ Your turn in Special Building Phase!');
+        addNotification('🏗️ Sua vez na Fase de Construção Especial!');
       }
     };
     
     const handleSpecialBuildEnded = () => {
-      addNotification('Special Building Phase ended');
+      addNotification('Fase de Construção Especial encerrada');
     };
     
     socket.on('specialBuildingPhaseStarted', handleSpecialBuildStarted);
@@ -216,8 +217,8 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       setShowTradeModal(true);
       setLastTradeOfferId(tradeId);
       setDismissedTradeId(null); // Reset dismissed state for new trade
-      const traderName = gameState.players[tradeOffer.from]?.name || 'A player';
-      addNotification(`${traderName} wants to trade with you!`);
+      const traderName = gameState.players[tradeOffer.from]?.name || 'Um jogador';
+      addNotification(`${traderName} quer trocar com você!`);
     } else if (!tradeOffer) {
       // Trade was cancelled or completed - clear all trade state
       setLastTradeOfferId(null);
@@ -263,7 +264,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       // Only notify for 7 (robber) - regular rolls are shown in the dice display
       if (rollKey !== lastNotifiedRoll && gameState.diceRoll.total === 7) {
         const roller = gameState.players[gameState.currentPlayerIndex];
-        addNotification(`⚠️ ${roller.name} rolled a 7! Move the robber.`);
+        addNotification(`⚠️ ${roller.name} tirou 7! Mova o ladrão.`);
         setLastNotifiedRoll(rollKey);
       } else if (rollKey !== lastNotifiedRoll) {
         setLastNotifiedRoll(rollKey);
@@ -275,7 +276,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   useEffect(() => {
     if (gameState.winner) {
       const winner = gameState.players.find(p => p.id === gameState.winner);
-      addNotification(`🎉 ${winner.name} wins the game!`);
+      addNotification(`🎉 ${winner.name} venceu o jogo!`);
     }
   }, [gameState.winner]);
 
@@ -338,7 +339,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const handleHexClick = useCallback((hexKey) => {
     if (gameState.turnPhase === 'robber' && isMyTurn) {
       if (hexKey === gameState.robber) {
-        addNotification('Must move robber to a different hex');
+        addNotification('É preciso mover o ladrão para outro hexágono');
         return;
       }
       
@@ -394,7 +395,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const handleBuyCityImprovement = useCallback((track) => {
     socket.emit('buyCityImprovement', { track }, (response) => {
       if (response.success) {
-        addNotification(`Upgraded ${track} improvement!`);
+        addNotification(`Melhoria de ${nomeTrilha(track)} aprimorada!`);
       } else {
         addNotification(response.error);
       }
@@ -430,7 +431,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const handleShuffleBoard = useCallback(() => {
     socket.emit('shuffleBoard', (response) => {
       if (response.success) {
-        addNotification('Board shuffled!');
+        addNotification('Tabuleiro embaralhado!');
       } else {
         addNotification(response.error);
       }
@@ -444,40 +445,40 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const getStatusMessage = () => {
     const maxPlayers = gameState.maxPlayers || 4;
     if (gameState.phase === 'waiting') {
-      const modeText = gameState.isExtended ? '(5-8 Player Mode)' : '';
-      return `Board Preview ${modeText} - Waiting for players... (${gameState.players.length}/${maxPlayers})`;
+      const modeText = gameState.isExtended ? '(Modo 5-8 Jogadores)' : '';
+      return `Prévia do Tabuleiro ${modeText} - Aguardando jogadores... (${gameState.players.length}/${maxPlayers})`;
     }
     if (gameState.phase === 'finished') {
       const winner = gameState.players.find(p => p.id === gameState.winner);
-      return `🎉 ${winner.name} wins!`;
+      return `🎉 ${winner.name} venceu!`;
     }
     if (needsToDiscard) {
       const discardInfo = gameState.discardingPlayers.find(
         d => d.playerIndex === gameState.myIndex
       );
-      return `Discard ${discardInfo.cardsToDiscard} cards`;
+      return `Descarte ${discardInfo.cardsToDiscard} cartas`;
     }
     if (isSetup) {
       return isMyTurn 
-        ? `Place your ${gameState.setupPhase === 0 ? 'first' : 'second'} settlement and road`
-        : `${currentPlayer?.name} is placing...`;
+        ? `Posicione sua ${gameState.setupPhase === 0 ? 'primeira' : 'segunda'} aldeia e estrada`
+        : `${currentPlayer?.name} está posicionando...`;
     }
     // Special Building Phase (5-8 player extension)
     if (isSpecialBuildPhase) {
       if (isMySpecialBuild) {
-        return '🏗️ Special Building Phase - Build or buy cards, then pass';
+        return '🏗️ Fase de Construção Especial - Construa ou compre cartas e depois passe a vez';
       }
       const specialBuilder = gameState.players[gameState.specialBuildIndex];
-      return `🏗️ Special Building Phase - ${specialBuilder?.name}'s turn to build`;
+      return `🏗️ Fase de Construção Especial - vez de ${specialBuilder?.name} construir`;
     }
     if (!isMyTurn) {
-      return `${currentPlayer?.name}'s turn`;
+      return `Vez de ${currentPlayer?.name}`;
     }
     switch (gameState.turnPhase) {
-      case 'roll': return 'Roll the dice';
-      case 'robber': return 'Move the robber';
-      case 'discard': return 'Waiting for players to discard';
-      case 'main': return 'Build, trade, or end turn';
+      case 'roll': return 'Role os dados';
+      case 'robber': return 'Mova o ladrão';
+      case 'discard': return 'Aguardando os jogadores descartarem';
+      case 'main': return 'Construa, troque ou encerre o turno';
       default: return '';
     }
   };
@@ -504,7 +505,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       {/* Header */}
       <div className="game-header">
         <div className="game-code-display">
-          <span className="label">Game Code:</span>
+          <span className="label">Código da Partida:</span>
           <span className="code">{gameCode}</span>
         </div>
         
@@ -518,14 +519,14 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             </div>
           ) : (
             <div className="current-player-badge waiting-badge">
-              Lobby
+              Sala de Espera
             </div>
           )}
           <span className="status-message">{getStatusMessage()}</span>
         </div>
 
         <button className="leave-btn" onClick={onLeaveGame}>
-          Leave Game
+          Sair da Partida
         </button>
       </div>
 
@@ -533,7 +534,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       <div className="game-main">
         {/* Left sidebar - Players */}
         <div className="sidebar left-sidebar">
-          <h3>Players</h3>
+          <h3>Jogadores</h3>
           {gameState.players.map((player, idx) => (
             <PlayerPanel 
               key={player.id}
@@ -559,7 +560,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
           {isWaiting && (
             <div className="waiting-controls">
               <div className="color-selector" style={{ marginBottom: '20px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#ccc' }}>Choose Your Color</h4>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#ccc' }}>Escolha Sua Cor</h4>
                 <div className="color-swatches" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {AVAILABLE_COLORS.map(c => {
                     const isTaken = gameState.players.some(p => p.color === c.value && p.id !== myPlayer.id);
@@ -577,7 +578,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                           cursor: isTaken ? 'not-allowed' : 'pointer'
                         }}
                         disabled={isTaken}
-                        title={isTaken ? 'Color taken' : c.label}
+                        title={isTaken ? 'Cor já escolhida' : c.label}
                         onClick={() => handleColorChange(c.value)}
                       />
                     );
@@ -592,19 +593,19 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                     onClick={handleShuffleBoard}
                     disabled={gameState.mapType === 'standard'} // Can't shuffle standard beginner map
                   >
-                    🔀 Shuffle Board
+                    🔀 Embaralhar Tabuleiro
                   </button>
                   <button 
                     className="start-game-btn"
                     onClick={handleStartGame}
                     disabled={gameState.players.length < 2}
                   >
-                    ▶️ Start Game ({gameState.players.length}/{gameState.maxPlayers || 4})
+                    ▶️ Iniciar Partida ({gameState.players.length}/{gameState.maxPlayers || 4})
                   </button>
                 </>
               )}
               {!isHost && (
-                <p className="waiting-text">Waiting for host to start...</p>
+                <p className="waiting-text">Aguardando o anfitrião iniciar...</p>
               )}
             </div>
           )}
@@ -692,10 +693,10 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         />
         
         <div className="dev-cards-summary" onClick={() => setShowDevCardModal(true)}>
-          <span className="label">Dev Cards:</span>
+          <span className="label">Cartas de Desenvolvimento:</span>
           <span className="count">{myPlayer.developmentCards?.length || 0}</span>
           {myPlayer.newDevCards?.length > 0 && (
-            <span className="new-badge">+{myPlayer.newDevCards.length} new</span>
+            <span className="new-badge">+{myPlayer.newDevCards.length} nova(s)</span>
           )}
         </div>
       </div>
@@ -705,7 +706,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         <div className="robber-notification-banner">
           <span className="robber-icon">🥷</span>
           <span className="robber-text">
-            <strong>Move the Robber!</strong> Click on a hex to place the robber there.
+            <strong>Mova o Ladrão!</strong> Clique em um hexágono para colocar o ladrão nele.
           </span>
         </div>
       )}
@@ -715,7 +716,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         <div className="discard-notification-banner">
           <span className="discard-icon">⏳</span>
           <span className="discard-text">
-            Waiting for players to discard cards...
+            Aguardando os jogadores descartarem cartas...
           </span>
         </div>
       )}
@@ -725,10 +726,10 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         <div className="special-build-banner">
           <span className="special-build-icon">🏗️</span>
           <span className="special-build-text">
-            <strong>Special Building Phase!</strong> You may build roads, settlements, cities, or buy development cards. No trading allowed.
+            <strong>Fase de Construção Especial!</strong> Você pode construir estradas, aldeias, cidades ou comprar cartas de desenvolvimento. Trocas não são permitidas.
           </span>
           <button className="special-build-done-btn" onClick={handleEndSpecialBuild}>
-            Done Building
+            Terminar Construção
           </button>
         </div>
       )}
@@ -738,7 +739,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         <div className="barbarian-tracker-banner">
           <span className="barbarian-icon">🏴‍☠️</span>
           <span className="barbarian-text">
-            <strong>Barbarian Fleet:</strong> {gameState.barbarianPosition}/7 spaces until attack
+            <strong>Frota Bárbara:</strong> {gameState.barbarianPosition}/7 casas até o ataque
           </span>
         </div>
       )}
@@ -748,17 +749,17 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         <div className="modal-overlay">
           <div className="modal-content" style={{ textAlign: 'center', zIndex: 1000, pointerEvents: 'auto' }}>
             <h2 style={{ color: gameState.lastBarbarianResult.won ? '#4caf50' : '#f44336' }}>
-              {gameState.lastBarbarianResult.won ? '🛡️ Catan Defended!' : '🔥 Barbarians Pillaged!'}
+              {gameState.lastBarbarianResult.won ? '🛡️ Catan Defendida!' : '🔥 Os Bárbaros Saquearam!'}
             </h2>
             <p style={{ margin: '20px 0', fontSize: '1.2rem' }}>
-              Barbarian Strength: <strong>{gameState.lastBarbarianResult.barbarianStrength}</strong>
+              Força dos Bárbaros: <strong>{gameState.lastBarbarianResult.barbarianStrength}</strong>
               <br/>
-              Catan Knights Strength: <strong>{gameState.lastBarbarianResult.catanStrength}</strong>
+              Força dos Cavaleiros de Catan: <strong>{gameState.lastBarbarianResult.catanStrength}</strong>
             </p>
             <p style={{ marginBottom: '20px', color: '#ffd700' }}>
               {gameState.lastBarbarianResult.details}
             </p>
-            <button className="primary-btn" onClick={() => setDismissedBarbarianResult(true)}>Close</button>
+            <button className="primary-btn" onClick={() => setDismissedBarbarianResult(true)}>Fechar</button>
           </div>
         </div>
       )}
@@ -771,16 +772,16 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         <div className="trade-notification-banner">
           <span className="trade-icon">🤝</span>
           <span className="trade-text" onClick={() => setShowTradeModal(true)}>
-            <strong>{gameState.players[gameState.tradeOffer.from]?.name}</strong> wants to trade with you!
+            <strong>{gameState.players[gameState.tradeOffer.from]?.name}</strong> quer trocar com você!
           </span>
-          <button className="view-trade-btn" onClick={() => setShowTradeModal(true)}>View Trade</button>
+          <button className="view-trade-btn" onClick={() => setShowTradeModal(true)}>Ver Troca</button>
           <button 
             className="dismiss-trade-btn" 
             onClick={(e) => {
               e.stopPropagation();
               setDismissedTradeId(lastTradeOfferId);
             }}
-            title="Dismiss notification"
+            title="Dispensar aviso"
           >
             ✕
           </button>
@@ -834,7 +835,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       {pendingRobberHex && playersOnHex.length > 0 && (
         <div className="modal-overlay">
           <div className="steal-modal">
-            <h3>Steal from whom?</h3>
+            <h3>Roubar de quem?</h3>
             <div className="steal-options">
               {playersOnHex.map(p => (
                 <button 
@@ -844,7 +845,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                   disabled={!p.hasResources}
                 >
                   {p.name}
-                  {!p.hasResources && <span className="no-cards">(no cards)</span>}
+                  {!p.hasResources && <span className="no-cards">(sem cartas)</span>}
                 </button>
               ))}
             </div>
@@ -864,9 +865,9 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       {/* Resource gain notification */}
       {resourceGainNotification && (
         <div className="resource-gain-popup">
-          <div className="resource-gain-title">🎲 Rolled {resourceGainNotification.fromRoll}</div>
+          <div className="resource-gain-title">🎲 Tirou {resourceGainNotification.fromRoll}</div>
           <div className="resource-gain-content">
-            You received: {resourceGainNotification.gainsList}
+            Você recebeu: {resourceGainNotification.gainsList}
           </div>
         </div>
       )}

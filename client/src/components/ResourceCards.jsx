@@ -1,11 +1,11 @@
 import './ResourceCards.css';
 
 const RESOURCES = [
-  { key: 'brick', name: 'Brick', icon: '🧱', color: '#c45a2c' },
-  { key: 'lumber', name: 'Lumber', icon: '🪵', color: '#2d5a27' },
-  { key: 'wool', name: 'Wool', icon: '🐑', color: '#90c26a' },
-  { key: 'grain', name: 'Grain', icon: '🌾', color: '#d4a942' },
-  { key: 'ore', name: 'Ore', icon: '⛏️', color: '#6b6b6b' }
+  { key: 'brick', name: 'Tijolo', icon: '🧱', color: '#c45a2c' },
+  { key: 'lumber', name: 'Madeira', icon: '🪵', color: '#2d5a27' },
+  { key: 'wool', name: 'Lã', icon: '🐑', color: '#90c26a' },
+  { key: 'grain', name: 'Trigo', icon: '🌾', color: '#d4a942' },
+  { key: 'ore', name: 'Minério', icon: '⛏️', color: '#6b6b6b' }
 ];
 
 function ResourceCards({ resources, compact = false, selectable = false, selected = {}, onSelect, onRightClick }) {
@@ -14,7 +14,7 @@ function ResourceCards({ resources, compact = false, selectable = false, selecte
       <div className="resource-cards compact">
         <div className="total-cards">
           <span className="card-icon">🃏</span>
-          <span className="count">{resources} cards</span>
+          <span className="count">{resources} cartas</span>
         </div>
       </div>
     );
@@ -45,7 +45,7 @@ function ResourceCards({ resources, compact = false, selectable = false, selecte
             style={{ '--resource-color': resource.color }}
             onClick={selectable && count > selectedCount ? () => onSelect?.(resource.key, 1) : undefined}
             onContextMenu={(e) => handleContextMenu(e, resource.key)}
-            title={onRightClick && !selectable ? "Right-click for info" : undefined}
+            title={onRightClick && !selectable ? "Clique com o botão direito para ver informações" : undefined}
           >
             <div className="card-top">
               <span className="resource-icon">{resource.icon}</span>

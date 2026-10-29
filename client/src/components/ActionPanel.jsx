@@ -62,13 +62,13 @@ function ActionPanel({
 
   return (
     <div className="action-panel">
-      <h3>Actions</h3>
+      <h3>Ações</h3>
       
       {/* Special Build Phase indicator */}
       {isMySpecialBuild && (
         <div className="special-build-indicator">
-          🏗️ Special Building Phase
-          <span className="no-trade-hint">(No trading allowed)</span>
+          🏗️ Fase de Construção Especial
+          <span className="no-trade-hint">(Trocas não permitidas)</span>
         </div>
       )}
       
@@ -78,33 +78,33 @@ function ActionPanel({
         onClick={onRollDice}
         disabled={!canRoll}
       >
-        🎲 Roll Dice
+        🎲 Rolar Dados
       </button>
 
       {/* Year of Plenty indicator */}
       {yearOfPlentyPicks > 0 && (
         <div className="special-action">
-          <p>Year of Plenty: Pick {yearOfPlentyPicks} resource(s)</p>
-          <button onClick={onOpenDevCards}>Choose Resources</button>
+          <p>Ano da Abundância: escolha {yearOfPlentyPicks} recurso(s)</p>
+          <button onClick={onOpenDevCards}>Escolher Recursos</button>
         </div>
       )}
 
       {/* Free Roads indicator */}
       {freeRoads > 0 && (
         <div className="special-action">
-          <p>Road Building: {freeRoads} free road(s)</p>
+          <p>Construção de Estradas: {freeRoads} estrada(s) grátis</p>
           <button 
             className={selectedAction === 'road' ? 'active' : ''}
             onClick={() => setSelectedAction('road')}
           >
-            Place Road
+            Posicionar Estrada
           </button>
         </div>
       )}
 
       {/* Build Section */}
       <div className="action-section">
-        <h4>Build</h4>
+        <h4>Construir</h4>
         
         <button
           className={`action-btn build-btn ${selectedAction === 'road' ? 'active' : ''}`}
@@ -112,7 +112,7 @@ function ActionPanel({
           disabled={!canBuild || (!canAffordRoad && freeRoads === 0)}
         >
           <span className="btn-icon">━</span>
-          <span className="btn-label">Road</span>
+          <span className="btn-label">Estrada</span>
           <span className="cost">🧱1 🪵1</span>
         </button>
 
@@ -122,7 +122,7 @@ function ActionPanel({
           disabled={!canBuild || !canAffordSettlement || player.settlements <= 0}
         >
           <span className="btn-icon">🏠</span>
-          <span className="btn-label">Settlement</span>
+          <span className="btn-label">Aldeia</span>
           <span className="cost">🧱1 🪵1 🐑1 🌾1</span>
         </button>
 
@@ -132,7 +132,7 @@ function ActionPanel({
           disabled={!canBuild || !canAffordCity || player.cities <= 0}
         >
           <span className="btn-icon">🏰</span>
-          <span className="btn-label">City</span>
+          <span className="btn-label">Cidade</span>
           <span className="cost">⛏️3 🌾2</span>
         </button>
 
@@ -143,20 +143,20 @@ function ActionPanel({
             disabled={!canBuild || !canAffordDevCard || devCardsLeft === 0}
           >
             <span className="btn-icon">📜</span>
-            <span className="btn-label">Dev Card</span>
+            <span className="btn-label">Carta de Desenv.</span>
             <span className="cost">⛏️1 🌾1 🐑1</span>
-            {devCardsLeft <= 5 && <span className="remaining">({devCardsLeft} left)</span>}
+            {devCardsLeft <= 5 && <span className="remaining">({devCardsLeft} restantes)</span>}
           </button>
         ) : (
           <div className="city-improvements">
-            <h4 style={{ margin: '10px 0 5px 0', fontSize: '0.9rem', color: '#b0b0b0' }}>City Improvements</h4>
+            <h4 style={{ margin: '10px 0 5px 0', fontSize: '0.9rem', color: '#b0b0b0' }}>Melhorias da Cidade</h4>
             <button
               className="action-btn build-btn"
               onClick={() => onBuyCityImprovement('science')}
               disabled={!canBuild || !canAffordScience || !hasCityBuilt || player.cityImprovements?.science >= 5}
             >
               <span className="btn-icon">📗</span>
-              <span className="btn-label">Science</span>
+              <span className="btn-label">Ciência</span>
               <span className="cost">📖{player.cityImprovements?.science >= 5 ? '-' : player.cityImprovements?.science + 1}</span>
             </button>
             <button
@@ -165,7 +165,7 @@ function ActionPanel({
               disabled={!canBuild || !canAffordPolitics || !hasCityBuilt || player.cityImprovements?.politics >= 5}
             >
               <span className="btn-icon">📘</span>
-              <span className="btn-label">Politics</span>
+              <span className="btn-label">Política</span>
               <span className="cost">🪙{player.cityImprovements?.politics >= 5 ? '-' : player.cityImprovements?.politics + 1}</span>
             </button>
             <button
@@ -174,12 +174,12 @@ function ActionPanel({
               disabled={!canBuild || !canAffordTrade || !hasCityBuilt || player.cityImprovements?.trade >= 5}
             >
               <span className="btn-icon">📒</span>
-              <span className="btn-label">Trade</span>
+              <span className="btn-label">Comércio</span>
               <span className="cost">🧵{player.cityImprovements?.trade >= 5 ? '-' : player.cityImprovements?.trade + 1}</span>
             </button>
             
             <div className="knights-section" style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <h4 style={{ margin: '0 0 5px 0', fontSize: '0.9rem', color: '#b0b0b0' }}>Knights</h4>
+              <h4 style={{ margin: '0 0 5px 0', fontSize: '0.9rem', color: '#b0b0b0' }}>Cavaleiros</h4>
               
               <button
                 className="action-btn build-btn"
@@ -187,7 +187,7 @@ function ActionPanel({
                 disabled={!canBuild || !hasResources(player, {ore: 1, wool: 1}) || (player.cKKnights?.inactive.basic + player.cKKnights?.active.basic) >= 2}
               >
                 <span className="btn-icon">🛡️</span>
-                <span className="btn-label">Recruit Knight</span>
+                <span className="btn-label">Recrutar Cavaleiro</span>
                 <span className="cost">⛏️1 🐑1</span>
               </button>
               
@@ -200,7 +200,7 @@ function ActionPanel({
                 disabled={!canBuild || !hasResources(player, {grain: 1}) || (player.cKKnights?.inactive.basic + player.cKKnights?.inactive.strong + player.cKKnights?.inactive.mighty) === 0}
               >
                 <span className="btn-icon">⚡</span>
-                <span className="btn-label">Activate Knight</span>
+                <span className="btn-label">Ativar Cavaleiro</span>
                 <span className="cost">🌾1</span>
               </button>
               
@@ -215,7 +215,7 @@ function ActionPanel({
                 disabled={!canBuild || !hasResources(player, {ore: 1, wool: 1}) || (player.cKKnights?.inactive.basic + player.cKKnights?.active.basic + player.cKKnights?.inactive.strong + player.cKKnights?.active.strong) === 0}
               >
                 <span className="btn-icon">⚔️</span>
-                <span className="btn-label">Upgrade Knight</span>
+                <span className="btn-label">Promover Cavaleiro</span>
                 <span className="cost">⛏️1 🐑1</span>
               </button>
             </div>
@@ -225,27 +225,27 @@ function ActionPanel({
 
       {/* Trade Section */}
       <div className="action-section">
-        <h4>Trade {isMySpecialBuild && <span className="disabled-hint">(disabled)</span>}</h4>
+        <h4>Troca {isMySpecialBuild && <span className="disabled-hint">(desativada)</span>}</h4>
         
         <button
           className="action-btn trade-btn"
           onClick={onOpenTrade}
           disabled={!canTrade}
         >
-          🤝 Trade
+          🤝 Trocar
         </button>
       </div>
 
       {/* Development Cards */}
       {hasDevCards && (
         <div className="action-section">
-          <h4>Development Cards</h4>
+          <h4>Cartas de Desenvolvimento</h4>
           <button
             className="action-btn"
             onClick={onOpenDevCards}
             disabled={!canPlayDevCards}
           >
-            📜 View & Play Cards ({player.developmentCards.length})
+            📜 Ver e Jogar Cartas ({player.developmentCards.length})
           </button>
         </div>
       )}
@@ -256,7 +256,7 @@ function ActionPanel({
         onClick={onEndTurn}
         disabled={!canEnd}
       >
-        ⏭️ End Turn
+        ⏭️ Encerrar Turno
       </button>
     </div>
   );

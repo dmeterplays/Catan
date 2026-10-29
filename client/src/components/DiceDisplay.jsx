@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './DiceDisplay.css';
+import { nomeTrilha } from '../i18n';
 
 const DICE_FACES = {
   1: '⚀',
@@ -27,11 +28,11 @@ function DiceDisplay({ roll, onRightClick }) {
     if (onRightClick) {
       e.preventDefault();
       onRightClick(e, 'diceRoll', {
-        title: `Dice Roll: ${roll.total}`,
+        title: `Rolagem de Dados: ${roll.total}`,
         icon: '🎲',
         description: isSeven 
-          ? 'Rolling a 7 activates the robber! Players with 8+ cards must discard half. Then move the robber and steal.'
-          : `Hexes with number ${roll.total} produce resources for adjacent settlements/cities.`,
+          ? 'Tirar 7 ativa o ladrão! Jogadores com 8 ou mais cartas devem descartar metade. Depois, mova o ladrão e roube.'
+          : `Hexágonos com o número ${roll.total} produzem recursos para as aldeias/cidades vizinhas.`,
         number: roll.total
       });
     }
@@ -41,13 +42,13 @@ function DiceDisplay({ roll, onRightClick }) {
     <div 
       className={`dice-display ${animating ? 'animating' : ''} ${isSeven ? 'seven' : ''}`}
       onContextMenu={handleContextMenu}
-      title="Right-click for info"
+      title="Clique com o botão direito para ver informações"
       style={{ cursor: 'context-menu' }}
     >
       <div className="dice-container">
         <div className="die die-white">{DICE_FACES[roll.die1]}</div>
         {roll.eventDie && (
-          <div className="die die-event" title={`Event: ${roll.eventDie}`}>
+          <div className="die die-event" title={`Evento: ${roll.eventDie === 'barbarian' ? 'bárbaros' : nomeTrilha(roll.eventDie)}`}>
             {roll.eventDie === 'barbarian' ? '🏴‍☠️' : 
              roll.eventDie === 'science' ? '📗' : 
              roll.eventDie === 'politics' ? '📘' : '📒'}
@@ -57,7 +58,7 @@ function DiceDisplay({ roll, onRightClick }) {
       </div>
       <div className="dice-total">
         {roll.total}
-        {isSeven && <span className="robber-alert">🥷 Robber!</span>}
+        {isSeven && <span className="robber-alert">🥷 Ladrão!</span>}
       </div>
     </div>
   );

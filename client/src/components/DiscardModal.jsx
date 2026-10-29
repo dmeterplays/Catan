@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './DiscardModal.css';
+import { nomeRecurso } from '../i18n';
 
 const RESOURCES = ['brick', 'lumber', 'wool', 'grain', 'ore'];
 const RESOURCE_ICONS = {
@@ -24,7 +25,7 @@ function DiscardModal({ socket, player, cardsToDiscard, addNotification }) {
 
   const handleDiscard = () => {
     if (totalSelected !== cardsToDiscard) {
-      addNotification(`Must discard exactly ${cardsToDiscard} cards`);
+      addNotification(`É preciso descartar exatamente ${cardsToDiscard} cartas`);
       return;
     }
 
@@ -38,9 +39,9 @@ function DiscardModal({ socket, player, cardsToDiscard, addNotification }) {
   return (
     <div className="modal-overlay">
       <div className="discard-modal">
-        <h2>🎲 Seven Rolled!</h2>
+        <h2>🎲 Saiu o Sete!</h2>
         <p className="discard-info">
-          You have more than 7 cards. Discard <strong>{cardsToDiscard}</strong> cards.
+          Você tem mais de 7 cartas. Descarte <strong>{cardsToDiscard}</strong> cartas.
         </p>
         
         <div className="discard-progress">
@@ -61,7 +62,7 @@ function DiscardModal({ socket, player, cardsToDiscard, addNotification }) {
             return (
               <div key={r} className="resource-discard-row">
                 <span className="resource-icon">{RESOURCE_ICONS[r]}</span>
-                <span className="resource-name">{r}</span>
+                <span className="resource-name">{nomeRecurso(r)}</span>
                 <span className="resource-available">({available})</span>
                 <div className="discard-controls">
                   <button 
@@ -88,7 +89,7 @@ function DiscardModal({ socket, player, cardsToDiscard, addNotification }) {
           onClick={handleDiscard}
           disabled={totalSelected !== cardsToDiscard}
         >
-          Discard {totalSelected} Cards
+          Descartar {totalSelected} Cartas
         </button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './TradeModal.css';
+import { nomeRecurso } from '../i18n';
 
 const RESOURCES = ['brick', 'lumber', 'wool', 'grain', 'ore'];
 const RESOURCE_ICONS = {
@@ -77,7 +78,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
     const hasRequest = Object.values(request).some(v => v > 0);
     
     if (!hasOffer || !hasRequest) {
-      addNotification('Must offer and request at least one resource');
+      addNotification('É preciso oferecer e pedir pelo menos um recurso');
       return;
     }
 
@@ -85,7 +86,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
       if (!response.success) {
         addNotification(response.error);
       } else {
-        addNotification('Trade proposed!');
+        addNotification('Troca proposta!');
       }
     });
   };
@@ -95,7 +96,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
       if (!response.success) {
         addNotification(response.error);
       } else {
-        addNotification('Trade accepted!');
+        addNotification('Troca aceita!');
         onClose(); // Close modal after accepting
       }
     });
@@ -116,27 +117,27 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
       if (!response.success) {
         addNotification(response.error);
       } else {
-        addNotification('Trade cancelled');
+        addNotification('Troca cancelada');
       }
     });
   };
 
   const handleBankTrade = () => {
     if (!bankGive || !bankGet || bankGive === bankGet) {
-      addNotification('Select different resources to give and receive');
+      addNotification('Selecione recursos diferentes para dar e receber');
       return;
     }
 
     const ratio = gameState.tradeRatios?.[bankGive] || 4;
     
     if (myPlayer.resources[bankGive] < ratio) {
-      addNotification(`Not enough ${bankGive} (need ${ratio})`);
+      addNotification(`${nomeRecurso(bankGive)} insuficiente (precisa de ${ratio})`);
       return;
     }
 
     socket.emit('bankTrade', { giveResource: bankGive, giveAmount: ratio, getResource: bankGet }, (response) => {
       if (response.success) {
-        addNotification(`Traded ${ratio} ${bankGive} for 1 ${bankGet}!`);
+        addNotification(`Trocou ${ratio} ${nomeRecurso(bankGive)} por 1 ${nomeRecurso(bankGet)}!`);
         onClose(); // Close modal after successful trade
       } else {
         addNotification(response.error);
@@ -153,11 +154,11 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
         <div className="trade-modal" onClick={e => e.stopPropagation()}>
           <button className="close-btn" onClick={onClose}>×</button>
           
-          <h2>Trade Offer from {trader.name}</h2>
+          <h2>Oferta de Troca de {trader.name}</h2>
           
           <div className="trade-display">
             <div className="trade-side">
-              <h4>They Offer:</h4>
+              <h4>Oferece:</h4>
               <div className="resource-list">
                 {RESOURCES.map(r => pendingTrade.offer[r] > 0 && (
                   <div key={r} className="resource-item">
@@ -171,7 +172,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
             <div className="trade-arrow">⇄</div>
             
             <div className="trade-side">
-              <h4>They Request:</h4>
+              <h4>Pede:</h4>
               <div className="resource-list">
                 {RESOURCES.map(r => pendingTrade.request[r] > 0 && (
                   <div key={r} className="resource-item">
@@ -185,10 +186,10 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
           
           <div className="trade-actions">
             <button className="accept-btn" onClick={handleAcceptTrade}>
-              ✓ Accept
+              ✓ Aceitar
             </button>
             <button className="decline-btn" onClick={handleDeclineTrade}>
-              ✗ Decline
+              ✗ Recusar
             </button>
           </div>
         </div>
@@ -201,7 +202,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
       <div className="trade-modal" onClick={e => e.stopPropagation()}>
         <button className="close-btn" onClick={onClose}>×</button>
         
-        <h2>Trade</h2>
+        <h2>Troca</h2>
         
         {/* Trade type tabs */}
         <div className="trade-tabs">
@@ -209,13 +210,13 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
             className={tradeType === 'player' ? 'active' : ''}
             onClick={() => setTradeType('player')}
           >
-            🤝 With Players
+            🤝 Com Jogadores
           </button>
           <button 
             className={tradeType === 'bank' ? 'active' : ''}
             onClick={() => setTradeType('bank')}
           >
-            🏦 With Bank/Ports
+            🏦 Com o Banco/Portos
           </button>
         </div>
 
@@ -224,8 +225,8 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
             {/* Pending trade status */}
             {pendingTrade && isTradeFromMe && (
               <div className="pending-trade">
-                <p>Waiting for responses...</p>
-                <button onClick={handleCancelTrade}>Cancel Trade</button>
+                <p>Aguardando respostas...</p>
+                <button onClick={handleCancelTrade}>Cancelar Troca</button>
               </div>
             )}
 
@@ -240,8 +241,8 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'offer')}
                     >
-                      <h4>🎁 You Offer</h4>
-                      <p className="dnd-hint">Drag from Your Hand</p>
+                      <h4>🎁 Você Oferece</h4>
+                      <p className="dnd-hint">Arraste da Sua Mão</p>
                       <div className="dnd-resource-list">
                         {RESOURCES.map(r => offer[r] > 0 && (
                           <div 
@@ -267,8 +268,8 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'request')}
                     >
-                      <h4>🙏 You Request</h4>
-                      <p className="dnd-hint">Drag from Pool</p>
+                      <h4>🙏 Você Pede</h4>
+                      <p className="dnd-hint">Arraste do Estoque</p>
                       <div className="dnd-resource-list">
                         {RESOURCES.map(r => request[r] > 0 && (
                           <div 
@@ -294,7 +295,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'hand')}
                     >
-                      <h4>🤚 Your Hand</h4>
+                      <h4>🤚 Sua Mão</h4>
                       <div className="dnd-resource-list">
                         {RESOURCES.map(r => {
                           const available = myPlayer.resources[r] - offer[r];
@@ -322,7 +323,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'pool')}
                     >
-                      <h4>🌍 Resources</h4>
+                      <h4>🌍 Recursos</h4>
                       <div className="dnd-resource-list compact">
                         {RESOURCES.map(r => (
                           <div 
@@ -346,7 +347,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                   onClick={handleProposeTrade}
                   disabled={!isMyTurn}
                 >
-                  📢 Propose Trade
+                  📢 Propor Troca
                 </button>
               </>
             )}
@@ -356,11 +357,11 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
             {/* Show available ports */}
             {gameState.myPorts && gameState.myPorts.length > 0 && (
               <div className="my-ports">
-                <h4>🚢 Your Ports:</h4>
+                <h4>🚢 Seus Portos:</h4>
                 <div className="port-list">
                   {gameState.myPorts.map((port, idx) => (
                     <span key={idx} className="port-badge">
-                      {port.icon} {port.ratio}:1 {port.resource ? port.resource : 'any'}
+                      {port.icon} {port.ratio}:1 {port.resource ? nomeRecurso(port.resource) : 'qualquer'}
                     </span>
                   ))}
                 </div>
@@ -368,12 +369,12 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
             )}
             
             <p className="bank-info">
-              Select a resource to trade. Your rate depends on ports you own!
+              Selecione um recurso para trocar. Sua taxa depende dos portos que você possui!
             </p>
             
             <div className="bank-trade-builder">
               <div className="bank-section">
-                <h4>Give:</h4>
+                <h4>Dar:</h4>
                 <div className="bank-options">
                   {RESOURCES.map(r => {
                     const ratio = gameState.tradeRatios?.[r] || 4;
@@ -397,7 +398,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
               <div className="bank-arrow">→</div>
               
               <div className="bank-section">
-                <h4>Receive (1x):</h4>
+                <h4>Receber (1x):</h4>
                 <div className="bank-options">
                   {RESOURCES.map(r => (
                     <button
@@ -418,7 +419,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
               onClick={handleBankTrade}
               disabled={!bankGive || !bankGet || bankGive === bankGet || myPlayer.resources[bankGive] < (gameState.tradeRatios?.[bankGive] || 4)}
             >
-              🏦 Complete Trade {bankGive && `(${gameState.tradeRatios?.[bankGive] || 4}:1)`}
+              🏦 Concluir Troca {bankGive && `(${gameState.tradeRatios?.[bankGive] || 4}:1)`}
             </button>
           </div>
         )}

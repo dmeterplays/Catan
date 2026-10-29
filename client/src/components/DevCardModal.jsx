@@ -1,44 +1,45 @@
 import { useState } from 'react';
 import './DevCardModal.css';
+import { nomeRecurso } from '../i18n';
 
 const DEV_CARD_INFO = {
   knight: {
-    name: 'Knight',
+    name: 'Cavaleiro',
     icon: '⚔️',
-    description: 'Move the robber and steal from an opponent. Counts toward Largest Army.',
+    description: 'Mova o ladrão e roube de um adversário. Conta para o Maior Exército.',
     playable: true
   },
   victoryPoint: {
-    name: 'Victory Point',
+    name: 'Ponto de Vitória',
     icon: '🏆',
-    description: 'Worth 1 VP. Revealed at end of game or when you win.',
+    description: 'Vale 1 PV. Revelado no fim do jogo ou quando você vencer.',
     playable: false
   },
   roadBuilding: {
-    name: 'Road Building',
+    name: 'Construção de Estradas',
     icon: '🛤️',
-    description: 'Build 2 roads for free.',
+    description: 'Construa 2 estradas de graça.',
     playable: true
   },
   yearOfPlenty: {
-    name: 'Year of Plenty',
+    name: 'Ano da Abundância',
     icon: '🌈',
-    description: 'Take any 2 resources from the bank.',
+    description: 'Pegue 2 recursos quaisquer do banco.',
     playable: true
   },
   monopoly: {
-    name: 'Monopoly',
+    name: 'Monopólio',
     icon: '💰',
-    description: 'Name a resource. All players give you all their cards of that type.',
+    description: 'Escolha um recurso. Todos os jogadores entregam a você todas as cartas desse tipo.',
     playable: true
   }
 };
 
 const PROGRESS_CARD_INFO = {
-  inventor: { name: 'Inventor (Science)', icon: '📗', description: 'Take any 2 resources from the bank.', playable: true, track: 'science' },
-  engineer: { name: 'Engineer (Science)', icon: '📗', description: 'Build 2 roads for free.', playable: true, track: 'science' },
-  constitution: { name: 'Constitution (Politics)', icon: '📘', description: '+1 Victory Point. Tracked automatically.', playable: false, track: 'politics' },
-  commercialMonopoly: { name: 'Commercial Monopoly (Trade)', icon: '📒', description: 'Name a resource. All players give you all their cards of that type.', playable: true, track: 'trade' }
+  inventor: { name: 'Inventor (Ciência)', icon: '📗', description: 'Pegue 2 recursos quaisquer do banco.', playable: true, track: 'science' },
+  engineer: { name: 'Engenheiro (Ciência)', icon: '📗', description: 'Construa 2 estradas de graça.', playable: true, track: 'science' },
+  constitution: { name: 'Constituição (Política)', icon: '📘', description: '+1 Ponto de Vitória. Contado automaticamente.', playable: false, track: 'politics' },
+  commercialMonopoly: { name: 'Monopólio Comercial (Comércio)', icon: '📒', description: 'Escolha um recurso. Todos os jogadores entregam a você todas as cartas desse tipo.', playable: true, track: 'trade' }
 };
 
 const RESOURCES = ['brick', 'lumber', 'wool', 'grain', 'ore'];
@@ -69,7 +70,7 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
     socket.emit(eventName, payload, (response) => {
       if (response.success) {
         const info = isCitiesAndKnights ? PROGRESS_CARD_INFO[cardType] : DEV_CARD_INFO[cardType];
-        addNotification(`Played ${info.name}!`);
+        addNotification(`Jogou ${info.name}!`);
         if (cardType === 'knight' || cardType === 'roadBuilding' || cardType === 'engineer') {
           onClose();
         }
@@ -81,7 +82,7 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
 
   const handleMonopoly = () => {
     if (!monopolyResource) {
-      addNotification('Select a resource');
+      addNotification('Selecione um recurso');
       return;
     }
 
@@ -92,7 +93,7 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
 
     socket.emit(eventName, payload, (response) => {
       if (response.success) {
-        addNotification(`Monopoly on ${monopolyResource}!`);
+        addNotification(`Monopólio de ${nomeRecurso(monopolyResource)}!`);
         onClose();
       } else {
         addNotification(response.error);
@@ -136,12 +137,12 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
       <div className="dev-card-modal" onClick={e => e.stopPropagation()}>
         <button className="close-btn" onClick={onClose}>×</button>
         
-        <h2>Development Cards</h2>
+        <h2>Cartas de Desenvolvimento</h2>
 
         {/* Year of Plenty resource picking */}
         {yearOfPlentyPicks > 0 && (
           <div className="year-of-plenty-picker">
-            <h3>Year of Plenty - Pick {yearOfPlentyPicks} resource(s)</h3>
+            <h3>Ano da Abundância - escolha {yearOfPlentyPicks} recurso(s)</h3>
             <div className="resource-buttons">
               {RESOURCES.map(r => (
                 <button
@@ -150,7 +151,7 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
                   onClick={() => handleYearOfPlentyPick(r)}
                 >
                   <span className="icon">{RESOURCE_ICONS[r]}</span>
-                  <span className="name">{r}</span>
+                  <span className="name">{nomeRecurso(r)}</span>
                 </button>
               ))}
             </div>
@@ -160,7 +161,7 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
         {/* Monopoly resource selection */}
         {selectedCard === 'monopoly' && (
           <div className="monopoly-picker">
-            <h3>Choose resource to monopolize</h3>
+            <h3>Escolha o recurso a monopolizar</h3>
             <div className="resource-buttons">
               {RESOURCES.map(r => (
                 <button
@@ -169,13 +170,13 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
                   onClick={() => setMonopolyResource(r)}
                 >
                   <span className="icon">{RESOURCE_ICONS[r]}</span>
-                  <span className="name">{r}</span>
+                  <span className="name">{nomeRecurso(r)}</span>
                 </button>
               ))}
             </div>
             <div className="monopoly-actions">
-              <button onClick={() => setSelectedCard(null)}>Cancel</button>
-              <button className="confirm" onClick={handleMonopoly}>Confirm</button>
+              <button onClick={() => setSelectedCard(null)}>Cancelar</button>
+              <button className="confirm" onClick={handleMonopoly}>Confirmar</button>
             </div>
           </div>
         )}
@@ -184,7 +185,7 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
         {!selectedCard && (
           <>
             {Object.keys(cardCounts).length === 0 && newCards.length === 0 ? (
-              <p className="no-cards">You have no {isCitiesAndKnights ? 'progress' : 'development'} cards.</p>
+              <p className="no-cards">Você não tem cartas de {isCitiesAndKnights ? 'progresso' : 'desenvolvimento'}.</p>
             ) : (
               <>
                 {/* Playable cards */}
@@ -207,7 +208,7 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
                             onClick={() => handlePlayCard(cardType, info.track)}
                             disabled={!isPlayable}
                           >
-                            Play
+                            Jogar
                           </button>
                         )}
                       </div>
@@ -218,7 +219,7 @@ function DevCardModal({ socket, myPlayer, isMyTurn, turnPhase, yearOfPlentyPicks
                 {/* New cards (bought this turn) */}
                 {newCards.length > 0 && (
                   <div className="new-cards">
-                    <h4>{isCitiesAndKnights ? "Drawn This Turn (can't play yet)" : "Bought This Turn (can't play yet)"}</h4>
+                    <h4>{isCitiesAndKnights ? "Sacadas Neste Turno (ainda não podem ser jogadas)" : "Compradas Neste Turno (ainda não podem ser jogadas)"}</h4>
                     <div className="card-list small">
                       {newCards.map((cardType, idx) => {
                         const info = isCitiesAndKnights ? PROGRESS_CARD_INFO[cardType] : DEV_CARD_INFO[cardType];

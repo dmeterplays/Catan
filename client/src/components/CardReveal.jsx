@@ -3,37 +3,37 @@ import './CardReveal.css';
 
 const DEV_CARD_INFO = {
   knight: {
-    name: 'Knight',
+    name: 'Cavaleiro',
     icon: '⚔️',
-    description: 'Move the robber to a new hex and steal a resource from an opponent with a building adjacent to that hex.',
+    description: 'Mova o ladrão para um novo hexágono e roube um recurso de um adversário que tenha uma construção ao lado dele.',
     color: '#8b4513',
     bgGradient: 'linear-gradient(135deg, #654321 0%, #8b4513 50%, #a0522d 100%)'
   },
   victoryPoint: {
-    name: 'Victory Point',
+    name: 'Ponto de Vitória',
     icon: '🏆',
-    description: 'Worth 1 Victory Point! This is kept SECRET from other players until you win. Only you can see this VP.',
+    description: 'Vale 1 Ponto de Vitória! Ele fica em SEGREDO dos outros jogadores até você vencer. Só você pode ver este PV.',
     color: '#ffd700',
     bgGradient: 'linear-gradient(135deg, #b8860b 0%, #ffd700 50%, #ffec8b 100%)'
   },
   roadBuilding: {
-    name: 'Road Building',
+    name: 'Construção de Estradas',
     icon: '🛤️',
-    description: 'Build 2 roads immediately for free, following normal placement rules.',
+    description: 'Construa 2 estradas imediatamente e de graça, seguindo as regras normais de posicionamento.',
     color: '#2e8b57',
     bgGradient: 'linear-gradient(135deg, #1e5a37 0%, #2e8b57 50%, #3cb371 100%)'
   },
   yearOfPlenty: {
-    name: 'Year of Plenty',
+    name: 'Ano da Abundância',
     icon: '🌈',
-    description: 'Take any 2 resource cards from the bank. They can be 2 of the same or different resources.',
+    description: 'Pegue 2 cartas de recurso quaisquer do banco. Podem ser 2 iguais ou diferentes.',
     color: '#4169e1',
     bgGradient: 'linear-gradient(135deg, #2a4494 0%, #4169e1 50%, #6495ed 100%)'
   },
   monopoly: {
-    name: 'Monopoly',
+    name: 'Monopólio',
     icon: '💰',
-    description: 'Name 1 resource. All other players must give you ALL of their cards of that type.',
+    description: 'Escolha 1 recurso. Todos os outros jogadores devem entregar a você TODAS as cartas desse tipo.',
     color: '#9932cc',
     bgGradient: 'linear-gradient(135deg, #6a1b9a 0%, #9932cc 50%, #ba55d3 100%)'
   }
@@ -74,7 +74,7 @@ function CardReveal({ cardType, onClose }) {
               <div className="card-back-pattern">
                 <span className="card-back-icon">🎴</span>
               </div>
-              <div className="card-back-text">Development Card</div>
+              <div className="card-back-text">Carta de Desenvolvimento</div>
             </div>
           </div>
           
@@ -97,13 +97,13 @@ function CardReveal({ cardType, onClose }) {
               </div>
               
               <div className="card-footer">
-                <span className="card-type">Development Card</span>
+                <span className="card-type">Carta de Desenvolvimento</span>
               </div>
             </div>
           </div>
         </div>
         
-        <p className="card-reveal-hint">Click anywhere to close</p>
+        <p className="card-reveal-hint">Clique em qualquer lugar para fechar</p>
       </div>
     </div>
   );
