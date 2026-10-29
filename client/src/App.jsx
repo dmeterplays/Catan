@@ -20,7 +20,7 @@ import GameBoard from './components/GameBoard';
 import './App.css';
 
 // Server URL from environment variable, falls back to localhost for development
-const DEFAULT_SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+const DEFAULT_SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://catan-da-pibi.enzonic.dev';
 
 // Keep server alive by pinging every 4 minutes (Render free tier spins down after 15 min)
 const KEEP_ALIVE_INTERVAL = 4 * 60 * 1000;
@@ -31,7 +31,7 @@ function App() {
   // ============================================================================
   
   const [socket, setSocket] = useState(null);           // Socket.io connection
-  const [serverUrl, setServerUrl] = useState(localStorage.getItem('catanServerUrl') || DEFAULT_SERVER_URL);
+  const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
   const [connected, setConnected] = useState(false);     // Connection status
   const [gameState, setGameState] = useState(null);      // Current game state from server
   const [playerId, setPlayerId] = useState(null);        // This player's unique ID
