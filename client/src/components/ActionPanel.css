@@ -224,3 +224,15 @@
 .action-panel .roll-btn { order: 0; font-size: 0; }
 .action-panel .roll-btn::after { content: '🎲'; font-size: 23px; }
 .action-panel .special-action, .action-panel .special-build-indicator, .action-panel .city-improvements { order: 10; width: 100%; }
+
+
+/* Stable action ordering inside the lower command dock. */
+.command-actions .action-panel > .roll-btn { order:0; }
+.command-actions .action-panel > .trade-btn {order:1;}
+.command-actions .action-panel .dev-card-btn {order:2;}
+.command-actions .action-panel .road-action {order:3 !important;}
+.command-actions .action-panel .settlement-action {order:4 !important;}
+.command-actions .action-panel .city-action {order:5 !important;}
+.command-actions .action-panel > .end-turn-btn {order:6;}
+.command-actions .action-panel .action-section {display:contents;}
+.command-actions .action-panel .special-action,.command-actions .action-panel .city-improvements,.command-actions .action-panel .special-build-indicator {order:8;}
