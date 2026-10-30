@@ -23,6 +23,7 @@ import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import * as GameLogic from './gameLogic.js';
 import { runBotTurn, runBotDiscards, runBotTradeResponses } from './bots.js';
+import { soundEventsForTransition } from './soundEvents.js';
 import { getLegalActions, executeLegalAction } from './legalActions.js';
 
 // ============================================================================
@@ -207,6 +208,9 @@ function broadcastGameState(gameId) {
     buildings: Object.fromEntries(Object.entries(game.vertices || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null && v.building).map(([k,v]) => [k, `${v.owner}:${v.building}`])),
     roads: Object.fromEntries(Object.entries(game.edges || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null).map(([k,v]) => [k, v.owner])),
     player: game.currentPlayerIndex,
+    phase: game.phase,
+    winner: game.winner || null,
+    rollTotal: game.__publicRollEvent?.roll?.total ?? null,
     rollId: game.__publicRollEvent?.id || 0,
     robberyId: game.__publicRobberyEvent?.id || 0,
     devCardsRemaining: game.devCardDeck?.length ?? 0,
@@ -268,6 +272,14 @@ function broadcastGameState(gameId) {
     }
     if (snapshot.player !== previous.player && game.phase === 'playing')
       recordEvent(game, `▶️ Vez de ${game.players[snapshot.player]?.name || 'Jogador'}`);
+  }
+  // Send authoritative one-shot sound cues to every connected player.
+  // No dependence on the feed, its text formatting, or private card state.
+  for (const sound of soundEventsForTransition(previous, snapshot)) {
+    broadcastToGame(gameId, 'gameSound', {
+      sound,
+      id: (game.__soundEventId = (game.__soundEventId || 0) + 1)
+    });
   }
   game.__publicSnapshot = snapshot;
   game.__skipResourceDelta = false;
