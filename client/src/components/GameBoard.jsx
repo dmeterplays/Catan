@@ -79,22 +79,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         setShowDice(false);
       }, 5000);
       
-      return (
-    <>
-      {gameState.phase === 'playing' && (
-        <div style={{position:'fixed',top:10,left:'50%',transform:'translateX(-50%)',zIndex:1200,background:'#202b37',color:'#fff',padding:'7px 14px',borderRadius:9,border:'1px solid #bd9b57',fontWeight:700}}>
-          ⏱️ {currentPlayer?.name}: <span style={{color:remainingSeconds !== null && remainingSeconds <= 20 ? '#ff7777':'#fff'}}>{clockLabel}</span>
-          <button type="button" onClick={() => setShowEventLog(v => !v)} style={{marginLeft:12}}>📜 Histórico</button>
-        </div>
-      )}
-      {showEventLog && (
-        <aside style={{position:'fixed',right:12,top:70,zIndex:1300,width:320,maxWidth:'90vw',maxHeight:'60vh',overflowY:'auto',background:'#202b37',color:'#fff',padding:14,borderRadius:10,border:'1px solid #bd9b57'}}>
-          <div style={{display:'flex',justifyContent:'space-between'}}><strong>📜 Acontecimentos</strong><button onClick={() => setShowEventLog(false)}>✕</button></div>
-          {(gameState.eventLog || []).slice().reverse().map(event => <p key={event.id} style={{borderBottom:'1px solid #555',padding:'5px 0',fontSize:13}}>{new Date(event.at).toLocaleTimeString('pt-BR')} — {event.message}</p>)}
-          {!gameState.eventLog?.length && <p>Nenhum acontecimento registrado.</p>}
-        </aside>
-      )}
-) => clearTimeout(timer);
+      return () => clearTimeout(timer);
     } else if (gameState.turnPhase === 'roll') {
       // Reset when new turn starts (waiting for roll)
       setShowDice(false);
@@ -542,6 +527,20 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, addNotification]);
 
   return (
+    <>
+      {gameState.phase === 'playing' && (
+        <div style={{position:'fixed',top:10,left:'50%',transform:'translateX(-50%)',zIndex:1200,background:'#202b37',color:'#fff',padding:'7px 14px',borderRadius:9,border:'1px solid #bd9b57',fontWeight:700}}>
+          ⏱️ {currentPlayer?.name}: <span style={{color:remainingSeconds !== null && remainingSeconds <= 20 ? '#ff7777':'#fff'}}>{clockLabel}</span>
+          <button type="button" onClick={() => setShowEventLog(v => !v)} style={{marginLeft:12}}>📜 Histórico</button>
+        </div>
+      )}
+      {showEventLog && (
+        <aside style={{position:'fixed',right:12,top:70,zIndex:1300,width:320,maxWidth:'90vw',maxHeight:'60vh',overflowY:'auto',background:'#202b37',color:'#fff',padding:14,borderRadius:10,border:'1px solid #bd9b57'}}>
+          <div style={{display:'flex',justifyContent:'space-between'}}><strong>📜 Acontecimentos</strong><button onClick={() => setShowEventLog(false)}>✕</button></div>
+          {(gameState.eventLog || []).slice().reverse().map(event => <p key={event.id} style={{borderBottom:'1px solid #555',padding:'5px 0',fontSize:13}}>{new Date(event.at).toLocaleTimeString('pt-BR')} — {event.message}</p>)}
+          {!gameState.eventLog?.length && <p>Nenhum acontecimento registrado.</p>}
+        </aside>
+      )}
     <div className="game-board">
       {/* Header */}
       <div className="game-header">
