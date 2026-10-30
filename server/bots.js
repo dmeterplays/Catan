@@ -3,6 +3,16 @@ import { getLegalActions, executeLegalAction } from './legalActions.js';
 
 const RESOURCES = ['brick', 'lumber', 'wool', 'grain', 'ore'];
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const names = {brick:'tijolo',lumber:'madeira',wool:'lã',grain:'trigo',ore:'minério'};
+const format = items => Object.keys(names).filter(key => (items?.[key] || 0) > 0)
+  .map(key => `${items[key]} ${names[key]}`).join(', ');
+function log(game, message) {
+  game.eventLog ||= [];
+  game.eventLog.push({id:(game.__eventSeq=(game.__eventSeq||0)+1),at:Date.now(),message});
+  if(game.eventLog.length>100) game.eventLog.shift();
+  game.__skipResourceDelta = true;
+}
+
 
 function vertexScore(game, key) {
   const adjacent = Game.getVertexAdjacentHexes(game, key);
@@ -93,6 +103,8 @@ export async function runBotTurn(game, broadcast) {
       if (!action) break;
       if (action.type === 'bankTrade' && (game.__botBankTrades || 0) >= 1) { game.__botBankTrades = 0; continue; }
       const result = executeLegalAction(game, player.id, action);
+      if (result.success && action.type === 'bankTrade')
+        log(game, `🏦 ${player.name} trocou ${action.giveAmount} ${names[action.giveResource]} por 1 ${names[action.getResource]} no banco`);
       if (!result.success) {
         console.warn('Bot action rejected:', action.type, result.error);
         if (action.type !== 'endTurn' && options.some(a => a.type === 'endTurn')) {
@@ -137,7 +149,10 @@ export function runBotTradeResponses(game, broadcast) {
     const actions = getLegalActions(game, player.id).filter(a => a.type === 'respondToTrade');
     if (!actions.length) continue;
     const choice = chooseAction(game, player, actions);
+    const proposed = game.tradeOffer ? {from:game.tradeOffer.from,offer:{...game.tradeOffer.offer},request:{...game.tradeOffer.request}} : null;
     const result = executeLegalAction(game, player.id, choice);
+    if (result.success && result.traded && proposed)
+      log(game, `🤝 ${game.players[proposed.from]?.name} trocou ${format(proposed.offer)} por ${format(proposed.request)} com ${player.name}`);
     if (result.success) broadcast();
   }
 }
