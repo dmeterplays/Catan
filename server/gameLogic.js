@@ -1461,6 +1461,10 @@ export function canPlaceSettlement(game, playerId, vKey, isSetup = false) {
 /** Place a settlement on a valid vertex */
 export function placeSettlement(game, playerId, vKey) {
   const isSetup = game.phase === 'setup';
+  if (isSetup && game.players[game.currentPlayerIndex]?.id !== playerId)
+    return { success: false, error: 'Not your setup turn' };
+  if (!isSetup && !canPlayerBuildNow(game, playerId))
+    return { success: false, error: 'Cannot build now' };
   const validation = canPlaceSettlement(game, playerId, vKey, isSetup);
   
   if (!validation.valid) {
@@ -1628,6 +1632,12 @@ function getEdgeVertices(q, r, dir) {
 
 /** Place a road on a valid edge */
 export function placeRoad(game, playerId, eKey, isSetup = false, lastSettlement = null) {
+  if (isSetup !== (game.phase === 'setup'))
+    return { success: false, error: 'Invalid road construction phase' };
+  if (isSetup && game.players[game.currentPlayerIndex]?.id !== playerId)
+    return { success: false, error: 'Not your setup turn' };
+  if (!isSetup && !canPlayerBuildNow(game, playerId))
+    return { success: false, error: 'Cannot build now' };
   const validation = canPlaceRoad(game, playerId, eKey, isSetup, lastSettlement);
   
   if (!validation.valid) {
@@ -2436,7 +2446,7 @@ export function endTurn(game, playerId) {
  * Advances to next player or ends the phase if all players have gone
  */
 export function endSpecialBuild(game, playerId) {
-  if (!game.specialBuildingPhase) {
+  if (!game.specialBuildingPhase || game.phase !== 'playing' || game.turnPhase !== 'specialBuild') {
     return { success: false, error: 'Not in special building phase' };
   }
   
