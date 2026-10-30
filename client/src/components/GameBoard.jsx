@@ -689,6 +689,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       <div className="my-resources-bar">
         <ResourceCards 
           resources={myPlayer.resources} 
+          minimal
           onRightClick={(e, resourceKey) => showInfo(e, resourceKey)}
         />
         

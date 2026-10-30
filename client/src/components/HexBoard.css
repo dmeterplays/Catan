@@ -1,8 +1,74 @@
-.hex-board {
+.hex-board-shell {
   width: 100%;
   height: 100%;
-  max-width: 500px;
-  max-height: 440px;
+  position: relative;
+  border-radius: 24px;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.32));
+  overflow: hidden;
+}
+
+.hex-board {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  user-select: none;
+  touch-action: none;
+}
+
+.hex-board.zoomed {
+  cursor: grab;
+}
+
+.hex-board.dragging {
+  cursor: grabbing;
+}
+
+.board-zoom-controls {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 246, 211, 0.9);
+  border-radius: 10px;
+  background: rgba(30, 78, 86, 0.88);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(5px);
+}
+
+.board-zoom-controls button {
+  min-width: 38px;
+  height: 36px;
+  padding: 0 0.55rem;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0;
+  background: transparent;
+  color: #fffceb;
+  font-family: 'Trebuchet MS', Arial, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.board-zoom-controls button:last-child {
+  border-right: 0;
+}
+
+.board-zoom-controls button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.board-zoom-controls button:disabled {
+  opacity: 0.35;
+}
+
+.board-zoom-controls .zoom-level {
+  min-width: 58px;
+  font-size: 0.78rem;
 }
 
 .hex {
@@ -14,7 +80,7 @@
 }
 
 .hex.clickable:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .hex.clickable:hover path:first-child {
@@ -22,7 +88,7 @@
 }
 
 .hex.has-robber path:first-child {
-  filter: brightness(0.6) sepia(0.3);
+  filter: brightness(0.82) saturate(0.8);
 }
 
 .robber {
@@ -35,8 +101,8 @@
 }
 
 .vertex-placeholder {
-  fill: rgba(255, 255, 255, 0.2);
-  stroke: rgba(255, 255, 255, 0.5);
+  fill: rgba(211, 181, 47, 0.36);
+  stroke: rgba(111, 99, 15, 0.58);
   stroke-width: 2;
   stroke-dasharray: 4 2;
   cursor: pointer;
@@ -96,7 +162,7 @@
 }
 
 .hex-board {
-  overflow: visible;
+  overflow: hidden;
 }
 
 

@@ -1,8 +1,20 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './HexBoard.css';
 
 // Hex geometry constants - POINTY-TOP orientation
-const HEX_SIZE = 50;
+const HEX_SIZE = 58;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 2.2;
+const ZOOM_STEP = 0.2;
+
+const TERRAIN_ASSETS = {
+  forest: '/textures/forest-v2.png',
+  hills: '/textures/hills-v2.png',
+  pasture: '/textures/pasture-v2.png',
+  fields: '/textures/fields-v2.png',
+  mountains: '/textures/mountain-v2.png',
+  desert: '/textures/desert-v2.png'
+};
 
 // Convert axial coordinates to pixel position (POINTY-TOP)
 function axialToPixel(q, r) {
@@ -38,20 +50,62 @@ function hexPath(cx, cy, size) {
 // Number token colors based on probability
 function getNumberColor(num) {
   if (num === 6 || num === 8) return '#d32f2f';
-  return '#2c2c2c';
+  return '#173f18';
 }
 
-// Get terrain resource icon
-function getTerrainIcon(terrain) {
-  const icons = {
-    'forest': '🌲',
-    'hills': '🧱',
-    'pasture': '🐑',
-    'fields': '🌾',
-    'mountains': '⛰️',
-    'desert': '🏜️'
-  };
-  return icons[terrain] || '';
+// Crisp, browser-independent resource marks for the harbor sails.
+function renderPortResourceIcon(resource, x, y) {
+  if (resource === 'brick') {
+    return (
+      <g fill="#b94d2c" stroke="#7e2f1d" strokeWidth="0.7">
+        <rect x={x - 7} y={y - 5} width="7" height="5" rx="0.8" />
+        <rect x={x + 1} y={y - 5} width="7" height="5" rx="0.8" />
+        <rect x={x - 4} y={y + 1} width="8" height="5" rx="0.8" />
+      </g>
+    );
+  }
+
+  if (resource === 'lumber') {
+    return (
+      <g stroke="#71421f" strokeWidth="3" strokeLinecap="round">
+        <line x1={x - 6} y1={y - 4} x2={x + 5} y2={y + 3} />
+        <line x1={x - 5} y1={y + 2} x2={x + 6} y2={y - 5} />
+      </g>
+    );
+  }
+
+  if (resource === 'wool') {
+    return (
+      <g stroke="#756653" strokeWidth="0.8">
+        <circle cx={x - 4} cy={y} r="4" fill="#fffdf3" />
+        <circle cx={x} cy={y - 3} r="4.5" fill="#fffdf3" />
+        <circle cx={x + 4} cy={y} r="4" fill="#fffdf3" />
+        <ellipse cx={x + 6} cy={y + 2} rx="2.8" ry="3.5" fill="#9a856a" />
+      </g>
+    );
+  }
+
+  if (resource === 'grain') {
+    return (
+      <g fill="none" stroke="#c78b16" strokeWidth="1.5" strokeLinecap="round">
+        <line x1={x} y1={y + 6} x2={x} y2={y - 6} />
+        <path d={`M${x},${y-3} q-5,-3 -5,-6 M${x},${y} q5,-3 5,-6 M${x},${y+3} q-5,-2 -5,-5`} />
+      </g>
+    );
+  }
+
+  if (resource === 'ore') {
+    return (
+      <g fill="#8e979b" stroke="#586267" strokeWidth="0.8">
+        <path d={`M${x-7},${y+5} L${x-4},${y-4} L${x+1},${y-6} L${x+4},${y+3} Z`} />
+        <path d={`M${x},${y+5} L${x+4},${y-3} L${x+8},${y+4} Z`} />
+      </g>
+    );
+  }
+
+  return (
+    <text x={x} y={y + 5} textAnchor="middle" fontSize="15" fontWeight="900" fill="#75452c">?</text>
+  );
 }
 
 // Create a position key for deduplication (rounded to avoid float issues)
@@ -80,6 +134,11 @@ function HexBoard({
   lastPlacedSettlement,
   freeRoads
 }) {
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragState, setDragState] = useState(null);
+  const dragMoved = useRef(false);
+
   // Calculate board bounds
   const bounds = useMemo(() => {
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -93,10 +152,76 @@ function HexBoard({
     return { minX, maxX, minY, maxY };
   }, [hexes]);
 
-  const width = bounds.maxX - bounds.minX + 60;
-  const height = bounds.maxY - bounds.minY + 60;
-  const offsetX = -bounds.minX + 30;
-  const offsetY = -bounds.minY + 30;
+  // Enough room for ports, while keeping the island dominant like the reference.
+  const boardPadding = 72;
+  const width = bounds.maxX - bounds.minX + boardPadding * 2;
+  const height = bounds.maxY - bounds.minY + boardPadding * 2;
+  const offsetX = -bounds.minX + boardPadding;
+  const offsetY = -bounds.minY + boardPadding;
+  const zoomedWidth = width / zoom;
+  const zoomedHeight = height / zoom;
+  const maxPanX = Math.max(0, (width - zoomedWidth) / 2);
+  const maxPanY = Math.max(0, (height - zoomedHeight) / 2);
+  const clampedPanX = Math.min(maxPanX, Math.max(-maxPanX, pan.x));
+  const clampedPanY = Math.min(maxPanY, Math.max(-maxPanY, pan.y));
+  const zoomedX = (width - zoomedWidth) / 2 + clampedPanX;
+  const zoomedY = (height - zoomedHeight) / 2 + clampedPanY;
+
+  useEffect(() => {
+    if (zoom === 1) setPan({ x: 0, y: 0 });
+  }, [zoom]);
+
+  const adjustZoom = (delta) => {
+    setZoom((current) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Number((current + delta).toFixed(2)))));
+  };
+
+  const handleBoardWheel = (event) => {
+    event.preventDefault();
+    adjustZoom(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
+  };
+
+  const handlePointerDown = (event) => {
+    if (zoom <= 1 || event.button !== 0) return;
+    dragMoved.current = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragState({
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      panX: clampedPanX,
+      panY: clampedPanY
+    });
+  };
+
+  const handlePointerMove = (event) => {
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const deltaX = event.clientX - dragState.clientX;
+    const deltaY = event.clientY - dragState.clientY;
+    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) dragMoved.current = true;
+
+    const nextX = dragState.panX - deltaX * (zoomedWidth / rect.width);
+    const nextY = dragState.panY - deltaY * (zoomedHeight / rect.height);
+    setPan({
+      x: Math.min(maxPanX, Math.max(-maxPanX, nextX)),
+      y: Math.min(maxPanY, Math.max(-maxPanY, nextY))
+    });
+  };
+
+  const handlePointerUp = (event) => {
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setDragState(null);
+  };
+
+  const preventClickAfterDrag = (event) => {
+    if (!dragMoved.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+    dragMoved.current = false;
+  };
 
   // Check if vertex can be placed
   // Use canBuildNow which includes special building phase
@@ -274,47 +399,55 @@ function HexBoard({
     return result;
   }, [vertices, hexes]);
 
+  // Only the edges used by one hex belong to the island shoreline.
+  const coastEdges = useMemo(() => {
+    const edgeMap = new Map();
+
+    Object.values(hexes).forEach((hex) => {
+      for (let dir = 0; dir < 6; dir += 1) {
+        const { v1, v2 } = getEdgeEndpoints(hex.q, hex.r, dir);
+        const key = [posKey(v1.x, v1.y), posKey(v2.x, v2.y)].sort().join('|');
+        const current = edgeMap.get(key);
+        edgeMap.set(key, current ? { ...current, count: current.count + 1 } : { v1, v2, count: 1 });
+      }
+    });
+
+    return [...edgeMap.values()].filter((edge) => edge.count === 1);
+  }, [hexes]);
+
   const showEdgePlaceholders = canPlaceAtEdge();
 
   return (
-    <svg 
-      className="hex-board"
-      viewBox={`0 0 ${width} ${height}`}
-      style={{ maxWidth: '100%', maxHeight: '100%' }}
-    >
+    <div className="hex-board-shell">
+      <svg 
+        className={`hex-board ${zoom > 1 ? 'zoomed' : ''} ${dragState ? 'dragging' : ''}`}
+        viewBox={`${zoomedX} ${zoomedY} ${zoomedWidth} ${zoomedHeight}`}
+        style={{ maxWidth: '100%', maxHeight: '100%' }}
+        onWheel={handleBoardWheel}
+        onDoubleClick={() => setZoom(1)}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onClickCapture={preventClickAfterDrag}
+      >
       <defs>
-        {/* Water pattern - vibrant ocean */}
-        <pattern id="water-pattern" patternUnits="userSpaceOnUse" width="120" height="120">
-          <rect width="120" height="120" fill="#09315c"/>
-          <path d="M 0 20 Q 30 5, 60 20 T 120 20 L 120 120 L 0 120 Z" fill="#0d4277" opacity="0.85"/>
-          <path d="M 0 45 Q 30 60, 60 45 T 120 45 L 120 120 L 0 120 Z" fill="#115596" opacity="0.85"/>
-          <path d="M 0 70 Q 30 55, 60 70 T 120 70 L 120 120 L 0 120 Z" fill="#1668b5" opacity="0.85"/>
-          <path d="M 0 95 Q 30 110, 60 95 T 120 95 L 120 120 L 0 120 Z" fill="#1a78d1" opacity="0.85"/>
-        </pattern>
-        
-        {/* Terrain Image Patterns */}
-        <pattern id="forest-pattern" patternUnits="userSpaceOnUse" width="87" height="100">
-          <image href="/textures/forest.png" x="-36" y="-30" width="160" height="160" preserveAspectRatio="xMidYMid slice" />
-        </pattern>
-        <pattern id="hills-pattern" patternUnits="userSpaceOnUse" width="87" height="100">
-          <image href="/textures/hills.png" x="-36" y="-30" width="160" height="160" preserveAspectRatio="xMidYMid slice" />
-        </pattern>
-        <pattern id="pasture-pattern" patternUnits="userSpaceOnUse" width="87" height="100">
-          <image href="/textures/pasture.png" x="-36" y="-30" width="160" height="160" preserveAspectRatio="xMidYMid slice" />
-        </pattern>
-        <pattern id="fields-pattern" patternUnits="userSpaceOnUse" width="87" height="100">
-          <image href="/textures/fields.png" x="-36" y="-30" width="160" height="160" preserveAspectRatio="xMidYMid slice" />
-        </pattern>
-        <pattern id="mountains-pattern" patternUnits="userSpaceOnUse" width="87" height="100">
-          <image href="/textures/mountain.png" x="-36" y="-30" width="160" height="160" preserveAspectRatio="xMidYMid slice" />
-        </pattern>
-        <pattern id="desert-pattern" patternUnits="userSpaceOnUse" width="87" height="100">
-          <image href="/textures/desert.png" x="-36" y="-30" width="160" height="160" preserveAspectRatio="xMidYMid slice" />
-        </pattern>
-        
-        {/* Drop shadow for 3D effect */}
+        <linearGradient id="ocean-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1685bd" />
+          <stop offset="100%" stopColor="#08689f" />
+        </linearGradient>
+
+        {Object.values(hexes).map((hex) => {
+          const pos = axialToPixel(hex.q, hex.r);
+          return (
+            <clipPath id={`hex-clip-${hex.q}-${hex.r}`} key={`clip-${hex.q}-${hex.r}`}>
+              <path d={hexPath(pos.x, pos.y, HEX_SIZE - 2)} />
+            </clipPath>
+          );
+        })}
+
         <filter id="hex-shadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="3" dy="6" stdDeviation="4" floodColor="#000000" floodOpacity="0.75"/>
+          <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#315019" floodOpacity="0.34"/>
         </filter>
         
         {/* Building shadow */}
@@ -322,41 +455,17 @@ function HexBoard({
           <feDropShadow dx="2" dy="4" stdDeviation="2" floodColor="#000000" floodOpacity="0.7"/>
         </filter>
 
-        {/* Terrain Gradients for 3D effect */}
-        <radialGradient id="forestGradient" cx="30%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#388e3c" />
-          <stop offset="100%" stopColor="#1b5e20" />
-        </radialGradient>
-        <radialGradient id="pastureGradient" cx="30%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#aed581" />
-          <stop offset="100%" stopColor="#689f38" />
-        </radialGradient>
-        <radialGradient id="fieldsGradient" cx="30%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#ffd54f" />
-          <stop offset="100%" stopColor="#f57f17" />
-        </radialGradient>
-        <radialGradient id="hillsGradient" cx="30%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#e64a19" />
-          <stop offset="100%" stopColor="#bf360c" />
-        </radialGradient>
-        <radialGradient id="mountainsGradient" cx="30%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#90a4ae" />
-          <stop offset="100%" stopColor="#455a64" />
-        </radialGradient>
-        <radialGradient id="desertGradient" cx="30%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#ffe082" />
-          <stop offset="100%" stopColor="#ffb300" />
-        </radialGradient>
       </defs>
       
       <g transform={`translate(${offsetX}, ${offsetY})`}>
         {/* Water background */}
         <rect 
-          x={bounds.minX - 80} 
-          y={bounds.minY - 80} 
-          width={width + 100} 
-          height={height + 100}
-          fill="url(#water-pattern)"
+          x={bounds.minX - boardPadding}
+          y={bounds.minY - boardPadding}
+          width={width}
+          height={height}
+          rx="24"
+          fill="url(#ocean-gradient)"
         />
         
         {/* Animated wave shimmer overlay */}
@@ -381,51 +490,19 @@ function HexBoard({
           ))}
         </g>
         
-        {/* Water sparkles */}
-        {[
-          {cx: bounds.minX, cy: bounds.minY, delay: 0},
-          {cx: bounds.maxX - 30, cy: bounds.minY + 30, delay: 1.5},
-          {cx: bounds.minX + 50, cy: bounds.maxY, delay: 3},
-          {cx: bounds.maxX, cy: bounds.maxY - 40, delay: 0.8},
-          {cx: bounds.minX + width/2 - 120, cy: bounds.minY - 20, delay: 2.2},
-          {cx: bounds.minX + width/2 + 100, cy: bounds.maxY + 10, delay: 4},
-        ].map(({cx, cy, delay}, i) => (
-          <circle key={`sparkle-${i}`} cx={cx} cy={cy} r="2" fill="#90caf9">
-            <animate attributeName="opacity" values="0;0.7;0" dur="3s" begin={`${delay}s`} repeatCount="indefinite"/>
-            <animate attributeName="r" values="1;3;1" dur="3s" begin={`${delay}s`} repeatCount="indefinite"/>
-          </circle>
+        {/* Layered shoreline, drawn only around the island perimeter. */}
+        {coastEdges.map(({ v1, v2 }, index) => (
+          <g key={`coast-${index}`}>
+            <line x1={v1.x} y1={v1.y} x2={v2.x} y2={v2.y} stroke="#8bd6e5" strokeWidth="22" strokeLinecap="round" />
+            <line x1={v1.x} y1={v1.y} x2={v2.x} y2={v2.y} stroke="#fff4cf" strokeWidth="15" strokeLinecap="round" />
+            <line x1={v1.x} y1={v1.y} x2={v2.x} y2={v2.y} stroke="#e9c86f" strokeWidth="7" strokeLinecap="round" />
+          </g>
         ))}
         
         {/* Hexes */}
         {Object.entries(hexes).map(([key, hex]) => {
           const pos = axialToPixel(hex.q, hex.r);
           const isRobberHere = robber === key;
-          
-          // Get pattern ID based on terrain type
-          const getTerrainPattern = (terrain) => {
-            const patterns = {
-              'forest': 'url(#forest-pattern)',
-              'hills': 'url(#hills-pattern)',
-              'pasture': 'url(#pasture-pattern)',
-              'fields': 'url(#fields-pattern)',
-              'mountains': 'url(#mountains-pattern)',
-              'desert': 'url(#desert-pattern)'
-            };
-            return patterns[terrain] || hex.color;
-          };
-          
-          // Get gradient ID based on terrain type
-          const getTerrainGradient = (terrain) => {
-            const gradients = {
-              'forest': 'url(#forestGradient)',
-              'hills': 'url(#hillsGradient)',
-              'pasture': 'url(#pastureGradient)',
-              'fields': 'url(#fieldsGradient)',
-              'mountains': 'url(#mountainsGradient)',
-              'desert': 'url(#desertGradient)'
-            };
-            return gradients[terrain] || hex.color;
-          };
           
           return (
             <g 
@@ -435,119 +512,84 @@ function HexBoard({
               onContextMenu={(e) => onHexRightClick && onHexRightClick(e, hex)}
               style={{ cursor: 'context-menu' }}
             >
-              {/* 3D Base (wall) */}
+              {/* Soft raised base and golden board-game rim. */}
               <path
-                d={hexPath(pos.x, pos.y + 12, HEX_SIZE)}
-                fill="#1a1005"
+                d={hexPath(pos.x, pos.y + 3, HEX_SIZE)}
+                fill="#8a6a18"
                 filter="url(#hex-shadow)"
               />
-              
-              {/* Base color layer (just a stroke outline now, fill covered by pattern) */}
               <path
                 d={hexPath(pos.x, pos.y, HEX_SIZE)}
-                fill="#000"
-                stroke="#2a1a0a"
-                strokeWidth="4"
+                fill="#dcb534"
+                stroke="#9f7c13"
+                strokeWidth="3"
               />
-              
-              {/* Image Texture Pattern overlay */}
+              <image
+                href={TERRAIN_ASSETS[hex.terrain]}
+                x={pos.x - HEX_SIZE}
+                y={pos.y - HEX_SIZE}
+                width={HEX_SIZE * 2}
+                height={HEX_SIZE * 2}
+                preserveAspectRatio="xMidYMid slice"
+                clipPath={`url(#hex-clip-${hex.q}-${hex.r})`}
+              />
               <path
                 d={hexPath(pos.x, pos.y, HEX_SIZE - 2)}
-                fill={getTerrainPattern(hex.terrain)}
-              />
-              
-              {/* Inner hex highlight */}
-              <path
-                d={hexPath(pos.x, pos.y, HEX_SIZE - 4)}
                 fill="none"
-                stroke="rgba(255,255,255,0.2)"
-                strokeWidth="1.5"
+                stroke="#b68c15"
+                strokeWidth="2"
               />
               
               {/* Number token */}
               {hex.number && (
                 <g>
-                  {/* 3D disc thickness */}
-                  <circle 
-                    cx={pos.x} 
-                    cy={pos.y + 4} 
-                    r="16"
-                    fill="#5a3a22"
-                    filter="url(#building-shadow)"
-                  />
-                  {/* 3D disc top face */}
-                  <circle 
-                    cx={pos.x} 
-                    cy={pos.y} 
-                    r="16"
-                    fill="#e2cca6"
-                    stroke="#5a3a22"
+                  <rect
+                    x={pos.x - 20}
+                    y={pos.y - 5}
+                    width="40"
+                    height="37"
+                    rx="7"
+                    fill="#fffef6"
+                    stroke="rgba(76, 70, 35, 0.18)"
                     strokeWidth="1"
-                  />
-                  {/* Top edge highlight */}
-                  <circle 
-                    cx={pos.x} 
-                    cy={pos.y} 
-                    r="14.5"
-                    fill="none"
-                    stroke="rgba(255, 255, 255, 0.6)"
-                    strokeWidth="1.5"
+                    filter="url(#building-shadow)"
                   />
                   <text
                     x={pos.x}
-                    y={pos.y + 5}
+                    y={pos.y + 17}
                     textAnchor="middle"
-                    fontSize="14"
-                    fontWeight="bold"
-                    fontFamily="Cinzel, serif"
+                    fontSize="22"
+                    fontWeight="900"
+                    fontFamily="Trebuchet MS, Arial, sans-serif"
                     fill={getNumberColor(hex.number)}
                   >
                     {hex.number}
                   </text>
-                  {/* Probability dots */}
-                  <text
-                    x={pos.x}
-                    y={pos.y + 14}
-                    textAnchor="middle"
-                    fontSize="5"
-                    fill={getNumberColor(hex.number)}
-                  >
-                    {'•'.repeat(6 - Math.abs(7 - hex.number))}
-                  </text>
+                  {/* Probability dots use real SVG circles to stay crisp at every scale. */}
+                  {Array.from({ length: 6 - Math.abs(7 - hex.number) }).map((_, dotIndex, dots) => (
+                    <circle
+                      key={`probability-${dotIndex}`}
+                      cx={pos.x + (dotIndex - (dots.length - 1) / 2) * 5}
+                      cy={pos.y + 27.5}
+                      r="2"
+                      fill={getNumberColor(hex.number)}
+                    />
+                  ))}
                 </g>
               )}
               
-              {/* Resource icon at bottom of hex */}
-              <text
-                x={pos.x}
-                y={pos.y + 32}
-                textAnchor="middle"
-                fontSize="16"
-                opacity="0.8"
-                style={{ pointerEvents: 'none' }}
-              >
-                {getTerrainIcon(hex.terrain)}
-              </text>
-              
-              {/* Robber */}
+              {/* Robber figurine */}
               {isRobberHere && (
                 <g className="robber">
-                  <ellipse 
-                    cx={pos.x} 
-                    cy={pos.y} 
-                    rx="10" 
-                    ry="14" 
-                    fill="#1a1a1a" 
-                    stroke="#333" 
-                    strokeWidth="2"
-                  />
-                  <circle 
-                    cx={pos.x} 
-                    cy={pos.y - 16} 
-                    r="8" 
-                    fill="#1a1a1a" 
-                    stroke="#333" 
-                    strokeWidth="2"
+                  <image
+                    href="/pieces/robber-v2.png"
+                    x={pos.x - 22}
+                    y={pos.y - 43}
+                    width="44"
+                    height="66"
+                    preserveAspectRatio="xMidYMid meet"
+                    filter="url(#building-shadow)"
+                    style={{ pointerEvents: 'none' }}
                   />
                 </g>
               )}
@@ -704,9 +746,9 @@ function HexBoard({
           }
           
           // Dock geometry
-          const dockWidth = 14;
-          const dockLen = 30;
-          const thickness = 6;
+          const dockWidth = 16;
+          const dockLen = 36;
+          const thickness = 5;
           
           // Unit vector along the edge
           let uX = edgeX / perpLen;
@@ -722,68 +764,67 @@ function HexBoard({
           const p4x = p1x + perpX * dockLen;
           const p4y = p1y + perpY * dockLen;
           
-          // Crate geometry
-          const cx = midX + perpX * 24;
-          const cy = midY + perpY * 24;
-          const s = 10; // width scale
-          const h = 12; // height scale
-          
-          const topFace = `${cx},${cy-h} ${cx-s},${cy-h-s/2} ${cx},${cy-h-s} ${cx+s},${cy-h-s/2}`;
-          const leftFace = `${cx},${cy-h} ${cx-s},${cy-h-s/2} ${cx-s},${cy-s/2} ${cx},${cy}`;
-          const rightFace = `${cx},${cy-h} ${cx+s},${cy-h-s/2} ${cx+s},${cy-s/2} ${cx},${cy}`;
-          
-          const topColor = port.resource ? '#a0522d' : '#6a6a6a';
-          const leftColor = port.resource ? '#8b4513' : '#4a4a4a';
-          const rightColor = port.resource ? '#6b340a' : '#3a3a3a';
+          const cx = midX + perpX * 33;
+          const cy = midY + perpY * 33;
           
           return (
             <g key={port.id} className="port">
               {/* Dock Side Wall (Thickness) */}
               <polygon 
                 points={`${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y} ${p4x},${p4y} ${p4x},${p4y+thickness} ${p3x},${p3y+thickness} ${p2x},${p2y+thickness} ${p1x},${p1y+thickness}`} 
-                fill="#5c4033" 
+                fill="#875322" 
               />
               {/* Dock Top Plank */}
               <polygon 
                 points={`${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y} ${p4x},${p4y}`} 
-                fill="#a0785a" 
+                fill="#d5963e"
+                stroke="#8b541f"
+                strokeWidth="1"
               />
+              {[0.22, 0.44, 0.66, 0.88].map((step) => (
+                <line
+                  key={`plank-${step}`}
+                  x1={p1x + perpX * dockLen * step}
+                  y1={p1y + perpY * dockLen * step}
+                  x2={p2x + perpX * dockLen * step}
+                  y2={p2y + perpY * dockLen * step}
+                  stroke="#9c6125"
+                  strokeWidth="1"
+                />
+              ))}
               {/* Ship */}
               <g className="ship">
-                {/* Hull Shadow */}
-                <ellipse cx={cx} cy={cy + 4} rx="14" ry="7" fill="rgba(0,0,0,0.3)" />
-                {/* Hull Top/Inner */}
-                <path d={`M${cx-12},${cy-4} L${cx+12},${cy-4} L${cx+18},${cy} L${cx-18},${cy} Z`} fill={leftColor} stroke="#3e230b" strokeWidth="0.5" />
-                {/* Hull Side */}
-                <path d={`M${cx-18},${cy} L${cx+18},${cy} L${cx+12},${cy+6} L${cx-12},${cy+6} Z`} fill={rightColor} stroke="#3e230b" strokeWidth="0.5" />
-                
-                {/* Mast */}
-                <rect x={cx-1} y={cy-24} width="2" height="22" fill="#3e230b" />
-                
-                {/* Sail */}
-                <path d={`M${cx+1},${cy-22} Q${cx+18},${cy-16} ${cx+16},${cy-6} L${cx+1},${cy-4} Z`} fill="#f5f5f5" stroke="#dcdcdc" strokeWidth="1" />
-                
-                {/* Port Icon on Sail */}
+                {/* Foam and rounded wooden hull. */}
+                <ellipse cx={cx} cy={cy + 13} rx="22" ry="5" fill="#8de1f0" opacity="0.9" />
+                <ellipse cx={cx} cy={cy + 11} rx="18" ry="3.5" fill="#d9fbff" />
+                <path
+                  d={`M${cx-21},${cy-3} Q${cx},${cy+4} ${cx+21},${cy-3} Q${cx+16},${cy+13} ${cx},${cy+14} Q${cx-16},${cy+13} ${cx-21},${cy-3} Z`}
+                  fill="#c77825"
+                  stroke="#75401b"
+                  strokeWidth="1.5"
+                />
+                <path d={`M${cx-17},${cy+3} Q${cx},${cy+10} ${cx+17},${cy+3}`} fill="none" stroke="#f0ad45" strokeWidth="2" />
+                <path d={`M${cx-20},${cy-3} Q${cx},${cy+2} ${cx+20},${cy-3}`} fill="none" stroke="#6c3819" strokeWidth="2" />
+
+                {/* Mast, white sail and pennant. */}
+                <rect x={cx - 1.5} y={cy - 37} width="3" height="36" rx="1" fill="#704119" />
+                <path
+                  d={`M${cx+2},${cy-34} Q${cx+24},${cy-29} ${cx+21},${cy-8} Q${cx+12},${cy-5} ${cx+2},${cy-7} Z`}
+                  fill="#fffef7"
+                  stroke="#d7d1c4"
+                  strokeWidth="1.2"
+                />
+                <path d={`M${cx+1},${cy-37} L${cx+15},${cy-36} L${cx+3},${cy-31} Z`} fill="#fffef7" stroke="#d7d1c4" strokeWidth="0.8" />
+
+                {renderPortResourceIcon(port.resource, cx + 10, cy - 23)}
                 <text
-                  x={cx + 7}
+                  x={cx + 10}
                   y={cy - 10}
                   textAnchor="middle"
-                  fontSize="10"
-                  fontWeight="bold"
-                  fill="#333"
-                >
-                  {port.icon}
-                </text>
-                
-                {/* Trade Ratio Badge below ship */}
-                <text
-                  x={cx}
-                  y={cy + 16}
-                  textAnchor="middle"
-                  fontSize="9"
-                  fill="white"
-                  fontWeight="bold"
-                  style={{ textShadow: '1px 1px 2px black' }}
+                  fontSize="8.5"
+                  fill="#65402c"
+                  fontWeight="900"
+                  fontFamily="Trebuchet MS, Arial, sans-serif"
                 >
                   {port.ratio}:1
                 </text>
@@ -791,8 +832,15 @@ function HexBoard({
             </g>
           );
         })}
-      </g>
-    </svg>
+        </g>
+      </svg>
+
+      <div className="board-zoom-controls" aria-label="Controles de zoom do tabuleiro">
+        <button type="button" onClick={() => adjustZoom(-ZOOM_STEP)} disabled={zoom <= MIN_ZOOM} aria-label="Diminuir zoom">−</button>
+        <button type="button" className="zoom-level" onClick={() => setZoom(1)} title="Restaurar zoom">{Math.round(zoom * 100)}%</button>
+        <button type="button" onClick={() => adjustZoom(ZOOM_STEP)} disabled={zoom >= MAX_ZOOM} aria-label="Aumentar zoom">+</button>
+      </div>
+    </div>
   );
 }
 

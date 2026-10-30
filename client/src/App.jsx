@@ -19,8 +19,10 @@ import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
 import './App.css';
 
-// Server URL from environment variable, falls back to localhost for development
-const DEFAULT_SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://catan-da-pibi.enzonic.dev';
+// Local development connects to the local backend automatically. Production
+// keeps using the hosted server unless VITE_SERVER_URL explicitly overrides it.
+const DEFAULT_SERVER_URL = import.meta.env.VITE_SERVER_URL
+  || (import.meta.env.DEV ? 'http://localhost:3001' : 'https://catan-da-pibi.enzonic.dev');
 
 // Keep server alive by pinging every 4 minutes (Render free tier spins down after 15 min)
 const KEEP_ALIVE_INTERVAL = 4 * 60 * 1000;

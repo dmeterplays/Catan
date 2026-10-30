@@ -8,7 +8,7 @@ const RESOURCES = [
   { key: 'ore', name: 'Minério', icon: '⛏️', color: '#6b6b6b' }
 ];
 
-function ResourceCards({ resources, compact = false, selectable = false, selected = {}, onSelect, onRightClick }) {
+function ResourceCards({ resources, compact = false, minimal = false, selectable = false, selected = {}, onSelect, onRightClick }) {
   if (typeof resources === 'number') {
     return (
       <div className="resource-cards compact">
@@ -33,7 +33,7 @@ function ResourceCards({ resources, compact = false, selectable = false, selecte
   };
 
   return (
-    <div className={`resource-cards ${compact ? 'compact' : ''}`}>
+    <div className={`resource-cards ${compact ? 'compact' : ''} ${minimal ? 'minimal' : ''}`}>
       {RESOURCES.map(resource => {
         const count = resources[resource.key] || 0;
         const selectedCount = selected[resource.key] || 0;
