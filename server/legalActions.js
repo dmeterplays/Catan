@@ -25,10 +25,10 @@ export function getLegalActions(game, playerId) {
       Game.canPlaceSettlement(game, playerId, key, true).valid
     );
     settlements.forEach(vertexKey => add('placeSettlement', { vertexKey, setup: true }));
-    if (game.lastPlacedSettlement) {
+    if (game.setupSettlementKey) {
       Object.keys(game.edges).filter(key =>
-        Game.canPlaceRoad(game, playerId, key, true, game.lastPlacedSettlement).valid
-      ).forEach(edgeKey => add('placeRoad', { edgeKey, setup: true, lastSettlement: game.lastPlacedSettlement }));
+        Game.canPlaceRoad(game, playerId, key, true, game.setupSettlementKey).valid
+      ).forEach(edgeKey => add('placeRoad', { edgeKey, setup: true, lastSettlement: game.setupSettlementKey }));
     }
     return actions;
   }
@@ -90,8 +90,8 @@ export function executeLegalAction(game, playerId, action) {
   if (!matches) return { success: false, error: 'Essa opção não está mais disponível.' };
 
   switch (action.type) {
-    case 'placeSettlement': return Game.placeSettlement(game, playerId, action.vertexKey);
-    case 'placeRoad': return Game.placeRoad(game, playerId, action.edgeKey, !!action.setup, action.lastSettlement);
+    case 'placeSettlement': {\n      const result = Game.placeSettlement(game, playerId, action.vertexKey);\n      if (result.success && game.phase === 'setup') game.setupSettlementKey = action.vertexKey;\n      return result;\n    }
+    case 'placeRoad': {\n      const result = Game.placeRoad(game, playerId, action.edgeKey, !!action.setup, action.lastSettlement);\n      if (result.success && action.setup) {\n        delete game.setupSettlementKey;\n        return Game.advanceSetup(game, playerId);\n      }\n      return result;\n    }
     case 'upgradeToCity': return Game.upgradeToCity(game, playerId, action.vertexKey);
     case 'rollDice': return Game.rollDice(game, playerId);
     case 'buyDevCard': return Game.buyDevCard(game, playerId);
