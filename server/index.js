@@ -23,6 +23,7 @@ import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import * as GameLogic from './gameLogic.js';
 import { runBotTurn } from './bots.js';
+import { getLegalActions, executeLegalAction } from './legalActions.js';
 
 // ============================================================================
 // EXPRESS APP SETUP
@@ -151,6 +152,7 @@ function broadcastGameState(gameId) {
     
     if (socketId) {
       const playerView = GameLogic.getPlayerView(game, player.id);
+      playerView.legalActions = getLegalActions(game, player.id);
       io.to(socketId).emit('gameState', playerView);
     }
   });
@@ -231,7 +233,7 @@ io.on('connection', (socket) => {
       success: true, 
       playerId,
       gameCode: gameCode.toUpperCase(),
-      gameState: GameLogic.getPlayerView(game, playerId)
+      gameState: { ...GameLogic.getPlayerView(game, playerId), legalActions: getLegalActions(game, playerId) }
     });
   });
 
