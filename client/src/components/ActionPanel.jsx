@@ -107,7 +107,7 @@ function ActionPanel({
         <h4>Construir</h4>
         
         <button
-          className={`action-btn build-btn ${selectedAction === 'road' ? 'active' : ''}`}
+          className={`action-btn build-btn road-action ${selectedAction === 'road' ? 'active' : ''}`}
           onClick={() => setSelectedAction(selectedAction === 'road' ? null : 'road')}
           disabled={!canBuild || (!canAffordRoad && freeRoads === 0)}
         >
@@ -117,7 +117,7 @@ function ActionPanel({
         </button>
 
         <button
-          className={`action-btn build-btn ${selectedAction === 'settlement' ? 'active' : ''}`}
+          className={`action-btn build-btn settlement-action ${selectedAction === 'settlement' ? 'active' : ''}`}
           onClick={() => setSelectedAction(selectedAction === 'settlement' ? null : 'settlement')}
           disabled={!canBuild || !canAffordSettlement || player.settlements <= 0}
         >
@@ -127,7 +127,7 @@ function ActionPanel({
         </button>
 
         <button
-          className={`action-btn build-btn ${selectedAction === 'city' ? 'active' : ''}`}
+          className={`action-btn build-btn city-action ${selectedAction === 'city' ? 'active' : ''}`}
           onClick={() => setSelectedAction(selectedAction === 'city' ? null : 'city')}
           disabled={!canBuild || !canAffordCity || player.cities <= 0}
         >
