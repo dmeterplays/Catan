@@ -201,3 +201,26 @@
 }
 
 
+
+/* Barra compacta: Troca, desenvolvimento, estrada, aldeia, cidade, passar. */
+.action-panel { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 5px; padding: 6px; }
+.action-panel > h3, .action-panel .action-section > h4 { display: none; }
+.action-panel > .action-section { display: contents; }
+.action-panel .action-btn { width: 48px; min-width: 48px; height: 46px; padding: 4px; justify-content: center; text-align: center; font-size: 19px; }
+.action-panel .action-btn .btn-label, .action-panel .action-btn .cost, .action-panel .action-btn .remaining { display: none; }
+.action-panel .action-btn .btn-icon { font-size: 22px; width: auto; }
+.action-panel .trade-btn { order: 1; font-size: 0; }
+.action-panel .trade-btn::after { content: '🤝'; font-size: 23px; }
+.action-panel .dev-card-btn { order: 2; }
+.action-panel .build-btn:has(.btn-label) { order: 8; }
+.action-panel .build-btn:has(.btn-label) .btn-icon { display: inline; }
+.action-panel .build-btn:has(.btn-label):has(.btn-icon:first-child) { flex-wrap: nowrap; }
+.action-panel .build-btn:has(.btn-label):has(.btn-icon:first-child) { font-size: 0; }
+.action-panel .build-btn:has(.btn-label):has(.btn-icon:first-child):nth-child(1) { order: 3; }
+.action-panel .build-btn:has(.btn-label):nth-child(2) { order: 4; }
+.action-panel .build-btn:has(.btn-label):nth-child(3) { order: 5; }
+.action-panel .end-turn-btn { order: 6; margin-top: 0; font-size: 0; }
+.action-panel .end-turn-btn::after { content: '⏭️'; font-size: 23px; }
+.action-panel .roll-btn { order: 0; font-size: 0; }
+.action-panel .roll-btn::after { content: '🎲'; font-size: 23px; }
+.action-panel .special-action, .action-panel .special-build-indicator, .action-panel .city-improvements { order: 10; width: 100%; }
