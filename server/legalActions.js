@@ -8,7 +8,15 @@ export function getLegalActions(game, playerId) {
   if (index < 0 || ['waiting', 'finished'].includes(game.phase)) return [];
   const player = game.players[index];
   const pendingTrade = game.tradeOffer && game.tradeOffer.from !== index && !game.tradeOffer.responses?.[playerId];
-  if (game.players[game.currentPlayerIndex]?.id !== playerId && !(game.turnPhase === 'discard' && game.discardingPlayers?.some(p => p.playerIndex === index)) && !pendingTrade) return [];
+  const isCurrentTurn = game.players[game.currentPlayerIndex]?.id === playerId;
+  const isSpecialBuilder = game.phase === 'playing' &&
+    game.turnPhase === 'specialBuild' && game.specialBuildingPhase &&
+    game.specialBuildIndex === index;
+  const isDiscarding = game.turnPhase === 'discard' &&
+    game.discardingPlayers?.some(p => p.playerIndex === index);
+  if (!isCurrentTurn && !isSpecialBuilder && !isDiscarding && !pendingTrade) return [];
+  // Only the designated special builder may act in this phase.
+  if (game.turnPhase === 'specialBuild' && !isSpecialBuilder) return [];
   const actions = [];
   const add = (type, data = {}) => actions.push({ type, ...data });
 
@@ -81,7 +89,7 @@ export function getLegalActions(game, playerId) {
       }
     }
   }
-  if (!special && hasCost(player, { ore: 1, grain: 1, wool: 1 }) && game.devCardDeck?.length) add('buyDevCard');
+  if (hasCost(player, { ore: 1, grain: 1, wool: 1 }) && game.devCardDeck?.length) add('buyDevCard');
   if (!special) add('endTurn');
   return actions;
 }
