@@ -80,8 +80,12 @@ export function playGameSound(name, volume = .5) {
         bell(ctx, 370, now + .63, gain * .56, 2.0);
         break;
       case 'seven':
-        bell(ctx, 155, now, gain * 1.15, 1.25);
-        tone(ctx, 92, now, .54, gain * .65, 'sawtooth', 65);
+        // Dice roll followed by a dramatic low metallic TAN.
+        for (let i = 0; i < 6; i++) {
+          noise(ctx, now + i * .063, .047, gain * .58, 1100 + Math.random() * 1600);
+        }
+        bell(ctx, 155, now + .48, gain * 1.15, 1.25);
+        tone(ctx, 92, now + .48, .54, gain * .65, 'sawtooth', 65);
         break;
       case 'milestone':
         fanfare(ctx, now, gain);
