@@ -7,9 +7,18 @@ export function getLegalActions(game, playerId) {
   const index = game.players.findIndex(p => p.id === playerId);
   if (index < 0 || ['waiting', 'finished'].includes(game.phase)) return [];
   const player = game.players[index];
-  if (game.players[game.currentPlayerIndex]?.id !== playerId && !(game.turnPhase === 'discard' && game.discardingPlayers?.some(p => p.playerIndex === index))) return [];
+  const pendingTrade = game.tradeOffer && game.tradeOffer.from !== index && !game.tradeOffer.responses?.[playerId];
+  if (game.players[game.currentPlayerIndex]?.id !== playerId && !(game.turnPhase === 'discard' && game.discardingPlayers?.some(p => p.playerIndex === index)) && !pendingTrade) return [];
   const actions = [];
   const add = (type, data = {}) => actions.push({ type, ...data });
+
+  if (pendingTrade) {
+    const offer = game.tradeOffer;
+    const canAccept = RESOURCES.every(resource => (player.resources?.[resource] || 0) >= (offer.request?.[resource] || 0));
+    add('respondToTrade', { accept: false });
+    if (canAccept) add('respondToTrade', { accept: true });
+    if (game.players[game.currentPlayerIndex]?.id !== playerId) return actions;
+  }
 
   if (game.phase === 'setup') {
     if (game.setupSettlementKey) {
@@ -63,6 +72,15 @@ export function getLegalActions(game, playerId) {
       const v = game.vertices[vertexKey];
       if (v?.owner === index && v?.building === 'settlement') add('upgradeToCity', { vertexKey });
     });
+  if (!special && !game.tradeOffer) {
+    for (const giveResource of RESOURCES) {
+      const ratio = Game.getTradeRatio(game, index, giveResource);
+      if ((player.resources?.[giveResource] || 0) < ratio) continue;
+      for (const getResource of RESOURCES) {
+        if (getResource !== giveResource) add('bankTrade', { giveResource, giveAmount: ratio, getResource });
+      }
+    }
+  }
   if (!special && hasCost(player, { ore: 1, grain: 1, wool: 1 }) && game.devCardDeck?.length) add('buyDevCard');
   if (!special) add('endTurn');
   return actions;
@@ -94,6 +112,8 @@ export function executeLegalAction(game, playerId, action) {
     case 'upgradeToCity': return Game.upgradeToCity(game, playerId, action.vertexKey);
     case 'rollDice': return Game.rollDice(game, playerId);
     case 'buyDevCard': return Game.buyDevCard(game, playerId);
+    case 'bankTrade': return Game.bankTrade(game, playerId, action.giveResource, action.giveAmount, action.getResource);
+    case 'respondToTrade': return Game.respondToTrade(game, playerId, action.accept);
     case 'endTurn': return Game.endTurn(game, playerId);
     case 'discard': {
       const counts = action.resources;
