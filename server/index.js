@@ -207,7 +207,9 @@ function broadcastGameState(gameId) {
     buildings: Object.fromEntries(Object.entries(game.vertices || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null && v.building).map(([k,v]) => [k, `${v.owner}:${v.building}`])),
     roads: Object.fromEntries(Object.entries(game.edges || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null).map(([k,v]) => [k, v.owner])),
     player: game.currentPlayerIndex,
-    dice: JSON.stringify(game.diceRoll || null),
+    rollId: game.__publicRollEvent?.id || 0,
+    robberyId: game.__publicRobberyEvent?.id || 0,
+    devCardsRemaining: game.devCardDeck?.length ?? 0,
     cardTotals: game.players.map(player => Object.values(player.resources || {}).reduce((sum, count) => sum + count, 0)),
     longestRoad: game.longestRoadPlayer,
     largestArmy: game.largestArmyPlayer
@@ -223,7 +225,24 @@ function broadcastGameState(gameId) {
     for (const [key, owner] of Object.entries(snapshot.roads)) {
       if (previous.roads[key] !== owner) recordEvent(game, `🛤️ ${game.players[owner]?.name || 'Jogador'} construiu uma estrada`);
     }
-    if (!game.__skipResourceDelta) {
+    const newRoll = snapshot.rollId !== previous.rollId && game.__publicRollEvent;
+    const newRobbery = snapshot.robberyId !== previous.robberyId && game.__publicRobberyEvent;
+    if (newRoll) {
+      const roll = game.__publicRollEvent;
+      recordEvent(game, `🎲 ${roll.playerName || 'Jogador'} tirou ${roll.roll.die1} + ${roll.roll.die2} (${roll.roll.total})`);
+      (roll.gains || []).forEach((gains, index) => {
+        const details = formatResources(gains);
+        if (details !== 'nenhum recurso')
+          recordEvent(game, `📥 ${game.players[index]?.name || 'Jogador'} recebeu ${details} pelos dados`);
+      });
+    }
+    if (newRobbery) {
+      const robbery = game.__publicRobberyEvent;
+      recordEvent(game, `🥷 ${robbery.thiefName} roubou uma carta de ${robbery.victimName} (recurso oculto)`);
+    }
+    if (snapshot.devCardsRemaining < previous.devCardsRemaining)
+      recordEvent(game, `📜 ${game.players[game.currentPlayerIndex]?.name || 'Jogador'} comprou ${previous.devCardsRemaining - snapshot.devCardsRemaining} carta(s) de desenvolvimento (tipo oculto)`);
+    if (!game.__skipResourceDelta && !newRoll && !newRobbery) {
       snapshot.cardTotals.forEach((total, idx) => {
         const difference = total - (previous.cardTotals?.[idx] ?? total);
         if (!difference) return;
@@ -243,8 +262,6 @@ function broadcastGameState(gameId) {
     }
     if (snapshot.player !== previous.player && game.phase === 'playing')
       recordEvent(game, `▶️ Vez de ${game.players[snapshot.player]?.name || 'Jogador'}`);
-    if (snapshot.dice !== previous.dice && game.diceRoll?.dice1 && game.diceRoll?.dice2)
-      recordEvent(game, `🎲 Dados: ${game.diceRoll.dice1} + ${game.diceRoll.dice2}`);
   }
   game.__publicSnapshot = snapshot;
   game.__skipResourceDelta = false;
