@@ -22,5 +22,7 @@ test('novos efeitos WAV possuem cabeçalhos e dados PCM válidos', () => {
     assert.equal(data.subarray(0,4).toString('ascii'), 'RIFF');
     assert.equal(data.subarray(8,12).toString('ascii'), 'WAVE');
     assert.equal(data.readUInt32LE(40) + 44, data.length);
+    const duration = data.readUInt32LE(40) / (data.readUInt32LE(24) * 2);
+    assert.ok(duration < 1.6, `${name} deve ser um efeito curto, não uma fanfarra longa`);
   }
 });
