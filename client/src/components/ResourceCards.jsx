@@ -1,4 +1,5 @@
 import './ResourceCards.css';
+import CardArt from './CardArt';
 
 const RESOURCES = [
   { key: 'brick', name: 'Tijolo', icon: '🧱', color: '#c45a2c' },
@@ -48,7 +49,7 @@ function ResourceCards({ resources, compact = false, minimal = false, selectable
             title={onRightClick && !selectable ? "Clique com o botão direito para ver informações" : undefined}
           >
             <div className="card-top">
-              <span className="resource-icon">{resource.icon}</span>
+              <CardArt type={resource.key} />
             </div>
             <div className="card-bottom">
               <span className="resource-name">{resource.name}</span>

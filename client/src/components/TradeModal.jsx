@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './TradeModal.css';
+import CardArt from './CardArt';
 import { nomeRecurso } from '../i18n';
 
 const RESOURCES = ['brick', 'lumber', 'wool', 'grain', 'ore'];
@@ -162,7 +163,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
               <div className="resource-list">
                 {RESOURCES.map(r => pendingTrade.offer[r] > 0 && (
                   <div key={r} className="resource-item">
-                    <span className="icon">{RESOURCE_ICONS[r]}</span>
+                    <span className="icon"><CardArt type={r} className="small" /></span>
                     <span className="amount">{pendingTrade.offer[r]}</span>
                   </div>
                 ))}
@@ -176,7 +177,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
               <div className="resource-list">
                 {RESOURCES.map(r => pendingTrade.request[r] > 0 && (
                   <div key={r} className="resource-item">
-                    <span className="icon">{RESOURCE_ICONS[r]}</span>
+                    <span className="icon"><CardArt type={r} className="small" /></span>
                     <span className="amount">{pendingTrade.request[r]}</span>
                   </div>
                 ))}
@@ -252,7 +253,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                             onDragStart={(e) => handleDragStart(e, r, 'offer')}
                             onClick={() => updateOffer(r, -1)} // Click as fallback
                           >
-                            <span className="icon">{RESOURCE_ICONS[r]}</span>
+                            <span className="icon"><CardArt type={r} className="small" /></span>
                             <span className="count">{offer[r]}</span>
                           </div>
                         ))}
@@ -279,7 +280,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                             onDragStart={(e) => handleDragStart(e, r, 'request')}
                             onClick={() => updateRequest(r, -1)}
                           >
-                            <span className="icon">{RESOURCE_ICONS[r]}</span>
+                            <span className="icon"><CardArt type={r} className="small" /></span>
                             <span className="count">{request[r]}</span>
                           </div>
                         ))}
@@ -308,7 +309,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                               onDragStart={(e) => handleDragStart(e, r, 'hand')}
                               onClick={() => updateOffer(r, 1)}
                             >
-                              <span className="icon">{RESOURCE_ICONS[r]}</span>
+                              <span className="icon"><CardArt type={r} className="small" /></span>
                               <span className="count">{available}</span>
                             </div>
                           );
@@ -333,7 +334,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                             onDragStart={(e) => handleDragStart(e, r, 'pool')}
                             onClick={() => updateRequest(r, 1)}
                           >
-                            <span className="icon">{RESOURCE_ICONS[r]}</span>
+                            <span className="icon"><CardArt type={r} className="small" /></span>
                             <span className="plus">+</span>
                           </div>
                         ))}
@@ -386,7 +387,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                         onClick={() => setBankGive(r)}
                         disabled={!hasEnough}
                       >
-                        <span className="icon">{RESOURCE_ICONS[r]}</span>
+                        <span className="icon"><CardArt type={r} className="small" /></span>
                         <span className="count">{myPlayer.resources[r]}</span>
                         <span className="ratio">{ratio}:1</span>
                       </button>
@@ -407,7 +408,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                       onClick={() => setBankGet(r)}
                       disabled={r === bankGive}
                     >
-                      <span className="icon">{RESOURCE_ICONS[r]}</span>
+                      <span className="icon"><CardArt type={r} className="small" /></span>
                     </button>
                   ))}
                 </div>

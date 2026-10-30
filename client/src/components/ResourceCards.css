@@ -198,3 +198,16 @@
   box-shadow: 0 4px 12px rgba(212, 169, 66, 0.2);
 }
 
+
+
+/* Illustrated resources replace emoji icons in all resource card displays. */
+.resource-card .card-top { display:flex;align-items:center;justify-content:center;min-height:64px;padding:2px; }
+.resource-card .resource-icon {display:flex;justify-content:center;align-items:center;width:100%;}
+.resource-card .resource-icon .catan-card-art {width:45px;}
+.resource-cards.minimal .resource-card {flex-direction:column;min-height:66px;width:56px;}
+.resource-cards.minimal .card-top {width:100%;height:50px;padding:2px;border:0;box-sizing:border-box;}
+.resource-cards.minimal .resource-icon .catan-card-art {width:37px;}
+.resource-cards.minimal .card-bottom {position:absolute;top:1px;right:2px;background:#173f62;border-radius:5px;padding:0 4px;min-width:13px;height:17px;}
+.resource-cards.minimal .resource-count {color:#fff;font-size:12px;line-height:17px;}
+.resource-cards.minimal .resource-name {display:none;}
+@media(max-width:1100px){.resource-cards.minimal .resource-card{width:43px;min-height:55px}.resource-cards.minimal .card-top{height:43px}.resource-cards.minimal .resource-icon .catan-card-art{width:29px}}
