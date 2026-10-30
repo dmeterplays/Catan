@@ -1183,11 +1183,14 @@ export function rollDice(game, playerId) {
     } else {
       game.turnPhase = 'robber';
     }
+    game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, gains: null };
     return { success: true, roll: game.diceRoll, resourceGains: null };
   } else {
     // Distribute resources
     const gains = distributeResources(game, total);
     game.turnPhase = 'main';
+    // Dice income is public; record only the resources awarded by this roll.
+    game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, gains: gains.map(playerGains => Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [resource, playerGains?.[resource] || 0]))) };
     return { success: true, roll: game.diceRoll, resourceGains: gains };
   }
 }
@@ -1367,6 +1370,13 @@ export function moveRobber(game, playerId, hexKey, stealFromPlayerId) {
       }
     }
   }
+  
+  // Public log deliberately omits the type of stolen resource.
+  if (stolenInfo) game.__publicRobberyEvent = {
+    id: (game.__robberySerial = (game.__robberySerial || 0) + 1),
+    thiefName: stolenInfo.thiefName,
+    victimName: stolenInfo.victimName
+  };
   
   // Return to appropriate phase based on whether dice have been rolled
   // This handles the case where Knight is played BEFORE rolling
