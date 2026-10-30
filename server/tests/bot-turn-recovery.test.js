@@ -70,3 +70,22 @@ test('bot completa turno normal e devolve a vez ao humano', async () => {
     Math.random=random;
   }
 });
+
+test('bot retoma o turno quando o humano termina o descarte', async () => {
+  const game = makeGame();
+  game.players[0].resources.brick = 8;
+  const random=Math.random;
+  let calls=0;
+  Math.random=()=> (calls++ % 2 ? .7 : .2);
+  try {
+    await runBotTurn(game, () => {}, {delayMs:0,maxActions:1,autoContinue:false});
+    assert.equal(game.turnPhase,'discard');
+  } finally { Math.random=random; }
+  const discarded = Game.discardCards(game,'human',{brick:4,lumber:0,wool:0,grain:0,ore:0});
+  assert.equal(discarded.success,true);
+  assert.equal(game.turnPhase,'robber');
+  // The websocket handler now calls runBotTurn after human discard.
+  await runBotTurn(game, () => {}, {delayMs:0,maxActions:1,autoContinue:false});
+  assert.equal(game.turnPhase,'main');
+  assert.equal(game.__botBusy,false);
+});
