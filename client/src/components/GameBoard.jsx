@@ -68,7 +68,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
     const dice = fresh.filter(event => /^🎲/.test(event.message));
     if (dice.length) {
       const last = dice[dice.length - 1];
-      if (/\\(7\\)\\s*$/.test(last.message)) plays('seven');
+      if (/\(7\)\s*$/.test(last.message)) plays('seven');
       else plays('dice');
     }
     if (fresh.some(event => /conquistou (a Maior Estrada|o Maior Exército)/.test(event.message))) plays('milestone');
