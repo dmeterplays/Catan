@@ -1,13 +1,11 @@
+import * as Game from './gameLogic.js';
 import { getLegalActions, executeLegalAction } from './legalActions.js';
 
 const RESOURCES = ['brick', 'lumber', 'wool', 'grain', 'ore'];
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function vertexScore(game, key) {
-  const hexes = Object.values(game.hexes);
-  const match = key.match(/v_(-?\d+)_(-?\d+)_(\d+)/);
-  if (!match) return 0;
-  const adjacent = GameAdjacentHexes(game, key);
+  const adjacent = Game.getVertexAdjacentHexes(game, key);
   let score = 0;
   const seen = new Set();
   for (const hex of adjacent) {
@@ -16,14 +14,6 @@ function vertexScore(game, key) {
     if (!seen.has(hex.resource)) { score += 2; seen.add(hex.resource); }
   }
   return score;
-}
-
-function GameAdjacentHexes(game, key) {
-  // Uses the same board utility as the game rules.
-  return Object.values(game.hexes).filter(hex => {
-    const adjacent = globalThis.__unused; // intentionally not used; scoring fallback below
-    return false;
-  });
 }
 
 function discardChoice(player, amount) {
@@ -44,7 +34,7 @@ function chooseAction(game, player, options) {
   const playerIndex = game.players.findIndex(p => p.id === player.id);
   const rank = action => {
     switch (action.type) {
-      case 'placeSettlement': return 100 + (action.vertexKey ? Math.random() : 0);
+      case 'placeSettlement': return 100 + vertexScore(game, action.vertexKey);
       case 'upgradeToCity': return 90;
       case 'buyDevCard': return 70;
       case 'placeRoad': return 40;
