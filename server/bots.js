@@ -89,15 +89,15 @@ function chooseAction(game, player, options) {
   return selected;
 }
 
-export async function runBotTurn(game, broadcast) {
+export async function runBotTurn(game, broadcast, { delayMs = 500, maxActions = 40, autoContinue = true } = {}) {
   if (game.__botBusy || game.phase === 'waiting' || game.phase === 'finished') return;
   game.__botBusy = true;
   try {
     let safety = 0;
-    while (game.phase !== 'finished' && safety++ < 40) {
+    while (game.phase !== 'finished' && safety++ < maxActions) {
       const player = game.players[game.currentPlayerIndex];
       if (!player?.isBot) break;
-      await sleep(500);
+      if (delayMs > 0) await sleep(delayMs);
       const options = getLegalActions(game, player.id);
       const action = chooseAction(game, player, options);
       if (!action) break;
@@ -113,16 +113,49 @@ export async function runBotTurn(game, broadcast) {
         }
         break;
       }
+      // A bot's 7 can require several bots to discard. Resolve them immediately;
+      // without this, the current bot has no legal action and appears frozen.
+      if (action.type === 'rollDice' && game.turnPhase === 'discard') {
+        runBotDiscards(game, broadcast);
+      }
       if (action.type === 'bankTrade') game.__botBankTrades = (game.__botBankTrades || 0) + 1;
       if (action.type === 'endTurn') game.__botBankTrades = 0;
       broadcast();
       if (action.type === 'endTurn') break;
     }
+  } catch (error) {
+    console.error('[Catan bot] Unexpected error while resolving turn:', error);
+    // Keep the game responsive and provide a visible diagnostic instead of
+    // leaving __botBusy set and the bot silently frozen.
+    game.eventLog ||= [];
+    game.eventLog.push({
+      id: (game.__eventSeq = (game.__eventSeq || 0) + 1),
+      at: Date.now(),
+      message: '⚠️ Erro automático no turno do bot; tentando recuperar a partida'
+    });
+    if (game.eventLog.length > 100) game.eventLog.shift();
+    try {
+      const current = game.players[game.currentPlayerIndex];
+      if (current?.isBot && game.phase === 'playing' && game.turnPhase === 'main') {
+        const end = executeLegalAction(game, current.id, { type: 'endTurn' });
+        if (!end.success) console.error('[Catan bot] Could not recover turn:', end.error);
+      }
+    } catch (recoveryError) {
+      console.error('[Catan bot] Recovery failed:', recoveryError);
+    }
   } finally {
     game.__botBusy = false;
     broadcast();
-    if (game.phase !== 'finished' && game.players[game.currentPlayerIndex]?.isBot && getLegalActions(game, game.players[game.currentPlayerIndex].id).length) {
-      setTimeout(() => runBotTurn(game, broadcast), 250);
+    if (autoContinue && game.phase !== 'finished' && game.players[game.currentPlayerIndex]?.isBot) {
+      try {
+        if (game.turnPhase === 'discard') runBotDiscards(game, broadcast);
+        const id = game.players[game.currentPlayerIndex].id;
+        if (getLegalActions(game, id).length) {
+          setTimeout(() => { void runBotTurn(game, broadcast).catch(error => console.error('[Catan bot] Restart failed:', error)); }, 250);
+        }
+      } catch (error) {
+        console.error('[Catan bot] Failed to schedule next action:', error);
+      }
     }
   }
 }
