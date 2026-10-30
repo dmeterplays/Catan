@@ -210,6 +210,8 @@ function broadcastGameState(gameId) {
     rollId: game.__publicRollEvent?.id || 0,
     robberyId: game.__publicRobberyEvent?.id || 0,
     devCardsRemaining: game.devCardDeck?.length ?? 0,
+    // Only internal server snapshot: never expose this to client views.
+    resourceCounts: game.players.map(player => Object.fromEntries(Object.keys(RESOURCE_NAMES).map(key => [key, player.resources?.[key] || 0]))),
     cardTotals: game.players.map(player => Object.values(player.resources || {}).reduce((sum, count) => sum + count, 0)),
     longestRoad: game.longestRoadPlayer,
     largestArmy: game.largestArmyPlayer
@@ -247,9 +249,20 @@ function broadcastGameState(gameId) {
         const difference = total - (previous.cardTotals?.[idx] ?? total);
         if (!difference) return;
         const name = game.players[idx]?.name || 'Jogador';
-        recordEvent(game, difference > 0
-          ? `📥 ${name} recebeu ${difference} carta(s) de recurso`
-          : `📤 ${name} perdeu ${Math.abs(difference)} carta(s) de recurso`);
+        const before = previous.resourceCounts?.[idx] || {};
+        const after = snapshot.resourceCounts[idx];
+        const received = {};
+        const lost = {};
+        for (const key of Object.keys(RESOURCE_NAMES)) {
+          const delta = (after[key] || 0) - (before[key] || 0);
+          if (delta > 0) received[key] = delta;
+          if (delta < 0) lost[key] = -delta;
+        }
+        // Public income and spending are descriptive. Robber theft is excluded above.
+        if (Object.keys(received).length)
+          recordEvent(game, `📥 ${name} recebeu ${formatResources(received)}`);
+        if (Object.keys(lost).length)
+          recordEvent(game, `📤 ${name} gastou/perdeu ${formatResources(lost)}`);
       });
     }
     if (snapshot.longestRoad !== previous.longestRoad) {

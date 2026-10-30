@@ -1190,7 +1190,7 @@ export function rollDice(game, playerId) {
     const gains = distributeResources(game, total);
     game.turnPhase = 'main';
     // Dice income is public; record only the resources awarded by this roll.
-    game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, gains: gains.map(playerGains => Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [resource, playerGains?.[resource] || 0]))) };
+    game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, playerName: player.name, gains: gains.map(playerGains => Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [resource, playerGains?.[resource] || 0]))) };
     return { success: true, roll: game.diceRoll, resourceGains: gains };
   }
 }
@@ -2839,9 +2839,16 @@ export function getPlayerView(game, playerId) {
   
   // After game ends, all information is public
   const isGameOver = game.phase === 'finished';
+  // Server-only event snapshots contain private per-player resource counts.
+  // Do not transmit these internal fields to opponents via ...game.
+  const {
+    __publicSnapshot, __publicRollEvent, __publicRobberyEvent,
+    __skipResourceDelta, __eventSeq, __rollSerial, __robberySerial,
+    ...clientSafeGame
+  } = game;
   
   return {
-    ...game,
+    ...clientSafeGame,
     players: game.players.map((p, idx) => ({
       ...p,
       // After game over, show everyone's dev cards; during game, only show own cards
