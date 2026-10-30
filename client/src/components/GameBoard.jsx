@@ -304,7 +304,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, isSetup, addNotification]);
 
   const handlePlaceRoad = useCallback((edgeKey) => {
-    socket.emit('performAction', { action: { type: 'placeRoad', edgeKey, setup: isSetup, ...(isSetup ? { lastSettlement: lastPlacedSettlement } : {}) } }, (response) => {
+    socket.emit('performAction', { action: { type: 'placeRoad', edgeKey, setup: isSetup,  } }, (response) => {
       if (response.success) {
         if (isSetup) {
           // Advance setup
