@@ -1117,7 +1117,8 @@ function appendPublicGameEvent(game, message) {
 const PUBLIC_RESOURCE_LABELS = {brick:'tijolo',lumber:'madeira',wool:'lã',grain:'trigo',ore:'minério'};
 function appendDiceEvents(game, playerName, roll, gains) {
   appendPublicGameEvent(game, `🎲 ${playerName} tirou ${roll.die1} + ${roll.die2} (${roll.total})`);
-  (gains || []).forEach((earned, index) => {
+  Object.entries(gains || {}).forEach(([playerIndex, earned]) => {
+    const index = Number(playerIndex);
     const details = Object.entries(PUBLIC_RESOURCE_LABELS)
       .filter(([key]) => earned?.[key] > 0)
       .map(([key,label]) => `${earned[key]} ${label}`).join(', ');
@@ -1213,7 +1214,7 @@ export function rollDice(game, playerId) {
     const gains = distributeResources(game, total);
     game.turnPhase = 'main';
     // Dice income is public; record only the resources awarded by this roll.
-    game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, playerName: player.name, gains: gains.map(playerGains => Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [resource, playerGains?.[resource] || 0]))) };
+    game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, playerName: player.name, gains: Object.fromEntries(Object.entries(gains).map(([index, playerGains]) => [index, Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [resource, playerGains?.[resource] || 0]))])) };
     appendDiceEvents(game, player.name, game.diceRoll, gains);
     return { success: true, roll: game.diceRoll, resourceGains: gains };
   }

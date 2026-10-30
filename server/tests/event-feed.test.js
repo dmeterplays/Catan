@@ -33,7 +33,7 @@ test('recursos obtidos nos dados aparecem pelo nome e não como cartas genérica
     game.turnPhase = 'roll';
     const result = Game.rollDice(game, game.players[game.currentPlayerIndex].id);
     assert.equal(result.success, true);
-    if (result.resourceGains?.some(g => Object.values(g).some(v => typeof v === 'number' && v > 0))) {
+    if (Object.values(result.resourceGains || {}).some(g => Object.values(g).some(v => typeof v === 'number' && v > 0))) {
       earned = true;
       break;
     }
