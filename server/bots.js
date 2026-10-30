@@ -89,7 +89,7 @@ export async function runBotTurn(game, broadcast) {
   } finally {
     game.__botBusy = false;
     broadcast();
-    if (game.phase !== 'finished' && game.players[game.currentPlayerIndex]?.isBot) {
+    if (game.phase !== 'finished' && game.players[game.currentPlayerIndex]?.isBot && getLegalActions(game, game.players[game.currentPlayerIndex].id).length) {
       setTimeout(() => runBotTurn(game, broadcast), 250);
     }
   }
