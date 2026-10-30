@@ -178,6 +178,23 @@ function broadcastToGame(gameId, event, data) {
 // ============================================================================
 
 io.on('connection', (socket) => {
+  socket.on('performAction', ({ action } = {}, callback = () => {}) => {
+    const info = playerSockets.get(socket.id);
+    const game = info && games.get(info.gameId);
+    if (!game) return callback({ success: false, error: 'Não está em uma partida.' });
+    const result = executeLegalAction(game, info.playerId, action);
+    if (result.success) {
+      if (action.type === 'placeSettlement') broadcastToGame(info.gameId, 'settlementPlaced', { vertexKey: action.vertexKey, playerId: info.playerId });
+      if (action.type === 'placeRoad') broadcastToGame(info.gameId, 'roadPlaced', { edgeKey: action.edgeKey, playerId: info.playerId });
+      if (action.type === 'upgradeToCity') broadcastToGame(info.gameId, 'cityBuilt', { vertexKey: action.vertexKey, playerId: info.playerId });
+      if (action.type === 'endTurn') broadcastToGame(info.gameId, 'turnEnded', { playerId: info.playerId });
+      if (action.type === 'moveRobber') broadcastToGame(info.gameId, 'robberMoved', { hexKey: action.hexKey, playerId: info.playerId });
+      broadcastGameState(info.gameId);
+      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(info.gameId));
+    }
+    callback(result);
+  });
+
   // --------------------------------------------------------------------
   // CONNECTION MANAGEMENT
   // --------------------------------------------------------------------
