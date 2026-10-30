@@ -1,10 +1,9 @@
 // Five original audio assets stored in /public/sounds.
 // Playback is triggered by authoritative Socket.IO gameSound events.
-// Local recordings plus a CC0 handbell recording (two strikes for ship departure).
-// Source: https://sfxmint.com/sounds/instrument-bell-42
+// Original locally hosted recordings, including the two-chime departure bell.
 const sources = {
   dice: '/sounds/dice.mp3',
-  sail: 'https://sfxmint.com/dl/instrument-bell-42.mp3',
+  sail: '/sounds/sail.wav',
   seven: '/sounds/seven.wav',
   milestone: '/sounds/milestone.wav',
   victory: '/sounds/victory.wav'
@@ -41,6 +40,5 @@ export function playGameAudio(name, volume = .45) {
   };
   // Dice recording was quieter than the other effects; give it a modest boost.
   playOnce(name === 'dice' ? 1.3 : 1);
-  // A pair of handbell chimes evokes a ship's departure rather than a church alarm.
-  if (name === 'sail') setTimeout(() => playOnce(.83), 860);
+  // The locally hosted bell already contains both departure chimes.
 }
