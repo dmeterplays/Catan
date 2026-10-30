@@ -14,7 +14,7 @@ import InfoPopup, { useInfoPopup, INFO_DATA } from './InfoPopup';
 import Confetti from './Confetti';
 import { nomeRecurso, nomeTrilha } from '../i18n';
 import './GameBoard.css';
-import { playGameSound, unlockSound } from './gameSounds';
+import { playGameAudio, preloadGameAudio } from './gameAudioFiles';
 
 const AVAILABLE_COLORS = [
   { value: '#e63946', label: 'Vermelho' },
@@ -34,52 +34,24 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
     return Number.isFinite(stored) && localStorage.getItem('catanSoundsVolume') !== null
       ? Math.max(0, Math.min(1, stored)) : 0.45;
   });
-  const soundOptionsRef = useRef(null);
-  const lastSoundEventRef = useRef(null);
-  const lastPhaseRef = useRef(null);
-  const soundReadyRef = useRef(false);
+  const soundVolumeRef = useRef(soundVolume);
+  const soundEnabledRef = useRef(soundEnabled);
   useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+    soundVolumeRef.current = soundVolume;
     localStorage.setItem('catanSoundsEnabled', String(soundEnabled));
     localStorage.setItem('catanSoundsVolume', String(soundVolume));
   }, [soundEnabled, soundVolume]);
   useEffect(() => {
-    // Browser audio policy: unlock only in response to a real user gesture.
-    const unlock = () => { void unlockSound().then(() => { soundReadyRef.current = true; }); };
-    document.addEventListener('pointerdown', unlock, { once: true });
-    document.addEventListener('keydown', unlock, { once: true });
-    return () => {
-      document.removeEventListener('pointerdown', unlock);
-      document.removeEventListener('keydown', unlock);
+    preloadGameAudio();
+    if (!socket) return;
+    const onSound = ({sound}) => {
+      if (soundEnabledRef.current) playGameAudio(sound, soundVolumeRef.current);
     };
-  }, []);
-  useEffect(() => {
-    const previous = lastSoundEventRef.current;
-    const log = gameState.eventLog || [];
-    const latestId = log.length ? Math.max(...log.map(event => Number(event.id) || 0)) : 0;
-    const initial = previous === null;
-    const oldPhase = lastPhaseRef.current;
-    lastSoundEventRef.current = latestId;
-    lastPhaseRef.current = gameState.phase;
-    if (!soundEnabled || !soundReadyRef.current || initial) return;
-    // Use authoritative event IDs. Reconnecting does not replay old sound effects.
-    const fresh = log.filter(event => (Number(event.id) || 0) > previous);
-    const plays = (name) => playGameSound(name, soundVolume);
-    if (oldPhase && oldPhase !== 'playing' && gameState.phase === 'playing') plays('sail');
-    const dice = fresh.filter(event => /^🎲/.test(event.message));
-    if (dice.length) {
-      const last = dice[dice.length - 1];
-      if (/\(7\)\s*$/.test(last.message)) plays('seven');
-      else plays('dice');
-    }
-    if (fresh.some(event => /conquistou (a Maior Estrada|o Maior Exército)/.test(event.message))) plays('milestone');
-    if (oldPhase !== 'finished' && gameState.phase === 'finished') plays('victory');
-  }, [gameState.eventLog, gameState.phase, soundEnabled, soundVolume]);
-  const previewSound = (name) => {
-    void unlockSound().then(() => {
-      soundReadyRef.current = true;
-      playGameSound(name, soundVolume);
-    });
-  };
+    socket.on('gameSound', onSound);
+    return () => socket.off('gameSound', onSound);
+  }, [socket]);
+  const previewSound = (name) => playGameAudio(name, soundVolume);
   const [selectedAction, setSelectedAction] = useState(null); // 'settlement', 'road', 'city'
   const [dismissedBarbarianResult, setDismissedBarbarianResult] = useState(false);
   const [lastPlacedSettlement, setLastPlacedSettlement] = useState(null);
@@ -655,13 +627,12 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
 
         <div className="sound-controls">
           <button type="button" className="sound-toggle" onClick={() => {
-            void unlockSound().then(() => { soundReadyRef.current = true; });
             setSoundEnabled(value => !value);
           }} title={soundEnabled ? 'Desativar efeitos sonoros' : 'Ativar efeitos sonoros'}
             aria-pressed={soundEnabled}>
             {soundEnabled ? '🔊' : '🔇'} Sons
           </button>
-          <details className="sound-options" ref={soundOptionsRef}>
+          <details className="sound-options">
             <summary title="Volume e prévia dos sons">⚙️</summary>
             <div className="sound-settings">
               <label htmlFor="catan-sound-volume">Volume: {Math.round(soundVolume * 100)}%</label>
