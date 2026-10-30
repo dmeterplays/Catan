@@ -22,6 +22,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import * as GameLogic from './gameLogic.js';
+import { runBotTurn } from './bots.js';
 
 // ============================================================================
 // EXPRESS APP SETUP
@@ -234,6 +235,37 @@ io.on('connection', (socket) => {
     });
   });
 
+  /** Host adds a server-controlled bot to a classic-game lobby. */
+  socket.on('addBot', (callback = () => {}) => {
+    const info = playerSockets.get(socket.id);
+    const game = info && games.get(info.gameId);
+    if (!game || game.phase !== 'waiting' || game.players[0].id !== info.playerId)
+      return callback({ success: false, error: 'Somente o anfitrião pode adicionar bots antes da partida.' });
+    if (game.isExtended || game.isCitiesAndKnights)
+      return callback({ success: false, error: 'Bots estão disponíveis inicialmente apenas no Catan clássico.' });
+    if (game.players.length >= game.maxPlayers)
+      return callback({ success: false, error: 'A sala já está cheia.' });
+    const botId = 'bot-' + uuidv4();
+    const result = GameLogic.addPlayer(game, { id: botId, name: 'Bot ' + (game.players.filter(p => p.isBot).length + 1) });
+    if (!result.success) return callback(result);
+    game.players.find(p => p.id === botId).isBot = true;
+    broadcastGameState(info.gameId);
+    callback({ success: true });
+  });
+
+  socket.on('removeBot', (callback = () => {}) => {
+    const info = playerSockets.get(socket.id);
+    const game = info && games.get(info.gameId);
+    if (!game || game.phase !== 'waiting' || game.players[0].id !== info.playerId)
+      return callback({ success: false, error: 'Somente o anfitrião pode remover bots antes da partida.' });
+    const index = game.players.findLastIndex(p => p.isBot);
+    if (index < 0) return callback({ success: false, error: 'Não há bots para remover.' });
+    game.players.splice(index, 1);
+    game.players.forEach((p, i) => { p.color = GameLogic.PLAYER_COLORS[i]; p.turnOrder = null; });
+    broadcastGameState(info.gameId);
+    callback({ success: true });
+  });
+
   /** Allow a player to pick their color in the lobby */
   socket.on('changeColor', ({ color }, callback) => {
     const playerInfo = playerSockets.get(socket.id);
@@ -321,6 +353,9 @@ io.on('connection', (socket) => {
         turnOrder: result.turnOrder 
       });
       broadcastGameState(playerInfo.gameId);
+      if (game.players[game.currentPlayerIndex]?.isBot) {
+        runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
+      }
     }
     
     callback(result);
@@ -807,6 +842,7 @@ io.on('connection', (socket) => {
     
     if (result.success) {
       broadcastGameState(playerInfo.gameId);
+      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
     }
     
     callback(result);
@@ -833,6 +869,7 @@ io.on('connection', (socket) => {
         broadcastToGame(playerInfo.gameId, 'turnEnded', { playerId: playerInfo.playerId });
       }
       broadcastGameState(playerInfo.gameId);
+      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
     }
     
     callback(result);
