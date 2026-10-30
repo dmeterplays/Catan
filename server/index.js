@@ -22,7 +22,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import * as GameLogic from './gameLogic.js';
-import { runBotTurn, runBotDiscards } from './bots.js';
+import { runBotTurn, runBotDiscards, runBotTradeResponses } from './bots.js';
 import { getLegalActions, executeLegalAction } from './legalActions.js';
 
 // ============================================================================
@@ -794,6 +794,7 @@ io.on('connection', (socket) => {
         request
       });
       broadcastGameState(playerInfo.gameId);
+      runBotTradeResponses(game, () => broadcastGameState(playerInfo.gameId));
     }
     
     callback(result);

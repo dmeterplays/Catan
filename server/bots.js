@@ -37,6 +37,8 @@ function chooseAction(game, player, options) {
       case 'placeSettlement': return 100 + vertexScore(game, action.vertexKey);
       case 'upgradeToCity': return 90;
       case 'buyDevCard': return 70;
+      case 'bankTrade': return (game.__botBankTrades || 0) < 1 && (player.resources[action.getResource] || 0) === 0 && (player.resources[action.giveResource] || 0) >= action.giveAmount + 1 ? 65 : -10;
+      case 'respondToTrade': return action.accept ? 90 : 5;
       case 'placeRoad': return 40;
       case 'moveRobber': {
         const hex = game.hexes[action.hexKey];
@@ -55,6 +57,13 @@ function chooseAction(game, player, options) {
   if (options[0]?.type === 'discard') {
     const option = options[0];
     return { type: 'discard', resources: discardChoice(player, option.cardsToDiscard) };
+  }
+  if (options.some(a => a.type === 'respondToTrade')) {
+    const offer = game.tradeOffer;
+    const offered = RESOURCES.reduce((n, resource) => n + (offer.offer?.[resource] || 0), 0);
+    const requested = RESOURCES.reduce((n, resource) => n + (offer.request?.[resource] || 0), 0);
+    const accept = offered >= requested && options.some(a => a.type === 'respondToTrade' && a.accept);
+    return { type: 'respondToTrade', accept };
   }
   const sorted = [...options].sort((a, b) => rank(b) - rank(a));
   const selected = sorted[0];
@@ -78,11 +87,14 @@ export async function runBotTurn(game, broadcast) {
       const options = getLegalActions(game, player.id);
       const action = chooseAction(game, player, options);
       if (!action) break;
+      if (action.type === 'bankTrade' && (game.__botBankTrades || 0) >= 1) break;
       const result = executeLegalAction(game, player.id, action);
       if (!result.success) {
         console.warn('Bot action rejected:', action.type, result.error);
         break;
       }
+      if (action.type === 'bankTrade') game.__botBankTrades = (game.__botBankTrades || 0) + 1;
+      if (action.type === 'endTurn') game.__botBankTrades = 0;
       broadcast();
       if (action.type === 'endTurn') break;
     }
@@ -107,5 +119,17 @@ export function runBotDiscards(game, broadcast) {
     const result = executeLegalAction(game, player.id, action);
     if (!result.success) console.warn('Bot discard rejected:', result.error);
     else broadcast();
+  }
+}
+
+export function runBotTradeResponses(game, broadcast) {
+  if (!game.tradeOffer) return;
+  for (const player of game.players) {
+    if (!player.isBot || !game.tradeOffer || game.tradeOffer.from === game.players.indexOf(player)) continue;
+    const actions = getLegalActions(game, player.id).filter(a => a.type === 'respondToTrade');
+    if (!actions.length) continue;
+    const choice = chooseAction(game, player, actions);
+    const result = executeLegalAction(game, player.id, choice);
+    if (result.success) broadcast();
   }
 }
