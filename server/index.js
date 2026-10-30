@@ -620,9 +620,15 @@ io.on('connection', (socket) => {
     
     const game = games.get(playerInfo.gameId);
     const result = GameLogic.discardCards(game, playerInfo.playerId, resources);
-    
+
     if (result.success) {
+      // If the current player is a bot, resume its interrupted robber phase
+      // once all human/bot discards are resolved.
+      runBotDiscards(game, () => broadcastGameState(playerInfo.gameId));
       broadcastGameState(playerInfo.gameId);
+      if (game.players[game.currentPlayerIndex]?.isBot && game.turnPhase !== 'discard') {
+        void runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
+      }
     }
     
     callback(result);
