@@ -229,15 +229,8 @@ function broadcastGameState(gameId) {
     }
     const newRoll = snapshot.rollId !== previous.rollId && game.__publicRollEvent;
     const newRobbery = snapshot.robberyId !== previous.robberyId && game.__publicRobberyEvent;
-    if (newRoll) {
-      const roll = game.__publicRollEvent;
-      recordEvent(game, `🎲 ${roll.playerName || 'Jogador'} tirou ${roll.roll.die1} + ${roll.roll.die2} (${roll.roll.total})`);
-      (roll.gains || []).forEach((gains, index) => {
-        const details = formatResources(gains);
-        if (details !== 'nenhum recurso')
-          recordEvent(game, `📥 ${game.players[index]?.name || 'Jogador'} recebeu ${details} pelos dados`);
-      });
-    }
+    // Dice events are already recorded atomically by GameLogic.rollDice().
+    // Suppress duplicate generic hand-delta entries for the same roll.
     if (newRobbery) {
       const robbery = game.__publicRobberyEvent;
       recordEvent(game, `🥷 ${robbery.thiefName} roubou uma carta de ${robbery.victimName} (recurso oculto)`);
