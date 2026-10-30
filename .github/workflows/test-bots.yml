@@ -1,0 +1,25 @@
+name: Testar bots
+on:
+  push:
+    branches: [feature/catan-bots]
+  pull_request:
+    branches: [main]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar sintaxe do servidor
+        run: |
+          node --check server/index.js
+          node --check server/gameLogic.js
+          node --check server/legalActions.js
+          node --check server/bots.js
+      - name: Instalar e compilar frontend
+        working-directory: client
+        run: |
+          npm ci
+          npm run build
