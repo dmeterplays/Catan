@@ -84,7 +84,7 @@ export function executeLegalAction(game, playerId, action) {
       return result;
     }
     case 'placeRoad': {
-      const result = Game.placeRoad(game, playerId, action.edgeKey, !!action.setup, action.lastSettlement);
+      const result = Game.placeRoad(game, playerId, action.edgeKey, !!action.setup, option.lastSettlement);
       if (result.success && action.setup) {
         delete game.setupSettlementKey;
         return Game.advanceSetup(game, playerId);
