@@ -94,3 +94,18 @@ export async function runBotTurn(game, broadcast) {
     }
   }
 }
+
+
+export function runBotDiscards(game, broadcast) {
+  if (game.turnPhase !== 'discard') return;
+  for (const pending of [...(game.discardingPlayers || [])]) {
+    const player = game.players[pending.playerIndex];
+    if (!player?.isBot) continue;
+    const options = getLegalActions(game, player.id);
+    const action = chooseAction(game, player, options);
+    if (!action || action.type !== 'discard') continue;
+    const result = executeLegalAction(game, player.id, action);
+    if (!result.success) console.warn('Bot discard rejected:', result.error);
+    else broadcast();
+  }
+}
