@@ -187,6 +187,18 @@ setInterval(() => {
   }
 }, 1000);
 
+
+const RESOURCE_NAMES = {brick:'tijolo',lumber:'madeira',wool:'lã',grain:'trigo',ore:'minério'};
+function formatResources(resources = {}) {
+  return Object.entries(RESOURCE_NAMES).filter(([key]) => resources[key] > 0)
+    .map(([key, name]) => `${resources[key]} ${name}`).join(', ') || 'nenhum recurso';
+}
+function logTrade(game, fromIndex, partnerId, offer, request) {
+  const from = game.players[fromIndex]?.name || 'Jogador';
+  const partner = game.players.find(p => p.id === partnerId)?.name || 'Jogador';
+  recordEvent(game, `🤝 ${from} trocou ${formatResources(offer)} por ${formatResources(request)} com ${partner}`);
+  game.__skipResourceDelta = true;
+}
 /** Send player-specific game state to each player in a game */
 function broadcastGameState(gameId) {
   const game = games.get(gameId);
@@ -195,7 +207,10 @@ function broadcastGameState(gameId) {
     buildings: Object.fromEntries(Object.entries(game.vertices || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null && v.building).map(([k,v]) => [k, `${v.owner}:${v.building}`])),
     roads: Object.fromEntries(Object.entries(game.edges || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null).map(([k,v]) => [k, v.owner])),
     player: game.currentPlayerIndex,
-    dice: JSON.stringify(game.diceRoll || null)
+    dice: JSON.stringify(game.diceRoll || null),
+    cardTotals: game.players.map(player => Object.values(player.resources || {}).reduce((sum, count) => sum + count, 0)),
+    longestRoad: game.longestRoadPlayer,
+    largestArmy: game.largestArmyPlayer
   };
   const previous = game.__publicSnapshot;
   if (previous) {
@@ -208,12 +223,31 @@ function broadcastGameState(gameId) {
     for (const [key, owner] of Object.entries(snapshot.roads)) {
       if (previous.roads[key] !== owner) recordEvent(game, `🛤️ ${game.players[owner]?.name || 'Jogador'} construiu uma estrada`);
     }
+    if (!game.__skipResourceDelta) {
+      snapshot.cardTotals.forEach((total, idx) => {
+        const difference = total - (previous.cardTotals?.[idx] ?? total);
+        if (!difference) return;
+        const name = game.players[idx]?.name || 'Jogador';
+        recordEvent(game, difference > 0
+          ? `📥 ${name} recebeu ${difference} carta(s) de recurso`
+          : `📤 ${name} perdeu ${Math.abs(difference)} carta(s) de recurso`);
+      });
+    }
+    if (snapshot.longestRoad !== previous.longestRoad) {
+      if (previous.longestRoad != null) recordEvent(game, `🛤️ ${game.players[previous.longestRoad]?.name} perdeu a Maior Estrada`);
+      if (snapshot.longestRoad != null) recordEvent(game, `🏆 ${game.players[snapshot.longestRoad]?.name} conquistou a Maior Estrada!`);
+    }
+    if (snapshot.largestArmy !== previous.largestArmy) {
+      if (previous.largestArmy != null) recordEvent(game, `⚔️ ${game.players[previous.largestArmy]?.name} perdeu o Maior Exército`);
+      if (snapshot.largestArmy != null) recordEvent(game, `🏆 ${game.players[snapshot.largestArmy]?.name} conquistou o Maior Exército!`);
+    }
     if (snapshot.player !== previous.player && game.phase === 'playing')
       recordEvent(game, `▶️ Vez de ${game.players[snapshot.player]?.name || 'Jogador'}`);
     if (snapshot.dice !== previous.dice && game.diceRoll?.dice1 && game.diceRoll?.dice2)
       recordEvent(game, `🎲 Dados: ${game.diceRoll.dice1} + ${game.diceRoll.dice2}`);
   }
   game.__publicSnapshot = snapshot;
+  game.__skipResourceDelta = false;
   
   syncTurnTimer(game);
   game.players.forEach(player => {
@@ -841,8 +875,10 @@ io.on('connection', (socket) => {
     
     const game = games.get(playerInfo.gameId);
     const result = GameLogic.bankTrade(game, playerInfo.playerId, giveResource, giveAmount, getResource);
-    
+
     if (result.success) {
+      recordEvent(game, `🏦 ${game.players.find(p => p.id === playerInfo.playerId)?.name} trocou ${giveAmount} ${RESOURCE_NAMES[giveResource]} por 1 ${RESOURCE_NAMES[getResource]} no banco`);
+      game.__skipResourceDelta = true;
       broadcastGameState(playerInfo.gameId);
     }
     
@@ -867,7 +903,14 @@ io.on('connection', (socket) => {
         request
       });
       broadcastGameState(playerInfo.gameId);
-      runBotTradeResponses(game, () => broadcastGameState(playerInfo.gameId));
+      const proposed = game.tradeOffer ? {from:game.tradeOffer.from,offer:{...game.tradeOffer.offer},request:{...game.tradeOffer.request}} : null;
+      runBotTradeResponses(game, () => {
+        if (proposed && !game.tradeOffer) {
+          // If a bot accepted the trade, its resources changed; log only the final result.
+          // Completion is logged by the bot action executor before broadcasting.
+        }
+        broadcastGameState(playerInfo.gameId);
+      });
     }
     
     callback(result);
@@ -882,7 +925,9 @@ io.on('connection', (socket) => {
     }
     
     const game = games.get(playerInfo.gameId);
+    const proposed = game.tradeOffer ? {from:game.tradeOffer.from,offer:{...game.tradeOffer.offer},request:{...game.tradeOffer.request}} : null;
     const result = GameLogic.respondToTrade(game, playerInfo.playerId, accept);
+    if (result.success && result.traded && proposed) logTrade(game, proposed.from, playerInfo.playerId, proposed.offer, proposed.request);
     
     if (result.success) {
       if (result.traded) {
