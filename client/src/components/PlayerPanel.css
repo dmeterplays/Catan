@@ -267,3 +267,12 @@
 .left-sidebar .player-achievements { flex-direction: row; flex-wrap: wrap; }
 .left-sidebar .player-name { font-size: 12px; }
 .left-sidebar .player-panel .stat-icon, .left-sidebar .player-panel .piece-icon { font-size: 12px; }
+
+
+/* True compact card: header + one horizontal stats row; hide redundant inventory. */
+.left-sidebar .player-panel { display: flex; flex-direction: column; gap: 2px; padding: 5px 7px; min-height: 0; }
+.left-sidebar .player-header { margin: 0; min-height: 24px; }
+.left-sidebar .player-stats { display: flex; width: 100%; justify-content: space-around; align-items: center; box-sizing: border-box; margin: 0; padding: 3px 4px; background: rgba(0,0,0,.16); }
+.left-sidebar .player-pieces, .left-sidebar .player-road-length { display: none; }
+.left-sidebar .player-achievements { margin: 0; }
+.left-sidebar .player-panel .victory-points { margin-left: auto; }

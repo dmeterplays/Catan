@@ -53,6 +53,22 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   // Info popup for right-click
   const { popup: infoPopup, showInfo, showHexInfo, closePopup: closeInfoPopup } = useInfoPopup();
   
+  // State diffs also cover bot actions and resource gains that have no personal socket event.
+  const previousResourceCounts = useRef(null);
+  useEffect(() => {
+    const current = gameState.players[gameState.myIndex]?.resources;
+    if (!current || typeof current !== 'object') return;
+    const previous = previousResourceCounts.current;
+    previousResourceCounts.current = { ...current };
+    if (!previous) return;
+    const icons = { brick: '🧱', lumber: '🪵', wool: '🐑', grain: '🌾', ore: '⛏️' };
+    const gained = Object.keys(icons).filter(key => (current[key] || 0) > (previous[key] || 0))
+      .map(key => `${icons[key]} +${current[key] - (previous[key] || 0)}`).join(' ');
+    if (!gained) return;
+    clearTimeout(flightTimer.current);
+    setCardFlight({ id: ++flightSequence.current, icons: gained });
+    flightTimer.current = setTimeout(() => setCardFlight(null), 1100);
+  }, [gameState.players, gameState.myIndex]);
   const myPlayer = gameState.players[gameState.myIndex];
   const currentPlayer = gameState.phase !== 'waiting' ? gameState.players[gameState.currentPlayerIndex] : null;
   const isMyTurn = gameState.phase !== 'waiting' && gameState.currentPlayerIndex === gameState.myIndex;
@@ -100,9 +116,6 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         .join(' ');
       
       if (gainsList) {
-        clearTimeout(flightTimer.current);
-        setCardFlight({ id: ++flightSequence.current, icons: gainsList });
-        flightTimer.current = setTimeout(() => setCardFlight(null), 850);
         // Show center popup for your own resources
         setResourceGainNotification({ gains, fromRoll, gainsList });
         setTimeout(() => setResourceGainNotification(null), 4000);
