@@ -54,22 +54,49 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   // Info popup for right-click
   const { popup: infoPopup, showInfo, showHexInfo, closePopup: closeInfoPopup } = useInfoPopup();
   
-  // State diffs also cover bot actions and resource gains that have no personal socket event.
-  const previousResourceCounts = useRef(null);
+  // Animate real cards between bank and player destinations. Never expose an opponent's card identity.
+  const previousHands = useRef(null);
   useEffect(() => {
-    const current = gameState.players[gameState.myIndex]?.resources;
-    if (!current || typeof current !== 'object') return;
-    const previous = previousResourceCounts.current;
-    previousResourceCounts.current = { ...current };
-    if (!previous) return;
-    const icons = { brick: '🧱', lumber: '🪵', wool: '🐑', grain: '🌾', ore: '⛏️' };
-    const gained = Object.keys(icons).filter(key => (current[key] || 0) > (previous[key] || 0))
-      .map(key => `${icons[key]} +${current[key] - (previous[key] || 0)}`).join(' ');
-    if (!gained) return;
+    const current = gameState.players.map((p, index) => {
+      const resourceCounts = index === gameState.myIndex && typeof p.resources === 'object' ? { ...p.resources } : null;
+      const total = typeof p.resources === 'number' ? p.resources : Object.values(p.resources || {}).reduce((sum, value) => sum + value, 0);
+      return { id: p.id, total, resourceCounts };
+    });
+    const before = previousHands.current;
+    previousHands.current = current;
+    if (!before || gameState.phase === 'waiting') return;
+    const bank = document.querySelector('[data-bank-resource="lumber"]');
+    const flights = [];
+    current.forEach((hand, index) => {
+      const old = before.find(p => p.id === hand.id);
+      if (!old) return;
+      const destination = index === gameState.myIndex
+        ? document.querySelector('[data-hand-target]')
+        : Array.from(document.querySelectorAll('[data-player-target]')).find(el => el.getAttribute('data-player-target') === hand.id);
+      if (!destination) return;
+      const specific = hand.resourceCounts && old.resourceCounts
+        ? Object.keys(hand.resourceCounts).filter(key => hand.resourceCounts[key] > (old.resourceCounts[key] || 0))
+          .map(key => ({ type:key, amount:hand.resourceCounts[key] - (old.resourceCounts[key] || 0) }))
+        : [{ type:'hidden', amount:Math.max(0, hand.total - old.total) }];
+      specific.forEach(({type, amount}) => {
+        if (amount <= 0) return;
+        const source = document.querySelector('[data-bank-resource="' + type + '"]') || bank;
+        if (!source) return;
+        const from = source.getBoundingClientRect();
+        const to = destination.getBoundingClientRect();
+        flights.push({
+          id: ++flightSequence.current, type, amount,
+          x: from.left + from.width/2 - 20, y: from.top + from.height/2 - 25,
+          dx: to.left + to.width/2 - from.left - from.width/2,
+          dy: to.top + to.height/2 - from.top - from.height/2
+        });
+      });
+    });
+    if (!flights.length) return;
     clearTimeout(flightTimer.current);
-    setCardFlight({ id: ++flightSequence.current, icons: gained });
-    flightTimer.current = setTimeout(() => setCardFlight(null), 1100);
-  }, [gameState.players, gameState.myIndex]);
+    setCardFlight(flights);
+    flightTimer.current = setTimeout(() => setCardFlight(null), 1500);
+  }, [gameState.players, gameState.myIndex, gameState.phase]);
   const myPlayer = gameState.players[gameState.myIndex];
   const currentPlayer = gameState.phase !== 'waiting' ? gameState.players[gameState.currentPlayerIndex] : null;
   const isMyTurn = gameState.phase !== 'waiting' && gameState.currentPlayerIndex === gameState.myIndex;
@@ -648,13 +675,14 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             <div className="bank-title">🏛️ Banco <small>Cartas disponíveis</small></div>
             <div className="bank-resources">
               {['lumber','brick','wool','grain','ore'].map(key => (
-                <div className="bank-resource" key={key}><CardArt type={key} count={gameState.bankResources?.[key] ?? '—'} className="small" /></div>
+                <div className="bank-resource" data-bank-resource={key} key={key}><CardArt type={key} count={gameState.bankResources?.[key] ?? '—'} className="small" /></div>
               ))}
-              <div className="bank-resource"><CardArt type="development" count={gameState.devCardDeck} className="small" /></div>
+              <div className="bank-resource" data-bank-resource="development"><CardArt type="development" count={gameState.devCardDeck} className="small" /></div>
             </div>
           </div>
           <h3>Jogadores</h3>
           {gameState.players.map((player, idx) => (
+            <div key={player.id} data-player-target={player.id} className="player-roster-target">
             <PlayerPanel 
               key={player.id}
               player={player}
@@ -674,6 +702,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                 }
               }}
             />
+            </div>
           ))}
           
           {isWaiting && (
@@ -740,11 +769,14 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         </div>
       </div>
 
-      {cardFlight && (
-        <div key={cardFlight.id} className="card-flight" aria-hidden="true">
-          <span className="card-flight-card">{cardFlight.icons}</span>
+      {cardFlight?.map(flight => (
+        <div key={flight.id} className="card-flight-real" aria-hidden="true" style={{
+          left:flight.x, top:flight.y,
+          '--flight-x':flight.dx+'px', '--flight-y':flight.dy+'px'
+        }}>
+          <CardArt type={flight.type} count={flight.amount} />
         </div>
-      )}
+      ))}
       <div className="command-dock">
         <div className="turn-clock-dock">
           <span className="turn-clock-player" style={{borderColor:currentPlayer?.color || '#b99448'}}>{currentPlayer ? currentPlayer.name : 'Sala de espera'}</span>
@@ -779,7 +811,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
           
 </div>
         {/* Bottom - My Resources */}
-        <div className="my-resources-bar">
+        <div className="my-resources-bar" data-hand-target>
         <ResourceCards 
           resources={myPlayer.resources} 
           minimal

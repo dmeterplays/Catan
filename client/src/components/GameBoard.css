@@ -798,3 +798,23 @@
   .command-dock {gap:3px;padding:3px; }
   .command-actions .action-panel .action-btn {width:39px;min-width:39px;height:40px;}
 }
+
+
+/* Cards actually travel from the bank to the hand or the opponent's player panel. */
+.card-flight-real {
+  position:fixed; z-index:5000; pointer-events:none; width:40px;
+  animation:catan-real-card-flight 1.4s cubic-bezier(.28,.66,.37,1) both;
+  filter:drop-shadow(0 6px 10px #0009);
+  will-change:transform,opacity;
+}
+.card-flight-real .catan-card-art { width:42px; }
+@keyframes catan-real-card-flight {
+  0% { transform:translate(0,0) scale(.8) rotate(-7deg); opacity:0; }
+  14% { opacity:1; }
+  65% { opacity:1; }
+  100% { transform:translate(var(--flight-x),var(--flight-y)) scale(.85) rotate(7deg); opacity:0; }
+}
+.player-roster-target { width:100%; }
+@media (prefers-reduced-motion:reduce) {
+  .card-flight-real {animation:none;display:none;}
+}
