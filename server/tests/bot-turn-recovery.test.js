@@ -54,3 +54,19 @@ test('bot descarta após 7 e espera o descarte obrigatório do humano', async ()
     Math.random=random;
   }
 });
+
+test('bot completa turno normal e devolve a vez ao humano', async () => {
+  const game = makeGame();
+  game.players[1].resources = {brick:0,lumber:0,wool:0,grain:0,ore:0};
+  const random=Math.random;
+  Math.random=()=>.5; // 4+4=8
+  try {
+    await runBotTurn(game, () => {}, {delayMs:0,maxActions:30,autoContinue:false});
+    assert.equal(game.currentPlayerIndex,0);
+    assert.equal(game.turnPhase,'roll');
+    assert.equal(game.__botBusy,false);
+    assert.ok(game.eventLog.some(e => e.message.includes('🎲')));
+  } finally {
+    Math.random=random;
+  }
+});
