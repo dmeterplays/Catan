@@ -229,7 +229,7 @@ function broadcastGameState(gameId) {
     const newRobbery = snapshot.robberyId !== previous.robberyId && game.__publicRobberyEvent;
     if (newRoll) {
       const roll = game.__publicRollEvent;
-      recordEvent(game, `🎲 ${game.players[game.currentPlayerIndex]?.name || 'Jogador'} tirou ${roll.roll.die1} + ${roll.roll.die2} (${roll.roll.total})`);
+      recordEvent(game, `🎲 ${roll.playerName || 'Jogador'} tirou ${roll.roll.die1} + ${roll.roll.die2} (${roll.roll.total})`);
       (roll.gains || []).forEach((gains, index) => {
         const details = formatResources(gains);
         if (details !== 'nenhum recurso')
