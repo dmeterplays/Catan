@@ -413,11 +413,31 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, addNotification]);
 
   const handleAddBot = useCallback(() => {
-    socket.emit('addBot', response => { if (!response.success) addNotification(response.error); });
+    if (!socket?.connected) {
+      addNotification('Sem conexão com o servidor. Verifique se o backend está online.');
+      return;
+    }
+    socket.timeout(5000).emit('addBot', (error, response) => {
+      if (error) {
+        addNotification('O servidor não respondeu ao pedido de adicionar bot. Verifique se o backend foi atualizado.');
+      } else if (!response?.success) {
+        addNotification(response?.error || 'Não foi possível adicionar o bot.');
+      }
+    });
   }, [socket, addNotification]);
 
   const handleRemoveBot = useCallback(() => {
-    socket.emit('removeBot', response => { if (!response.success) addNotification(response.error); });
+    if (!socket?.connected) {
+      addNotification('Sem conexão com o servidor.');
+      return;
+    }
+    socket.timeout(5000).emit('removeBot', (error, response) => {
+      if (error) {
+        addNotification('O servidor não respondeu ao pedido de remover bot.');
+      } else if (!response?.success) {
+        addNotification(response?.error || 'Não foi possível remover o bot.');
+      }
+    });
   }, [socket, addNotification]);
 
   const handleStartGame = useCallback(() => {
