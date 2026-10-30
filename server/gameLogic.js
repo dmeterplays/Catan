@@ -1577,45 +1577,23 @@ export function canPlaceRoad(game, playerId, eKey, isSetup = false, lastSettleme
   // Get vertices at ends of this edge
   const endVertices = getEdgeVertices(eq, er, edir);
   
-  // Check connectivity
+  // Connectivity is evaluated from each endpoint separately. An opponent's
+  // settlement/city blocks extending your network through that vertex,
+  // including when a Road Building card grants a free road.
   let connected = false;
-  
   if (isSetup && lastSettlement) {
-    // Must connect to the last placed settlement
-    // Use areVerticesEqual to handle equivalent vertex keys (same physical position, different hex reference)
     connected = endVertices.some(vKey => areVerticesEqual(vKey, lastSettlement));
-  } else if (game.freeRoads > 0) {
-    // Free road from road building card - must connect to own network
-    connected = endVertices.some(vKey => {
-      // Check if player has a building at this vertex or any equivalent vertex
-      if (hasPlayerBuildingAtVertex(game, vKey, playerIndex)) return true;
-      
-      // Check if player has a road at any adjacent edge (checking all equivalent edges)
-      const vEdges = getVertexEdges(vKey);
-      return vEdges.some(ve => hasPlayerRoadAtEdge(game, ve, playerIndex));
-    });
   } else {
-    // Normal placement - must connect to own building or road
     connected = endVertices.some(vKey => {
-      // Check if player has a building at this vertex or any equivalent vertex
       if (hasPlayerBuildingAtVertex(game, vKey, playerIndex)) return true;
-      
-      // Check if player has a road at any adjacent edge (checking all equivalent edges)
-      // Exclude the edge being placed
-      const vEdges = getVertexEdges(vKey);
-      return vEdges.some(ve => {
-        // Check if this is the same edge we're trying to place (need to check equivalents)
-        const veMatch = ve.match(/e_(-?\d+)_(-?\d+)_(\d+)/);
-        const eKeyMatch = eKey.match(/e_(-?\d+)_(-?\d+)_(\d+)/);
-        if (veMatch && eKeyMatch) {
-          const veEquivs = getEquivalentEdges(parseInt(veMatch[1]), parseInt(veMatch[2]), parseInt(veMatch[3]));
-          const isCurrentEdge = veEquivs.some(eq => 
-            eq.q === parseInt(eKeyMatch[1]) && eq.r === parseInt(eKeyMatch[2]) && eq.dir === parseInt(eKeyMatch[3])
-          );
-          if (isCurrentEdge) return false;
-        }
-        return hasPlayerRoadAtEdge(game, ve, playerIndex);
-      });
+      if (hasOpponentBuildingAtVertex(game, vKey, playerIndex)) return false;
+
+      // Own road on another incident edge supplies continuity.
+      // hasRoadAtEdge above already guarantees the target edge is empty.
+      const adjacent = getVertexEdges(vKey);
+      return adjacent.some(adjacentEdge =>
+        hasPlayerRoadAtEdge(game, adjacentEdge, playerIndex)
+      );
     });
   }
   
