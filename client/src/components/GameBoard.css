@@ -818,3 +818,18 @@
 @media (prefers-reduced-motion:reduce) {
   .card-flight-real {animation:none;display:none;}
 }
+
+
+/* Compact sound control panel. */
+.sound-controls {display:flex;align-items:center;gap:5px;position:relative;margin-left:auto;margin-right:12px;z-index:50}
+.sound-toggle,.sound-options summary {background:#183b53;color:#f3dfba;border:1px solid #b59451;border-radius:6px;padding:6px 9px;font-size:12px;cursor:pointer}
+.sound-toggle[aria-pressed="false"] {opacity:.6}
+.sound-options summary {list-style:none;display:block}
+.sound-options summary::-webkit-details-marker {display:none}
+.sound-settings {position:absolute;top:calc(100% + 8px);right:0;z-index:900;width:235px;padding:12px;background:#162e42;border:1px solid #b59451;border-radius:9px;box-shadow:0 10px 32px #0009;color:#fff;display:flex;flex-direction:column;gap:9px}
+.sound-settings label {font-size:12px}
+.sound-settings input {width:100%;accent-color:#d1aa60}
+.sound-preview {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.sound-preview button {background:#244c63;color:#fff;border:1px solid #64859d;border-radius:5px;padding:6px 4px;font-size:11px;cursor:pointer}
+.sound-preview button:hover {background:#356b86}
+@media(max-width:700px){.sound-toggle{padding:5px;font-size:11px}.sound-controls{margin-right:4px}.sound-settings{right:-40px}.game-header{gap:4px}}
