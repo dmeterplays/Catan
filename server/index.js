@@ -22,6 +22,8 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import * as GameLogic from './gameLogic.js';
+import { runBotTurn, runBotDiscards } from './bots.js';
+import { getLegalActions, executeLegalAction } from './legalActions.js';
 
 // ============================================================================
 // EXPRESS APP SETUP
@@ -150,6 +152,7 @@ function broadcastGameState(gameId) {
     
     if (socketId) {
       const playerView = GameLogic.getPlayerView(game, player.id);
+      playerView.legalActions = getLegalActions(game, player.id);
       io.to(socketId).emit('gameState', playerView);
     }
   });
@@ -175,6 +178,24 @@ function broadcastToGame(gameId, event, data) {
 // ============================================================================
 
 io.on('connection', (socket) => {
+  socket.on('performAction', ({ action } = {}, callback = () => {}) => {
+    const info = playerSockets.get(socket.id);
+    const game = info && games.get(info.gameId);
+    if (!game) return callback({ success: false, error: 'Não está em uma partida.' });
+    const result = executeLegalAction(game, info.playerId, action);
+    if (result.success) {
+      if (action.type === 'placeSettlement') broadcastToGame(info.gameId, 'settlementPlaced', { vertexKey: action.vertexKey, playerId: info.playerId });
+      if (action.type === 'placeRoad') broadcastToGame(info.gameId, 'roadPlaced', { edgeKey: action.edgeKey, playerId: info.playerId });
+      if (action.type === 'upgradeToCity') broadcastToGame(info.gameId, 'cityBuilt', { vertexKey: action.vertexKey, playerId: info.playerId });
+      if (action.type === 'endTurn') broadcastToGame(info.gameId, 'turnEnded', { playerId: info.playerId });
+      if (action.type === 'moveRobber') broadcastToGame(info.gameId, 'robberMoved', { hexKey: action.hexKey, playerId: info.playerId });
+      broadcastGameState(info.gameId);
+      runBotDiscards(game, () => broadcastGameState(info.gameId));
+      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(info.gameId));
+    }
+    callback(result);
+  });
+
   // --------------------------------------------------------------------
   // CONNECTION MANAGEMENT
   // --------------------------------------------------------------------
@@ -230,8 +251,39 @@ io.on('connection', (socket) => {
       success: true, 
       playerId,
       gameCode: gameCode.toUpperCase(),
-      gameState: GameLogic.getPlayerView(game, playerId)
+      gameState: { ...GameLogic.getPlayerView(game, playerId), legalActions: getLegalActions(game, playerId) }
     });
+  });
+
+  /** Host adds a server-controlled bot to a classic-game lobby. */
+  socket.on('addBot', (callback = () => {}) => {
+    const info = playerSockets.get(socket.id);
+    const game = info && games.get(info.gameId);
+    if (!game || game.phase !== 'waiting' || game.players[0].id !== info.playerId)
+      return callback({ success: false, error: 'Somente o anfitrião pode adicionar bots antes da partida.' });
+    if (game.isExtended || game.isCitiesAndKnights)
+      return callback({ success: false, error: 'Bots estão disponíveis inicialmente apenas no Catan clássico.' });
+    if (game.players.length >= game.maxPlayers)
+      return callback({ success: false, error: 'A sala já está cheia.' });
+    const botId = 'bot-' + uuidv4();
+    const result = GameLogic.addPlayer(game, { id: botId, name: 'Bot ' + (game.players.filter(p => p.isBot).length + 1) });
+    if (!result.success) return callback(result);
+    game.players.find(p => p.id === botId).isBot = true;
+    broadcastGameState(info.gameId);
+    callback({ success: true });
+  });
+
+  socket.on('removeBot', (callback = () => {}) => {
+    const info = playerSockets.get(socket.id);
+    const game = info && games.get(info.gameId);
+    if (!game || game.phase !== 'waiting' || game.players[0].id !== info.playerId)
+      return callback({ success: false, error: 'Somente o anfitrião pode remover bots antes da partida.' });
+    const index = game.players.findLastIndex(p => p.isBot);
+    if (index < 0) return callback({ success: false, error: 'Não há bots para remover.' });
+    game.players.splice(index, 1);
+    game.players.forEach((p, i) => { p.color = GameLogic.PLAYER_COLORS[i]; p.turnOrder = null; });
+    broadcastGameState(info.gameId);
+    callback({ success: true });
   });
 
   /** Allow a player to pick their color in the lobby */
@@ -321,6 +373,9 @@ io.on('connection', (socket) => {
         turnOrder: result.turnOrder 
       });
       broadcastGameState(playerInfo.gameId);
+      if (game.players[game.currentPlayerIndex]?.isBot) {
+        runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
+      }
     }
     
     callback(result);
@@ -807,6 +862,7 @@ io.on('connection', (socket) => {
     
     if (result.success) {
       broadcastGameState(playerInfo.gameId);
+      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
     }
     
     callback(result);
@@ -833,6 +889,7 @@ io.on('connection', (socket) => {
         broadcastToGame(playerInfo.gameId, 'turnEnded', { playerId: playerInfo.playerId });
       }
       broadcastGameState(playerInfo.gameId);
+      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
     }
     
     callback(result);

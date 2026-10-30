@@ -29,7 +29,7 @@ function DiscardModal({ socket, player, cardsToDiscard, addNotification }) {
       return;
     }
 
-    socket.emit('discardCards', { resources: selected }, (response) => {
+    socket.emit('performAction', { action: { type: 'discard', resources: selected } }, (response) => {
       if (!response.success) {
         addNotification(response.error);
       }

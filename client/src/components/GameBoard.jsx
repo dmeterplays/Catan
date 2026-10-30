@@ -281,7 +281,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [gameState.winner]);
 
   const handleRollDice = useCallback(() => {
-    socket.emit('rollDice', (response) => {
+    socket.emit('performAction', { action: { type: 'rollDice' } }, (response) => {
       if (!response.success) {
         addNotification(response.error);
       }
@@ -289,7 +289,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, addNotification]);
 
   const handlePlaceSettlement = useCallback((vertexKey) => {
-    socket.emit('placeSettlement', { vertexKey, isSetup }, (response) => {
+    socket.emit('performAction', { action: { type: 'placeSettlement', vertexKey, ...(isSetup ? { setup: true } : {}) } }, (response) => {
       if (response.success) {
         setLastPlacedSettlement(vertexKey);
         if (isSetup) {
@@ -304,15 +304,10 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, isSetup, addNotification]);
 
   const handlePlaceRoad = useCallback((edgeKey) => {
-    socket.emit('placeRoad', { 
-      edgeKey, 
-      isSetup, 
-      lastSettlement: lastPlacedSettlement 
-    }, (response) => {
+    socket.emit('performAction', { action: { type: 'placeRoad', edgeKey, ...(isSetup ? { setup: true } : {}),  } }, (response) => {
       if (response.success) {
         if (isSetup) {
           // Advance setup
-          socket.emit('advanceSetup', () => {});
           setLastPlacedSettlement(null);
         } else if (gameState.freeRoads > 1) {
           // Still have free roads from Road Building card
@@ -327,7 +322,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, isSetup, lastPlacedSettlement, gameState.freeRoads, addNotification]);
 
   const handleUpgradeToCity = useCallback((vertexKey) => {
-    socket.emit('upgradeToCity', { vertexKey }, (response) => {
+    socket.emit('performAction', { action: { type: 'upgradeToCity', vertexKey } }, (response) => {
       if (response.success) {
         setSelectedAction(null);
       } else {
@@ -350,7 +345,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
           setPlayersOnHex(response.players);
         } else {
           // No players to steal from, just move
-          socket.emit('moveRobber', { hexKey, stealFromPlayerId: null }, (res) => {
+          socket.emit('performAction', { action: { type: 'moveRobber', hexKey, stealFromPlayerId: null } }, (res) => {
             if (!res.success) {
               addNotification(res.error);
             }
@@ -361,10 +356,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [gameState.turnPhase, gameState.robber, isMyTurn, socket, addNotification]);
 
   const handleStealFromPlayer = useCallback((stealPlayerId) => {
-    socket.emit('moveRobber', { 
-      hexKey: pendingRobberHex, 
-      stealFromPlayerId: stealPlayerId 
-    }, (response) => {
+    socket.emit('performAction', { action: { type: 'moveRobber', hexKey: pendingRobberHex, stealFromPlayerId: stealPlayerId } }, (response) => {
       if (response.success) {
         setPendingRobberHex(null);
         setPlayersOnHex([]);
@@ -375,7 +367,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, pendingRobberHex, addNotification]);
 
   const handleEndTurn = useCallback(() => {
-    socket.emit('endTurn', (response) => {
+    socket.emit('performAction', { action: { type: 'endTurn' } }, (response) => {
       if (!response.success) {
         addNotification(response.error);
       }
@@ -383,7 +375,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, addNotification]);
 
   const handleBuyDevCard = useCallback(() => {
-    socket.emit('buyDevCard', (response) => {
+    socket.emit('performAction', { action: { type: 'buyDevCard' } }, (response) => {
       if (response.success) {
         setRevealedCard(response.card);
       } else {
@@ -418,6 +410,14 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
     socket.emit('upgradeKnight', { fromLevel }, (response) => {
       if (!response.success) addNotification(response.error);
     });
+  }, [socket, addNotification]);
+
+  const handleAddBot = useCallback(() => {
+    socket.emit('addBot', response => { if (!response.success) addNotification(response.error); });
+  }, [socket, addNotification]);
+
+  const handleRemoveBot = useCallback(() => {
+    socket.emit('removeBot', response => { if (!response.success) addNotification(response.error); });
   }, [socket, addNotification]);
 
   const handleStartGame = useCallback(() => {
@@ -586,6 +586,12 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                 </div>
               </div>
 
+              {isHost && !gameState.isExtended && !gameState.isCitiesAndKnights && (
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                  <button type="button" className="shuffle-btn" onClick={handleAddBot} disabled={gameState.players.length >= (gameState.maxPlayers || 4)}>🤖 Adicionar bot</button>
+                  <button type="button" className="shuffle-btn" onClick={handleRemoveBot} disabled={!gameState.players.some(p => p.isBot)}>Remover bot</button>
+                </div>
+              )}
               {isHost && (
                 <>
                   <button 
@@ -633,6 +639,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             onHexRightClick={showHexInfo}
             lastPlacedSettlement={lastPlacedSettlement}
             freeRoads={gameState.freeRoads}
+            legalActions={gameState.legalActions || []}
           />
           
           {/* Dice display - auto-hides after 5 seconds */}
