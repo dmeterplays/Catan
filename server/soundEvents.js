@@ -1,9 +1,8 @@
 // Public sound triggers are independent of the action-history text.
 // These names correspond to original audio assets in client/public/sounds.
 export function soundEventsForTransition(previous, next) {
-  if (!previous) return next.phase === 'playing' ? ['sail'] : [];
+  if (!previous) return [];
   const events = [];
-  if (previous.phase !== 'playing' && next.phase === 'playing') events.push('sail');
   if (next.rollId && next.rollId !== previous.rollId) {
     events.push(next.rollTotal === 7 ? 'seven' : 'dice');
   }

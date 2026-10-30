@@ -16,13 +16,13 @@ test('gravação dos dados foi incluída como MP3 reproduzível', () => {
   }
 });
 test('novos efeitos WAV possuem cabeçalhos e dados PCM válidos', () => {
-  for (const name of ['seven','milestone','victory']) {
+  for (const name of ['sail','seven','milestone','victory']) {
     const data = readFileSync(asset(name + '.wav'));
     assert.ok(data.length > 10000);
     assert.equal(data.subarray(0,4).toString('ascii'), 'RIFF');
     assert.equal(data.subarray(8,12).toString('ascii'), 'WAVE');
     assert.equal(data.readUInt32LE(40) + 44, data.length);
     const duration = data.readUInt32LE(40) / (data.readUInt32LE(24) * 2);
-    assert.ok(duration < 1.6, `${name} deve ser um efeito curto, não uma fanfarra longa`);
+    assert.ok(duration < (name === 'sail' ? 3 : 1.6), `${name} deve ter duração apropriada`);
   }
 });

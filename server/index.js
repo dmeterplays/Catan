@@ -511,6 +511,12 @@ io.on('connection', (socket) => {
     const result = GameLogic.startGame(game);
     
     if (result.success) {
+      // The departure bell belongs to clicking "Start Game", not to finishing
+      // setup. Emitted exactly once for the successful startGame action.
+      broadcastToGame(playerInfo.gameId, 'gameSound', {
+        sound: 'sail',
+        id: (game.__soundEventId = (game.__soundEventId || 0) + 1)
+      });
       broadcastToGame(playerInfo.gameId, 'gameStarted', { 
         turnOrder: result.turnOrder 
       });

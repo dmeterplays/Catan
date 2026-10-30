@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { soundEventsForTransition } from '../soundEvents.js';
 
 const start = {phase:'setup',winner:null,rollId:0,rollTotal:null,longestRoad:null,largestArmy:null};
-test('começo da partida toca o sino somente uma vez',()=>{
+test('passagem de setup para playing não repete o sino disparado no startGame',()=>{
   const playing={...start,phase:'playing'};
-  assert.deepEqual(soundEventsForTransition(start,playing),['sail']);
+  assert.deepEqual(soundEventsForTransition(start,playing),[]);
   assert.deepEqual(soundEventsForTransition(playing,playing),[]);
 });
 test('rolagem regular e sete produzem sons exclusivos sem duplicação',()=>{
