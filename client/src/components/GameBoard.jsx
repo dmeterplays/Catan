@@ -35,6 +35,10 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const [playersOnHex, setPlayersOnHex] = useState([]);
   const [showChat, setShowChat] = useState(false);
   const [resourceGainNotification, setResourceGainNotification] = useState(null);
+  const [cardFlight, setCardFlight] = useState(null);
+  const flightSequence = useRef(0);
+  const flightTimer = useRef(null);
+  useEffect(() => () => clearTimeout(flightTimer.current), []);
   const [revealedCard, setRevealedCard] = useState(null);
   const [lastTradeOfferId, setLastTradeOfferId] = useState(null);
   const [dismissedTradeId, setDismissedTradeId] = useState(null);
@@ -96,6 +100,9 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         .join(' ');
       
       if (gainsList) {
+        clearTimeout(flightTimer.current);
+        setCardFlight({ id: ++flightSequence.current, icons: gainsList });
+        flightTimer.current = setTimeout(() => setCardFlight(null), 850);
         // Show center popup for your own resources
         setResourceGainNotification({ gains, fromRoll, gainsList });
         setTimeout(() => setResourceGainNotification(null), 4000);
@@ -754,6 +761,11 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         </div>
       </div>
 
+      {cardFlight && (
+        <div key={cardFlight.id} className="card-flight" aria-hidden="true">
+          <span className="card-flight-card">{cardFlight.icons}</span>
+        </div>
+      )}
       {/* Bottom - My Resources */}
       <div className="my-resources-bar">
         <ResourceCards 
