@@ -22,7 +22,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import * as GameLogic from './gameLogic.js';
-import { runBotTurn } from './bots.js';
+import { runBotTurn, runBotDiscards } from './bots.js';
 import { getLegalActions, executeLegalAction } from './legalActions.js';
 
 // ============================================================================
@@ -190,6 +190,7 @@ io.on('connection', (socket) => {
       if (action.type === 'endTurn') broadcastToGame(info.gameId, 'turnEnded', { playerId: info.playerId });
       if (action.type === 'moveRobber') broadcastToGame(info.gameId, 'robberMoved', { hexKey: action.hexKey, playerId: info.playerId });
       broadcastGameState(info.gameId);
+      runBotDiscards(game, () => broadcastGameState(info.gameId));
       if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(info.gameId));
     }
     callback(result);
