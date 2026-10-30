@@ -256,3 +256,14 @@
 .left-sidebar .player-road-length { padding: 1px 2px; font-size: 10px; }
 .left-sidebar .player-achievements { margin-top: 2px; }
 .left-sidebar .player-panel.current-turn { border-color: #f1bc4d; box-shadow: inset 3px 0 #f1bc4d, 0 0 8px #f1bc4d55; }
+
+
+/* More balanced compact rows in the player sidebar. */
+.left-sidebar .player-panel { padding: 5px 7px; }
+.left-sidebar .player-header { margin-bottom: 2px; }
+.left-sidebar .player-stats { display: inline-flex; gap: 9px; padding: 2px 4px; margin-bottom: 0; background: transparent; }
+.left-sidebar .player-pieces { display: inline-flex; gap: 7px; padding: 2px 4px; vertical-align: middle; }
+.left-sidebar .player-road-length { display: inline-flex; border: 0; padding: 2px 4px; vertical-align: middle; }
+.left-sidebar .player-achievements { flex-direction: row; flex-wrap: wrap; }
+.left-sidebar .player-name { font-size: 12px; }
+.left-sidebar .player-panel .stat-icon, .left-sidebar .player-panel .piece-icon { font-size: 12px; }
