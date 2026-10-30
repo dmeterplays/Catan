@@ -4,7 +4,7 @@ const RESOURCES = ['brick', 'lumber', 'wool', 'grain', 'ore'];
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 function scoreVertex(game, key) {
-  const adjacent = Game.getVertexAdjacentHexes(key, game.hexes);
+  const adjacent = Game.getVertexAdjacentHexes(game, key);
   let score = 0;
   const seen = new Set();
   for (const hex of adjacent) {
@@ -30,7 +30,6 @@ function chooseSetupRoad(game, playerId, settlement) {
   return Object.keys(game.edges)
     .filter(key => Game.canPlaceRoad(game, playerId, key, true, settlement).valid)
     .map(key => {
-      const ends = Game.getVertexEdges; // keep selection deterministic enough; validity is authoritative
       return { key, score: Math.random() };
     })
     .sort((a, b) => b.score - a.score)[0]?.key;
