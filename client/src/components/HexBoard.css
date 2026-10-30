@@ -166,3 +166,10 @@
 }
 
 
+
+
+@keyframes catanPiecePop { from { opacity: .25; filter: brightness(2); } 65% { opacity: 1; filter: brightness(1.7); } to { opacity: 1; filter: brightness(1); } }
+@keyframes catanRoadDraw { from { opacity: .2; stroke-dasharray: 0 1000; } to { opacity: 1; stroke-dasharray: 1000 0; } }
+.piece-building-appear { animation: catanPiecePop .65s ease-out; }
+.piece-road-appear line { animation: catanRoadDraw .7s ease-out; }
+@media (prefers-reduced-motion: reduce) { .piece-building-appear, .piece-road-appear line { animation: none; } }
