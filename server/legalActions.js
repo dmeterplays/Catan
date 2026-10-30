@@ -7,7 +7,7 @@ export function getLegalActions(game, playerId) {
   const index = game.players.findIndex(p => p.id === playerId);
   if (index < 0 || ['waiting', 'finished'].includes(game.phase)) return [];
   const player = game.players[index];
-  if (game.players[game.currentPlayerIndex]?.id !== playerId) return [];
+  if (game.players[game.currentPlayerIndex]?.id !== playerId && !(game.turnPhase === 'discard' && game.discardingPlayers?.some(p => p.playerIndex === index))) return [];
   const actions = [];
   const add = (type, data = {}) => actions.push({ type, ...data });
 
