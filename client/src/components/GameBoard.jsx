@@ -289,7 +289,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, addNotification]);
 
   const handlePlaceSettlement = useCallback((vertexKey) => {
-    socket.emit('performAction', { action: { type: 'placeSettlement', vertexKey, setup: isSetup } }, (response) => {
+    socket.emit('performAction', { action: { type: 'placeSettlement', vertexKey, ...(isSetup ? { setup: true } : {}) } }, (response) => {
       if (response.success) {
         setLastPlacedSettlement(vertexKey);
         if (isSetup) {
@@ -304,7 +304,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [socket, isSetup, addNotification]);
 
   const handlePlaceRoad = useCallback((edgeKey) => {
-    socket.emit('performAction', { action: { type: 'placeRoad', edgeKey, setup: isSetup,  } }, (response) => {
+    socket.emit('performAction', { action: { type: 'placeRoad', edgeKey, ...(isSetup ? { setup: true } : {}),  } }, (response) => {
       if (response.success) {
         if (isSetup) {
           // Advance setup
