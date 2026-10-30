@@ -141,11 +141,81 @@ function generateGameCode() {
   return code;
 }
 
+// Timer and public action history are authoritative on the server.
+function recordEvent(game, message) {
+  game.eventLog ||= [];
+  game.eventLog.push({ id: (game.__eventSeq = (game.__eventSeq || 0) + 1), at: Date.now(), message });
+  if (game.eventLog.length > 100) game.eventLog.shift();
+}
+function syncTurnTimer(game) {
+  if (!game.turnTimeLimit || game.phase !== 'playing') {
+    game.turnDeadline = null;
+    game.__timerOwner = null;
+    return;
+  }
+  const owner = game.players[game.currentPlayerIndex]?.id;
+  if (owner !== game.__timerOwner) {
+    game.__timerOwner = owner;
+    game.turnDeadline = Date.now() + game.turnTimeLimit * 1000;
+  }
+}
+setInterval(() => {
+  for (const [gameId, game] of games) {
+    syncTurnTimer(game);
+    if (!game.turnDeadline || Date.now() < game.turnDeadline || game.__botBusy || game.__timerExpiring) continue;
+    game.__timerExpiring = true;
+    try {
+      const player = game.players[game.currentPlayerIndex];
+      if (!player || player.isBot) continue;
+      if (game.turnPhase === 'roll') {
+        const roll = GameLogic.rollDice(game, player.id);
+        if (roll.success) recordEvent(game, `⏱️ ${player.name}: dados lançados automaticamente`);
+      }
+      if (game.turnPhase === 'main') {
+        game.tradeOffer = null;
+        const result = GameLogic.endTurn(game, player.id);
+        if (result.success) recordEvent(game, `⏱️ Tempo esgotado: turno de ${player.name} encerrado`);
+      }
+      // Discards, robber and special-build phases require separate resolution; keep
+      // the game playable rather than forcing an invalid endTurn.
+      if (game.players[game.currentPlayerIndex]?.id === player.id) {
+        game.turnDeadline = Date.now() + 30000;
+      }
+      broadcastGameState(gameId);
+      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(gameId));
+    } finally { game.__timerExpiring = false; }
+  }
+}, 1000);
+
 /** Send player-specific game state to each player in a game */
 function broadcastGameState(gameId) {
   const game = games.get(gameId);
   if (!game) return;
+  const snapshot = {
+    buildings: Object.fromEntries(Object.entries(game.vertices || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null && v.building).map(([k,v]) => [k, `${v.owner}:${v.building}`])),
+    roads: Object.fromEntries(Object.entries(game.edges || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null).map(([k,v]) => [k, v.owner])),
+    player: game.currentPlayerIndex,
+    dice: JSON.stringify(game.diceRoll || null)
+  };
+  const previous = game.__publicSnapshot;
+  if (previous) {
+    for (const [key, value] of Object.entries(snapshot.buildings)) {
+      if (previous.buildings[key] !== value) {
+        const [owner, building] = value.split(':');
+        recordEvent(game, `🏠 ${game.players[Number(owner)]?.name || 'Jogador'} construiu ${building === 'city' ? 'uma cidade' : 'uma aldeia'}`);
+      }
+    }
+    for (const [key, owner] of Object.entries(snapshot.roads)) {
+      if (previous.roads[key] !== owner) recordEvent(game, `🛤️ ${game.players[owner]?.name || 'Jogador'} construiu uma estrada`);
+    }
+    if (snapshot.player !== previous.player && game.phase === 'playing')
+      recordEvent(game, `▶️ Vez de ${game.players[snapshot.player]?.name || 'Jogador'}`);
+    if (snapshot.dice !== previous.dice && game.diceRoll?.dice1 && game.diceRoll?.dice2)
+      recordEvent(game, `🎲 Dados: ${game.diceRoll.dice1} + ${game.diceRoll.dice2}`);
+  }
+  game.__publicSnapshot = snapshot;
   
+  syncTurnTimer(game);
   game.players.forEach(player => {
     const socketId = [...playerSockets.entries()]
       .find(([_, v]) => v.gameId === gameId && v.playerId === player.id)?.[0];
@@ -153,6 +223,7 @@ function broadcastGameState(gameId) {
     if (socketId) {
       const playerView = GameLogic.getPlayerView(game, player.id);
       playerView.legalActions = getLegalActions(game, player.id);
+      playerView.eventLog = game.eventLog || [];
       io.to(socketId).emit('gameState', playerView);
     }
   });
@@ -220,7 +291,7 @@ io.on('connection', (socket) => {
   // --------------------------------------------------------------------
   
   /** Create a new game room as the host */
-  socket.on('createGame', ({ playerName, isExtended = false, enableSpecialBuild = true, mapType = 'random', autoSetup = false, isCitiesAndKnights = false }, callback) => {
+  socket.on('createGame', ({ playerName, isExtended = false, enableSpecialBuild = true, mapType = 'random', autoSetup = false, isCitiesAndKnights = false, turnTimeLimit = 120 }, callback) => {
     // Check game limit
     if (games.size >= MAX_CONCURRENT_GAMES) {
       callback({ 
@@ -238,6 +309,8 @@ io.on('connection', (socket) => {
       name: playerName
     }, isExtended, enableSpecialBuild, mapType, autoSetup, isCitiesAndKnights);
     
+    game.turnTimeLimit = [0, 60, 120, 180, 300].includes(Number(turnTimeLimit)) ? Number(turnTimeLimit) : 120;
+    game.eventLog = [];
     // Add timestamp for cleanup
     game.createdAt = Date.now();
     

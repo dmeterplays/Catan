@@ -13,6 +13,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
   const [enableSpecialBuild, setEnableSpecialBuild] = useState(true);
   const [mapType, setMapType] = useState('random');
   const [autoSetup, setAutoSetup] = useState(false);
+  const [turnTimeLimit, setTurnTimeLimit] = useState(120);
   const [isCitiesAndKnights, setIsCitiesAndKnights] = useState(false);
 
   const handleSaveSettings = () => {
@@ -30,7 +31,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
     }
     
     if (mode === 'create') {
-      onCreateGame(playerName.trim(), isExtended, enableSpecialBuild, mapType, autoSetup, isCitiesAndKnights);
+      onCreateGame(playerName.trim(), isExtended, enableSpecialBuild, mapType, autoSetup, isCitiesAndKnights, turnTimeLimit);
     } else if (mode === 'join') {
       if (!gameCode.trim()) {
         setError('Digite o código da partida');
@@ -203,6 +204,17 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                   </div>
                 </div>
 
+                <div className="form-group">
+                  <label htmlFor="turnTimeLimit">⏱️ Tempo por turno</label>
+                  <select id="turnTimeLimit" value={turnTimeLimit} onChange={e => setTurnTimeLimit(Number(e.target.value))}>
+                    <option value={0}>Sem limite</option>
+                    <option value={60}>1 minuto</option>
+                    <option value={120}>2 minutos (padrão)</option>
+                    <option value={180}>3 minutos</option>
+                    <option value={300}>5 minutos</option>
+                  </select>
+                  <small>Ao esgotar, o servidor encerra o turno automaticamente quando possível.</small>
+                </div>
                 {/* Auto Setup Toggle */}
                 <div className="form-group special-build-option" style={{ marginTop: '1rem' }}>
                   <label className="checkbox-label">

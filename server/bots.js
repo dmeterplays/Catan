@@ -62,7 +62,11 @@ function chooseAction(game, player, options) {
     const offer = game.tradeOffer;
     const offered = RESOURCES.reduce((n, resource) => n + (offer.offer?.[resource] || 0), 0);
     const requested = RESOURCES.reduce((n, resource) => n + (offer.request?.[resource] || 0), 0);
-    const accept = offered >= requested && options.some(a => a.type === 'respondToTrade' && a.accept);
+    const useful = RESOURCES.reduce((n, resource) => {
+      const held = player.resources?.[resource] || 0;
+      return n + (offer.offer?.[resource] || 0) * (held < 2 ? 2 : 0.5) - (offer.request?.[resource] || 0) * (held <= 2 ? 2 : 1);
+    }, 0);
+    const accept = offered > 0 && requested > 0 && useful >= 1 && options.some(a => a.type === 'respondToTrade' && a.accept);
     return { type: 'respondToTrade', accept };
   }
   const sorted = [...options].sort((a, b) => rank(b) - rank(a));
@@ -87,10 +91,14 @@ export async function runBotTurn(game, broadcast) {
       const options = getLegalActions(game, player.id);
       const action = chooseAction(game, player, options);
       if (!action) break;
-      if (action.type === 'bankTrade' && (game.__botBankTrades || 0) >= 1) break;
+      if (action.type === 'bankTrade' && (game.__botBankTrades || 0) >= 1) { game.__botBankTrades = 0; continue; }
       const result = executeLegalAction(game, player.id, action);
       if (!result.success) {
         console.warn('Bot action rejected:', action.type, result.error);
+        if (action.type !== 'endTurn' && options.some(a => a.type === 'endTurn')) {
+          executeLegalAction(game, player.id, { type: 'endTurn' });
+          broadcast();
+        }
         break;
       }
       if (action.type === 'bankTrade') game.__botBankTrades = (game.__botBankTrades || 0) + 1;
