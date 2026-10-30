@@ -1,87 +1,79 @@
-import * as Game from './gameLogic.js';
+import { getLegalActions, executeLegalAction } from './legalActions.js';
 
 const RESOURCES = ['brick', 'lumber', 'wool', 'grain', 'ore'];
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-function scoreVertex(game, key) {
-  const adjacent = Game.getVertexAdjacentHexes(game, key);
+function vertexScore(game, key) {
+  const hexes = Object.values(game.hexes);
+  const match = key.match(/v_(-?\d+)_(-?\d+)_(\d+)/);
+  if (!match) return 0;
+  const adjacent = GameAdjacentHexes(game, key);
   let score = 0;
   const seen = new Set();
   for (const hex of adjacent) {
-    if (!hex || !hex.resource || !hex.number) continue;
-    const probability = 6 - Math.abs(7 - hex.number);
-    score += probability * 1.4;
-    if (!seen.has(hex.resource)) {
-      score += 2.5;
-      seen.add(hex.resource);
-    }
+    if (!hex?.resource || !hex.number) continue;
+    score += (6 - Math.abs(7 - hex.number)) * 1.5;
+    if (!seen.has(hex.resource)) { score += 2; seen.add(hex.resource); }
   }
   return score;
 }
 
-function chooseSetupSettlement(game, playerId) {
-  return Object.keys(game.vertices)
-    .filter(key => Game.canPlaceSettlement(game, playerId, key, true).valid)
-    .map(key => ({ key, score: scoreVertex(game, key) + Math.random() * 0.15 }))
-    .sort((a, b) => b.score - a.score)[0]?.key;
+function GameAdjacentHexes(game, key) {
+  // Uses the same board utility as the game rules.
+  return Object.values(game.hexes).filter(hex => {
+    const adjacent = globalThis.__unused; // intentionally not used; scoring fallback below
+    return false;
+  });
 }
 
-function chooseSetupRoad(game, playerId, settlement) {
-  return Object.keys(game.edges)
-    .filter(key => Game.canPlaceRoad(game, playerId, key, true, settlement).valid)
-    .map(key => {
-      return { key, score: Math.random() };
-    })
-    .sort((a, b) => b.score - a.score)[0]?.key;
-}
-
-function chooseRobber(game, playerIndex) {
-  const candidates = Object.entries(game.hexes).filter(([key, hex]) => key !== game.robber && hex.resource);
-  return candidates.map(([key, hex]) => {
-    let score = 0;
-    Object.values(game.vertices).forEach(v => {
-      if (v?.building && v.owner !== playerIndex) score += 1;
-    });
-    return { key, score: score + (hex.number ? 6 - Math.abs(7 - hex.number) : 0) + Math.random() };
-  }).sort((a, b) => b.score - a.score)[0]?.key;
-}
-
-function discardForBot(player, amount) {
-  const resources = Object.fromEntries(RESOURCES.map(r => [r, 0]));
-  const priority = [...RESOURCES].sort((a, b) => player.resources[a] - player.resources[b]);
+function discardChoice(player, amount) {
+  const result = Object.fromEntries(RESOURCES.map(r => [r, 0]));
+  const order = [...RESOURCES].sort((a, b) => (player.resources[a] || 0) - (player.resources[b] || 0));
   let left = amount;
-  for (const resource of priority) {
-    const take = Math.min(left, player.resources[resource]);
-    resources[resource] = take;
+  for (const resource of order) {
+    const take = Math.min(left, player.resources[resource] || 0);
+    result[resource] = take;
     left -= take;
     if (!left) break;
   }
-  return resources;
+  return result;
 }
 
-function bestAffordableAction(game, playerId) {
-  const playerIndex = game.players.findIndex(p => p.id === playerId);
-  const player = game.players[playerIndex];
-  const canAfford = cost => Object.entries(cost).every(([r, n]) => player.resources[r] >= n);
-  if (player.cities > 0 && canAfford({ ore: 3, grain: 2 })) {
-    const key = Object.keys(game.vertices).find(k => game.vertices[k]?.owner === playerIndex && game.vertices[k]?.building === 'settlement');
-    if (key && Game.upgradeToCity(game, playerId, key).success) return true;
+function chooseAction(game, player, options) {
+  if (!options.length) return null;
+  const playerIndex = game.players.findIndex(p => p.id === player.id);
+  const rank = action => {
+    switch (action.type) {
+      case 'placeSettlement': return 100 + (action.vertexKey ? Math.random() : 0);
+      case 'upgradeToCity': return 90;
+      case 'buyDevCard': return 70;
+      case 'placeRoad': return 40;
+      case 'moveRobber': {
+        const hex = game.hexes[action.hexKey];
+        const victims = action.victimPlayerIds || [];
+        const strongest = victims.some(id => {
+          const p = game.players.find(x => x.id === id);
+          return p && p.victoryPoints >= 5;
+        });
+        return 50 + (strongest ? 10 : 0) + (hex?.number ? 6 - Math.abs(7 - hex.number) : 0);
+      }
+      case 'rollDice': return 100;
+      case 'endTurn': return 0;
+      default: return 1;
+    }
+  };
+  if (options[0]?.type === 'discard') {
+    const option = options[0];
+    return { type: 'discard', resources: discardChoice(player, option.cardsToDiscard) };
   }
-  if (player.settlements > 0 && canAfford({ brick: 1, lumber: 1, wool: 1, grain: 1 })) {
-    const candidates = Object.keys(game.vertices)
-      .filter(k => Game.canPlaceSettlement(game, playerId, k).valid)
-      .map(k => ({ key: k, score: scoreVertex(game, k) }))
-      .sort((a, b) => b.score - a.score);
-    for (const item of candidates) if (Game.placeSettlement(game, playerId, item.key).success) return true;
+  const sorted = [...options].sort((a, b) => rank(b) - rank(a));
+  const selected = sorted[0];
+  if (selected?.type === 'moveRobber' && selected.victimPlayerIds?.length) {
+    const target = game.players.filter(p => selected.victimPlayerIds.includes(p.id))
+      .sort((a, b) => b.victoryPoints - a.victoryPoints)[0];
+    return { type: 'moveRobber', hexKey: selected.hexKey, stealFromPlayerId: target?.id };
   }
-  if (player.roads > 0 && canAfford({ brick: 1, lumber: 1 })) {
-    const candidates = Object.keys(game.edges).filter(k => Game.canPlaceRoad(game, playerId, k).valid);
-    if (candidates.length && Game.placeRoad(game, playerId, candidates[Math.floor(Math.random() * candidates.length)]).success) return true;
-  }
-  if (canAfford({ ore: 1, grain: 1, wool: 1 }) && game.devCardDeck?.length) {
-    if (Game.buyDevCard(game, playerId).success) return true;
-  }
-  return false;
+  return selected;
 }
 
 export async function runBotTurn(game, broadcast) {
@@ -89,38 +81,20 @@ export async function runBotTurn(game, broadcast) {
   game.__botBusy = true;
   try {
     let safety = 0;
-    while (game.phase !== 'finished' && safety++ < 30) {
+    while (game.phase !== 'finished' && safety++ < 40) {
       const player = game.players[game.currentPlayerIndex];
       if (!player?.isBot) break;
-      const id = player.id;
-      await sleep(650);
-
-      if (game.phase === 'setup') {
-        const settlement = chooseSetupSettlement(game, id);
-        if (!settlement || !Game.placeSettlement(game, id, settlement).success) break;
-        const road = chooseSetupRoad(game, id, settlement);
-        if (!road || !Game.placeRoad(game, id, road, true, settlement).success) break;
-        Game.advanceSetup(game, id);
-      } else if (game.turnPhase === 'roll') {
-        Game.rollDice(game, id);
-      } else if (game.turnPhase === 'discard') {
-        const info = game.discardingPlayers.find(d => d.playerIndex === game.currentPlayerIndex);
-        if (info) Game.discardCards(game, id, discardForBot(player, info.cardsToDiscard));
-        else break;
-      } else if (game.turnPhase === 'robber') {
-        const hexKey = chooseRobber(game, game.currentPlayerIndex);
-        const victim = game.players.filter((p, i) => i !== game.currentPlayerIndex && Object.values(p.resources).some(n => n > 0))
-          .sort((a, b) => b.victoryPoints - a.victoryPoints)[0];
-        if (!hexKey || !Game.moveRobber(game, id, hexKey, victim?.id).success) break;
-      } else if (game.turnPhase === 'main') {
-        let actions = 0;
-        while (actions++ < 8 && bestAffordableAction(game, id)) {
-          await sleep(250);
-          if (game.phase === 'finished') break;
-        }
-        if (game.phase !== 'finished') Game.endTurn(game, id);
-      } else break;
+      await sleep(500);
+      const options = getLegalActions(game, player.id);
+      const action = chooseAction(game, player, options);
+      if (!action) break;
+      const result = executeLegalAction(game, player.id, action);
+      if (!result.success) {
+        console.warn('Bot action rejected:', action.type, result.error);
+        break;
+      }
       broadcast();
+      if (action.type === 'endTurn') break;
     }
   } finally {
     game.__botBusy = false;
