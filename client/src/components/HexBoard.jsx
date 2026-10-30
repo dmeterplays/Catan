@@ -132,7 +132,8 @@ function HexBoard({
   onHexClick,
   onHexRightClick,
   lastPlacedSettlement,
-  freeRoads
+  freeRoads,
+  legalActions = []
 }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -228,7 +229,7 @@ function HexBoard({
   const canPlaceAtVertex = (vKey) => {
     if (gamePhase === 'setup') {
       if (!isMyTurn) return false;
-      if (selectedAction === 'settlement') return true;
+      if (selectedAction === 'settlement') return legalActions.some(a => a.type === 'placeSettlement' && a.vertexKey === vKey);
     }
     if (gamePhase === 'playing') {
       if (!canBuildNow) return false;
@@ -244,14 +245,14 @@ function HexBoard({
     if (turnPhase !== 'main' && turnPhase !== 'specialBuild') return false;
     if (selectedAction !== 'city') return false;
     if (vertex.building !== 'settlement' || vertex.owner !== myIndex) return false;
-    return true;
+    return legalActions.some(a => a.type === 'upgradeToCity' && a.vertexKey === vKey);
   };
 
   // Check if edge can be placed
-  const canPlaceAtEdge = () => {
+  const canPlaceAtEdge = (edgeKey) => {
     if (gamePhase === 'setup') {
       if (!isMyTurn) return false;
-      if (selectedAction === 'road') return true;
+      if (selectedAction === 'road') return legalActions.some(a => a.type === 'placeRoad' && a.edgeKey === edgeKey);
     }
     if (gamePhase === 'playing') {
       if (!canBuildNow) return false;
@@ -415,7 +416,7 @@ function HexBoard({
     return [...edgeMap.values()].filter((edge) => edge.count === 1);
   }, [hexes]);
 
-  const showEdgePlaceholders = canPlaceAtEdge();
+  const showEdgePlaceholders = canPlaceAtEdge(edge.key);
 
   return (
     <div className="hex-board-shell">
