@@ -416,7 +416,7 @@ function HexBoard({
     return [...edgeMap.values()].filter((edge) => edge.count === 1);
   }, [hexes]);
 
-  const showEdgePlaceholders = canPlaceAtEdge();
+
 
   return (
     <div className="hex-board-shell">
@@ -509,7 +509,7 @@ function HexBoard({
             <g 
               key={key} 
               className={`hex ${canClickHex ? 'clickable' : ''} ${isRobberHere ? 'has-robber' : ''}`}
-              onClick={() => canClickHex && onHexClick(key)}
+              onClick={() => canClickHex && legalActions.some(a => a.type === 'moveRobber' && a.hexKey === key) && onHexClick(key)}
               onContextMenu={(e) => onHexRightClick && onHexRightClick(e, hex)}
               style={{ cursor: 'context-menu' }}
             >
