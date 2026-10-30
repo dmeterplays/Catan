@@ -39,7 +39,8 @@ export function playGameAudio(name, volume = .45) {
     }
     sound.addEventListener('ended', () => { sound.removeAttribute('src'); sound.load(); }, {once:true});
   };
-  playOnce();
+  // Dice recording was quieter than the other effects; give it a modest boost.
+  playOnce(name === 'dice' ? 1.3 : 1);
   // A pair of handbell chimes evokes a ship's departure rather than a church alarm.
   if (name === 'sail') setTimeout(() => playOnce(.83), 860);
 }
