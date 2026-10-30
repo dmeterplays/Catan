@@ -139,6 +139,25 @@ function HexBoard({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragState, setDragState] = useState(null);
   const dragMoved = useRef(false);
+  const previousPieces = useRef(null);
+  const [newPieces, setNewPieces] = useState({ roads: [], buildings: [] });
+  useEffect(() => {
+    const current = {
+      roads: Object.entries(edges).filter(([, e]) => e.road).map(([key]) => key),
+      buildings: Object.entries(vertices).filter(([, v]) => v.building).map(([key, v]) => key + ':' + v.building)
+    };
+    if (previousPieces.current) {
+      const previous = previousPieces.current;
+      setNewPieces({
+        roads: current.roads.filter(key => !previous.roads.includes(key)),
+        buildings: current.buildings.filter(key => !previous.buildings.includes(key))
+      });
+      const timeout = setTimeout(() => setNewPieces({ roads: [], buildings: [] }), 750);
+      previousPieces.current = current;
+      return () => clearTimeout(timeout);
+    }
+    previousPieces.current = current;
+  }, [edges, vertices]);
 
   // Calculate board bounds
   const bounds = useMemo(() => {
@@ -616,7 +635,7 @@ function HexBoard({
 
         {/* Roads - rendered separately from clickable areas */}
         {roads.map(({ key, owner, v1, v2 }) => (
-          <g key={`road-${key}`}>
+          <g key={`road-${key}`} className={newPieces.roads.includes(key) ? "piece-road-appear" : ""}>
             {/* Black outline behind the road for visibility */}
             <line
               x1={v1.x}
@@ -646,7 +665,7 @@ function HexBoard({
           const canUpgrade = canUpgradeVertex(key, vertex);
           
           return (
-            <g key={key} className="vertex-group">
+            <g key={key} className={`vertex-group ${newPieces.buildings.includes(key + ":" + vertex.building) ? "piece-building-appear" : ""}`}>
               {/* Settlement */}
               {vertex.building === 'settlement' && (
                 <g 
