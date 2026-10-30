@@ -34,7 +34,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const [showDevCardModal, setShowDevCardModal] = useState(false);
   const [pendingRobberHex, setPendingRobberHex] = useState(null);
   const [playersOnHex, setPlayersOnHex] = useState([]);
-  const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(true);
   const [resourceGainNotification, setResourceGainNotification] = useState(null);
   const [cardFlight, setCardFlight] = useState(null);
   const flightSequence = useRef(0);
@@ -628,7 +628,12 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
               {!gameState.eventLog?.length && <div className="activity-feed-empty">As jogadas aparecerão aqui.</div>}
             </div>
           </section>
-          <button 
+          {showChat && (
+            <div className="embedded-chat">
+              <Chat messages={chatMessages} onSend={handleSendChat} onClose={() => setShowChat(false)} />
+            </div>
+          )}
+          <button
             className="chat-toggle"
             onClick={() => setShowChat(!showChat)}
           >
@@ -961,15 +966,6 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             Você recebeu: {resourceGainNotification.gainsList}
           </div>
         </div>
-      )}
-
-      {/* Chat panel */}
-      {showChat && (
-        <Chat 
-          messages={chatMessages}
-          onSend={handleSendChat}
-          onClose={() => setShowChat(false)}
-        />
       )}
 
       {/* Info Popup for right-click help */}
