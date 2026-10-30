@@ -1,5 +1,6 @@
 name: Testar bots
 on:
+  workflow_dispatch:
   push:
     branches: [feature/catan-bots]
   pull_request:
@@ -18,6 +19,8 @@ jobs:
           node --check server/gameLogic.js
           node --check server/legalActions.js
           node --check server/bots.js
+      - name: Executar testes dos bots
+        run: node --test server/tests/*.test.js
       - name: Instalar e compilar frontend
         working-directory: client
         run: |
