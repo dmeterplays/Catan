@@ -26,6 +26,9 @@ for (const count of [5,8]) {
     for(let i=1;i<count;i++) {
       const builder='p'+i;
       assert.equal(game.specialBuildIndex,i);
+      // A road needs an existing network; give the acting player a valid
+      // settlement so we test special-build authorization, not connectivity.
+      game.vertices['v_0_0_1']={building:'settlement',owner:i};
       const actions=getLegalActions(game,builder);
       assert.ok(actions.some(a=>a.type==='buyDevCard'),'construtor deve poder comprar desenvolvimento');
       assert.ok(actions.some(a=>a.type==='placeRoad'),'construtor deve poder construir estrada');
