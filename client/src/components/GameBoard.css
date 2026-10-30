@@ -737,3 +737,64 @@
 .card-flight-card { display: block; padding: 12px 17px; background: #e9d5a7; color: #36210c; border: 2px solid #a17a36; border-radius: 8px; font-weight: bold; box-shadow: 0 6px 20px #0007; animation: catanCardToHand .8s ease-in forwards; }
 @keyframes catanCardToHand { 0% { opacity: .2; transform: translate(0,0) scale(.6); } 25% { opacity: 1; } 100% { opacity: .15; transform: translate(0,65vh) scale(.85); } }
 @media (prefers-reduced-motion: reduce) { .card-flight-card { animation: none; } }
+
+
+/* 2026 layout: large board, right information rail and bottom command dock. */
+.game-board { background: linear-gradient(145deg,#123f62,#0e2840); }
+.game-header { padding: 5px 12px; min-height: 42px; border-bottom-width: 2px; }
+.game-header .status-message { font-size: 12px; }
+.game-header .current-player-badge { padding: 3px 10px; font-size: 13px; }
+.game-main { display: grid; grid-template-columns: minmax(0,1fr) minmax(295px,330px); gap: 5px; padding: 5px; min-height: 0; }
+.game-main .board-container { grid-column: 1; min-width: 0; padding: 0; overflow: hidden; }
+.game-main > .right-sidebar { grid-column: 2; width: 100%; box-sizing: border-box; padding: 5px; gap: 5px; overflow: hidden; background: rgba(17,34,48,.9); }
+.right-sidebar::before { display: none; }
+.right-sidebar .activity-feed { flex: 1 1 24%; min-height: 90px; max-height: 30%; }
+.right-sidebar .activity-feed-items { padding: 4px 7px; }
+.right-sidebar .embedded-chat { display:flex; flex: 0 1 120px; min-height: 76px; }
+.right-sidebar .embedded-chat .chat-panel { position: static; bottom:auto;right:auto;width:100%;height:100%;max-height:none;box-shadow:none;animation:none;border-radius:6px;background:rgba(15,31,46,.86); }
+.right-sidebar .embedded-chat .chat-header { padding:4px 9px; }
+.right-sidebar .embedded-chat .chat-header h3 { font-size:12px; }
+.right-sidebar .embedded-chat .chat-messages { min-height:0; max-height:none;flex:1;padding:5px 8px;font-size:12px; }
+.right-sidebar .embedded-chat .chat-input { padding:4px;gap:4px; }
+.right-sidebar .embedded-chat .chat-input input { min-width:0;padding:5px;font-size:12px; }
+.right-sidebar .embedded-chat .chat-input button { padding:5px;font-size:11px; }
+.right-sidebar .chat-toggle { padding:4px;margin:0;font-size:11px;flex:0 0 auto; }
+.right-sidebar .roster-panel { min-height:0; flex:1 1 40%; overflow-y:auto; padding:5px; background:rgba(20,32,43,.9);border:1px solid #78582d;border-radius:7px; }
+.right-sidebar .roster-panel > h3 { margin:5px 0; font-size:12px; }
+.right-sidebar .roster-panel .bank-summary { padding:5px; }
+.right-sidebar .roster-panel .bank-resources { grid-template-columns:repeat(6,minmax(0,1fr));gap:1px; }
+.right-sidebar .roster-panel .bank-resource { padding:2px 0;background:transparent;border:0; }
+.right-sidebar .roster-panel .player-panel { padding:4px 6px; margin-bottom:4px; flex-shrink:0; display:flex;flex-direction:column;gap:2px; }
+.right-sidebar .roster-panel .player-panel::before {display:none;}
+.right-sidebar .roster-panel .player-header { margin:0;min-height:20px; }
+.right-sidebar .roster-panel .player-stats { padding:2px 5px;margin:0;display:flex;justify-content:space-around; }
+.right-sidebar .roster-panel .player-pieces,.right-sidebar .roster-panel .player-road-length { display:none; }
+.right-sidebar .roster-panel .player-achievements {margin:0;}
+.command-dock { display:flex;align-items:center;justify-content:space-between;gap:9px;padding:5px 9px;min-height:81px;flex:0 0 auto;background:#173e59;border-top:2px solid #9c743a;z-index:25; }
+.turn-clock-dock { display:flex; flex-direction:column;align-items:center;gap:3px;min-width:104px;color:#fff;font-size:12px; }
+.turn-clock-player { border-left:4px solid;max-width:116px;padding:3px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.turn-clock-dock strong {font-size:19px;font-variant-numeric:tabular-nums;}
+.turn-clock-dock .clock-urgent { color:#ff7474; }
+.command-actions {display:flex;justify-content:center;align-items:center;min-width:0;flex:1;}
+.command-actions .action-panel {background:none;border:0;box-shadow:none;padding:0;animation:none;gap:4px;justify-content:center;}
+.command-actions .action-panel .action-btn {width:47px;min-width:47px;height:47px;}
+.command-dock .my-resources-bar {position:static;transform:none;left:auto;bottom:auto;min-width:0;width:auto;max-width:42%;padding:3px;box-shadow:none;border-width:1px;flex-shrink:0;gap:4px; }
+.command-dock .my-resources-bar .resource-cards.minimal .resource-card {width:52px;}
+.command-dock .my-resources-bar .dev-cards-summary {padding:4px;font-size:12px;}
+.command-dock .my-resources-bar .dev-cards-summary .label {display:none;}
+.command-dock .my-resources-bar .dev-cards-summary .count::before {content:"📜 "; }
+@media(max-width:980px) {
+  .game-main {grid-template-columns:minmax(0,1fr) 240px;}
+  .command-dock {flex-wrap:wrap;min-height:90px; }
+  .command-dock .my-resources-bar {max-width:100%;order:0;}
+  .command-actions {order:1;}
+  .turn-clock-dock {order:2;}
+}
+@media(max-width:700px) {
+  .game-main {display:flex;flex-direction:column;}
+  .game-main .board-container {flex:1;min-height:250px;}
+  .game-main > .right-sidebar {flex:0 0 auto;width:100%;max-height:190px;flex-direction:row;overflow-x:auto; }
+  .right-sidebar .activity-feed,.right-sidebar .embedded-chat,.right-sidebar .roster-panel {min-width:215px;max-height:170px;min-height:0;flex:1 0 215px;}
+  .command-dock {gap:3px;padding:3px; }
+  .command-actions .action-panel .action-btn {width:39px;min-width:39px;height:40px;}
+}
