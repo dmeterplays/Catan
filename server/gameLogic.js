@@ -1103,6 +1103,28 @@ export function shuffleBoard(game) {
  * - Rolling 7 triggers discard phase (if anyone has >7 cards) then robber movement
  * - Other numbers distribute resources to players with adjacent buildings
  */
+// Append authoritative public events at action time (not on a later state diff).
+// Keep hands private; dice production is public but stolen resources are not.
+function appendPublicGameEvent(game, message) {
+  game.eventLog ||= [];
+  game.eventLog.push({
+    id: (game.__eventSeq = (game.__eventSeq || 0) + 1),
+    at: Date.now(),
+    message
+  });
+  if (game.eventLog.length > 100) game.eventLog.shift();
+}
+const PUBLIC_RESOURCE_LABELS = {brick:'tijolo',lumber:'madeira',wool:'lã',grain:'trigo',ore:'minério'};
+function appendDiceEvents(game, playerName, roll, gains) {
+  appendPublicGameEvent(game, `🎲 ${playerName} tirou ${roll.die1} + ${roll.die2} (${roll.total})`);
+  (gains || []).forEach((earned, index) => {
+    const details = Object.entries(PUBLIC_RESOURCE_LABELS)
+      .filter(([key]) => earned?.[key] > 0)
+      .map(([key,label]) => `${earned[key]} ${label}`).join(', ');
+    if (details) appendPublicGameEvent(game, `📥 ${game.players[index]?.name || 'Jogador'} recebeu ${details} pelos dados`);
+  });
+}
+
 export function rollDice(game, playerId) {
   const player = game.players[game.currentPlayerIndex];
   
@@ -1184,6 +1206,7 @@ export function rollDice(game, playerId) {
       game.turnPhase = 'robber';
     }
     game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, playerName: player.name, gains: null };
+    appendDiceEvents(game, player.name, game.diceRoll, null);
     return { success: true, roll: game.diceRoll, resourceGains: null };
   } else {
     // Distribute resources
@@ -1191,6 +1214,7 @@ export function rollDice(game, playerId) {
     game.turnPhase = 'main';
     // Dice income is public; record only the resources awarded by this roll.
     game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, playerName: player.name, gains: gains.map(playerGains => Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [resource, playerGains?.[resource] || 0]))) };
+    appendDiceEvents(game, player.name, game.diceRoll, gains);
     return { success: true, roll: game.diceRoll, resourceGains: gains };
   }
 }
