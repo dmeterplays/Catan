@@ -2840,6 +2840,11 @@ export function getPlayerView(game, playerId) {
     myIndex: playerIndex,
     myPorts: getPlayerPorts(game, playerIndex),
     tradeRatios,
+    // Public bank supply. The standard deck starts with 19 of each resource.
+    bankResources: Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [
+      resource,
+      Math.max(0, 19 - game.players.reduce((total, p) => total + (p.resources?.[resource] || 0), 0))
+    ])),
     hasRolledThisTurn: game.hasRolledThisTurn
   };
 }

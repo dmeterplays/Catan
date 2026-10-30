@@ -241,3 +241,18 @@
 .improvement-stat.science { color: #64dd17; }
 .improvement-stat.politics { color: #2196f3; }
 .improvement-stat.trade { color: #ffd600; }
+
+
+/* Compact player overview: card totals stay visible without exposing card identities. */
+.left-sidebar .player-panel { padding: 6px 7px; border-radius: 5px; box-shadow: none; flex-shrink: 0; }
+.left-sidebar .player-panel::before { display: none; }
+.left-sidebar .player-header { margin-bottom: 3px; gap: 5px; }
+.left-sidebar .player-name { font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.left-sidebar .you-badge { font-size: 9px; padding: 1px 3px; }
+.left-sidebar .victory-points { padding: 2px 4px; }
+.left-sidebar .vp-number { font-size: 14px; }
+.left-sidebar .player-stats { padding: 3px 5px; margin-bottom: 2px; gap: 12px; }
+.left-sidebar .player-pieces { gap: 8px; font-size: 11px; }
+.left-sidebar .player-road-length { padding: 1px 2px; font-size: 10px; }
+.left-sidebar .player-achievements { margin-top: 2px; }
+.left-sidebar .player-panel.current-turn { border-color: #f1bc4d; box-shadow: inset 3px 0 #f1bc4d, 0 0 8px #f1bc4d55; }

@@ -40,7 +40,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const [dismissedTradeId, setDismissedTradeId] = useState(null);
   const [showDice, setShowDice] = useState(false);
   const [clockNow, setClockNow] = useState(Date.now());
-  const [showEventLog, setShowEventLog] = useState(false);
+
   useEffect(() => { const id = setInterval(() => setClockNow(Date.now()), 500); return () => clearInterval(id); }, []);
   const [lastNotifiedRoll, setLastNotifiedRoll] = useState(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -531,15 +531,8 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       {gameState.phase === 'playing' && (
         <div style={{position:'fixed',top:10,left:'50%',transform:'translateX(-50%)',zIndex:1200,background:'#202b37',color:'#fff',padding:'7px 14px',borderRadius:9,border:'1px solid #bd9b57',fontWeight:700}}>
           ⏱️ {currentPlayer?.name}: <span style={{color:remainingSeconds !== null && remainingSeconds <= 20 ? '#ff7777':'#fff'}}>{clockLabel}</span>
-          <button type="button" onClick={() => setShowEventLog(v => !v)} style={{marginLeft:12}}>📜 Histórico</button>
+
         </div>
-      )}
-      {showEventLog && (
-        <aside style={{position:'fixed',right:12,top:70,zIndex:1300,width:320,maxWidth:'90vw',maxHeight:'60vh',overflowY:'auto',background:'#202b37',color:'#fff',padding:14,borderRadius:10,border:'1px solid #bd9b57'}}>
-          <div style={{display:'flex',justifyContent:'space-between'}}><strong>📜 Acontecimentos</strong><button onClick={() => setShowEventLog(false)}>✕</button></div>
-          {(gameState.eventLog || []).slice().reverse().map(event => <p key={event.id} style={{borderBottom:'1px solid #555',padding:'5px 0',fontSize:13}}>{new Date(event.at).toLocaleTimeString('pt-BR')} — {event.message}</p>)}
-          {!gameState.eventLog?.length && <p>Nenhum acontecimento registrado.</p>}
-        </aside>
       )}
     <div className="game-board">
       {/* Header */}
@@ -574,6 +567,23 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       <div className="game-main">
         {/* Left sidebar - Players */}
         <div className="sidebar left-sidebar">
+          <div className="bank-summary">
+            <div className="bank-title">🏛️ Banco <small>Cartas disponíveis</small></div>
+            <div className="bank-resources">
+              {[
+                ['lumber','🪵','Madeira'],
+                ['brick','🧱','Tijolo'],
+                ['wool','🐑','Lã'],
+                ['grain','🌾','Trigo'],
+                ['ore','⛏️','Minério']
+              ].map(([key, emoji, label]) => (
+                <div className="bank-resource" key={key} title={label}>
+                  <span>{emoji}</span><strong>{gameState.bankResources?.[key] ?? '—'}</strong>
+                </div>
+              ))}
+              <div className="bank-resource" title="Cartas de desenvolvimento disponíveis"><span>📜</span><strong>{gameState.devCardDeck}</strong></div>
+            </div>
+          </div>
           <h3>Jogadores</h3>
           {gameState.players.map((player, idx) => (
             <PlayerPanel 
@@ -720,6 +730,18 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             </>
           )}
           
+          <section className="activity-feed" aria-label="Acontecimentos da partida">
+            <div className="activity-feed-title">📜 Acontecimentos</div>
+            <div className="activity-feed-items">
+              {(gameState.eventLog || []).slice().reverse().map(event => (
+                <div className="activity-feed-item" key={event.id}>
+                  <time>{new Date(event.at).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}</time>
+                  <span>{event.message}</span>
+                </div>
+              ))}
+              {!gameState.eventLog?.length && <div className="activity-feed-empty">As jogadas aparecerão aqui.</div>}
+            </div>
+          </section>
           <button 
             className="chat-toggle"
             onClick={() => setShowChat(!showChat)}
