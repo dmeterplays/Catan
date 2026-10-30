@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import HexBoard from './HexBoard';
 import PlayerPanel from './PlayerPanel';
 import ResourceCards from './ResourceCards';
+import CardArt from './CardArt';
 import ActionPanel from './ActionPanel';
 import TradeModal from './TradeModal';
 import DiceDisplay from './DiceDisplay';
@@ -548,12 +549,6 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
 
   return (
     <>
-      {gameState.phase === 'playing' && (
-        <div style={{position:'fixed',top:10,left:'50%',transform:'translateX(-50%)',zIndex:1200,background:'#202b37',color:'#fff',padding:'7px 14px',borderRadius:9,border:'1px solid #bd9b57',fontWeight:700}}>
-          ⏱️ {currentPlayer?.name}: <span style={{color:remainingSeconds !== null && remainingSeconds <= 20 ? '#ff7777':'#fff'}}>{clockLabel}</span>
-
-        </div>
-      )}
     <div className="game-board">
       {/* Header */}
       <div className="game-header">
@@ -585,23 +580,72 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
 
       {/* Main game area */}
       <div className="game-main">
-        {/* Left sidebar - Players */}
-        <div className="sidebar left-sidebar">
+        {/* Center - Board */}
+        <div className="board-container">
+          <HexBoard 
+            hexes={gameState.hexes}
+            vertices={gameState.vertices}
+            edges={gameState.edges}
+            robber={gameState.robber}
+            players={gameState.players}
+            ports={gameState.ports || []}
+            selectedAction={selectedAction}
+            isMyTurn={isMyTurn}
+            canBuildNow={canBuildNow}
+            myIndex={gameState.myIndex}
+            gamePhase={gameState.phase}
+            turnPhase={gameState.turnPhase}
+            onPlaceSettlement={handlePlaceSettlement}
+            onPlaceRoad={handlePlaceRoad}
+            onUpgradeToCity={handleUpgradeToCity}
+            onHexClick={handleHexClick}
+            onHexRightClick={showHexInfo}
+            lastPlacedSettlement={lastPlacedSettlement}
+            freeRoads={gameState.freeRoads}
+            legalActions={gameState.legalActions || []}
+          />
+          
+          {/* Dice display - auto-hides after 5 seconds */}
+          {showDice && gameState.diceRoll && (
+            <DiceDisplay 
+              roll={gameState.diceRoll} 
+              onRightClick={(e, key, extra) => showInfo(e, key, extra)}
+            />
+          )}
+        </div>
+
+        {/* Right sidebar - Actions */}
+        <div className="sidebar right-sidebar">
+          <section className="activity-feed" aria-label="Acontecimentos da partida">
+            <div className="activity-feed-title">📜 Acontecimentos</div>
+            <div className="activity-feed-items">
+              {(gameState.eventLog || []).slice().reverse().map(event => (
+                <div className="activity-feed-item" key={event.id}>
+                  <time>{new Date(event.at).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}</time>
+                  <span>{event.message}</span>
+                </div>
+              ))}
+              {!gameState.eventLog?.length && <div className="activity-feed-empty">As jogadas aparecerão aqui.</div>}
+            </div>
+          </section>
+          <button 
+            className="chat-toggle"
+            onClick={() => setShowChat(!showChat)}
+          >
+            💬 Chat
+            {unreadMessages > 0 && (
+              <span className="chat-notification-dot">{unreadMessages}</span>
+            )}
+          </button>
+                  {/* Left sidebar - Players */}
+        <div className="roster-panel">
           <div className="bank-summary">
             <div className="bank-title">🏛️ Banco <small>Cartas disponíveis</small></div>
             <div className="bank-resources">
-              {[
-                ['lumber','🪵','Madeira'],
-                ['brick','🧱','Tijolo'],
-                ['wool','🐑','Lã'],
-                ['grain','🌾','Trigo'],
-                ['ore','⛏️','Minério']
-              ].map(([key, emoji, label]) => (
-                <div className="bank-resource" key={key} title={label}>
-                  <span>{emoji}</span><strong>{gameState.bankResources?.[key] ?? '—'}</strong>
-                </div>
+              {['lumber','brick','wool','grain','ore'].map(key => (
+                <div className="bank-resource" key={key}><CardArt type={key} count={gameState.bankResources?.[key] ?? '—'} className="small" /></div>
               ))}
-              <div className="bank-resource" title="Cartas de desenvolvimento disponíveis"><span>📜</span><strong>{gameState.devCardDeck}</strong></div>
+              <div className="bank-resource"><CardArt type="development" count={gameState.devCardDeck} className="small" /></div>
             </div>
           </div>
           <h3>Jogadores</h3>
@@ -687,43 +731,21 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
           )}
         </div>
 
-        {/* Center - Board */}
-        <div className="board-container">
-          <HexBoard 
-            hexes={gameState.hexes}
-            vertices={gameState.vertices}
-            edges={gameState.edges}
-            robber={gameState.robber}
-            players={gameState.players}
-            ports={gameState.ports || []}
-            selectedAction={selectedAction}
-            isMyTurn={isMyTurn}
-            canBuildNow={canBuildNow}
-            myIndex={gameState.myIndex}
-            gamePhase={gameState.phase}
-            turnPhase={gameState.turnPhase}
-            onPlaceSettlement={handlePlaceSettlement}
-            onPlaceRoad={handlePlaceRoad}
-            onUpgradeToCity={handleUpgradeToCity}
-            onHexClick={handleHexClick}
-            onHexRightClick={showHexInfo}
-            lastPlacedSettlement={lastPlacedSettlement}
-            freeRoads={gameState.freeRoads}
-            legalActions={gameState.legalActions || []}
-          />
-          
-          {/* Dice display - auto-hides after 5 seconds */}
-          {showDice && gameState.diceRoll && (
-            <DiceDisplay 
-              roll={gameState.diceRoll} 
-              onRightClick={(e, key, extra) => showInfo(e, key, extra)}
-            />
-          )}
-        </div>
 
-        {/* Right sidebar - Actions */}
-        <div className="sidebar right-sidebar">
-          {gameState.phase === 'playing' && (
+        </div>
+      </div>
+
+      {cardFlight && (
+        <div key={cardFlight.id} className="card-flight" aria-hidden="true">
+          <span className="card-flight-card">{cardFlight.icons}</span>
+        </div>
+      )}
+      <div className="command-dock">
+        <div className="turn-clock-dock">
+          <span className="turn-clock-player" style={{borderColor:currentPlayer?.color || '#b99448'}}>{currentPlayer ? currentPlayer.name : 'Sala de espera'}</span>
+          <strong className={remainingSeconds !== null && remainingSeconds <= 20 ? 'clock-urgent' : ''}>⏱️ {clockLabel}</strong>
+        </div>
+        <div className="command-actions">          {gameState.phase === 'playing' && (
             <>
               <ActionPanel 
                 isMyTurn={isMyTurn}
@@ -750,37 +772,9 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             </>
           )}
           
-          <section className="activity-feed" aria-label="Acontecimentos da partida">
-            <div className="activity-feed-title">📜 Acontecimentos</div>
-            <div className="activity-feed-items">
-              {(gameState.eventLog || []).slice().reverse().map(event => (
-                <div className="activity-feed-item" key={event.id}>
-                  <time>{new Date(event.at).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}</time>
-                  <span>{event.message}</span>
-                </div>
-              ))}
-              {!gameState.eventLog?.length && <div className="activity-feed-empty">As jogadas aparecerão aqui.</div>}
-            </div>
-          </section>
-          <button 
-            className="chat-toggle"
-            onClick={() => setShowChat(!showChat)}
-          >
-            💬 Chat
-            {unreadMessages > 0 && (
-              <span className="chat-notification-dot">{unreadMessages}</span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {cardFlight && (
-        <div key={cardFlight.id} className="card-flight" aria-hidden="true">
-          <span className="card-flight-card">{cardFlight.icons}</span>
-        </div>
-      )}
-      {/* Bottom - My Resources */}
-      <div className="my-resources-bar">
+</div>
+        {/* Bottom - My Resources */}
+        <div className="my-resources-bar">
         <ResourceCards 
           resources={myPlayer.resources} 
           minimal
@@ -794,6 +788,8 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             <span className="new-badge">+{myPlayer.newDevCards.length} nova(s)</span>
           )}
         </div>
+      </div>
+
       </div>
 
       {/* Robber Phase Banner - shows when player needs to move the robber */}
