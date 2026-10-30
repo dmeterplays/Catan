@@ -887,11 +887,12 @@ export function createGame(gameId, hostPlayer, isExtended = false, enableSpecial
   });
   
   // Create ports
+  const portTypes = mapType === 'random' ? shuffle(PORT_POSITIONS.map(p => p.type)) : PORT_POSITIONS.map(p => p.type);
   const ports = PORT_POSITIONS.map((portPos, idx) => ({
     id: idx,
     vertices: portPos.vertices,
-    type: portPos.type,
-    ...PORT_TYPES[portPos.type]
+    type: portTypes[idx],
+    ...PORT_TYPES[portTypes[idx]]
   }));
 
   return {
@@ -1082,6 +1083,13 @@ export function shuffleBoard(game) {
   });
   
   game.robber = desertHex;
+  // Keep the coastal locations legal, but reshuffle their port types too.
+  const shuffledPortTypes = shuffle(game.ports.map(port => port.type));
+  game.ports = game.ports.map((port, idx) => ({
+    ...port,
+    type: shuffledPortTypes[idx],
+    ...PORT_TYPES[shuffledPortTypes[idx]]
+  }));
   
   return { success: true };
 }
