@@ -191,6 +191,29 @@ setInterval(() => {
 function broadcastGameState(gameId) {
   const game = games.get(gameId);
   if (!game) return;
+  const snapshot = {
+    buildings: Object.fromEntries(Object.entries(game.vertices || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null && v.building).map(([k,v]) => [k, `${v.owner}:${v.building}`])),
+    roads: Object.fromEntries(Object.entries(game.edges || {}).filter(([k,v]) => v.owner !== undefined && v.owner !== null).map(([k,v]) => [k, v.owner])),
+    player: game.currentPlayerIndex,
+    dice: JSON.stringify(game.diceRoll || null)
+  };
+  const previous = game.__publicSnapshot;
+  if (previous) {
+    for (const [key, value] of Object.entries(snapshot.buildings)) {
+      if (previous.buildings[key] !== value) {
+        const [owner, building] = value.split(':');
+        recordEvent(game, `🏠 ${game.players[Number(owner)]?.name || 'Jogador'} construiu ${building === 'city' ? 'uma cidade' : 'uma aldeia'}`);
+      }
+    }
+    for (const [key, owner] of Object.entries(snapshot.roads)) {
+      if (previous.roads[key] !== owner) recordEvent(game, `🛤️ ${game.players[owner]?.name || 'Jogador'} construiu uma estrada`);
+    }
+    if (snapshot.player !== previous.player && game.phase === 'playing')
+      recordEvent(game, `▶️ Vez de ${game.players[snapshot.player]?.name || 'Jogador'}`);
+    if (snapshot.dice !== previous.dice && game.diceRoll?.dice1 && game.diceRoll?.dice2)
+      recordEvent(game, `🎲 Dados: ${game.diceRoll.dice1} + ${game.diceRoll.dice2}`);
+  }
+  game.__publicSnapshot = snapshot;
   
   syncTurnTimer(game);
   game.players.forEach(player => {
