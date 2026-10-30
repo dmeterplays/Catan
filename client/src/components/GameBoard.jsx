@@ -420,6 +420,14 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
     });
   }, [socket, addNotification]);
 
+  const handleAddBot = useCallback(() => {
+    socket.emit('addBot', response => { if (!response.success) addNotification(response.error); });
+  }, [socket, addNotification]);
+
+  const handleRemoveBot = useCallback(() => {
+    socket.emit('removeBot', response => { if (!response.success) addNotification(response.error); });
+  }, [socket, addNotification]);
+
   const handleStartGame = useCallback(() => {
     socket.emit('startGame', (response) => {
       if (!response.success) {
@@ -586,6 +594,12 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                 </div>
               </div>
 
+              {isHost && !gameState.isExtended && !gameState.isCitiesAndKnights && (
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                  <button type="button" className="shuffle-btn" onClick={handleAddBot} disabled={gameState.players.length >= (gameState.maxPlayers || 4)}>🤖 Adicionar bot</button>
+                  <button type="button" className="shuffle-btn" onClick={handleRemoveBot} disabled={!gameState.players.some(p => p.isBot)}>Remover bot</button>
+                </div>
+              )}
               {isHost && (
                 <>
                   <button 
