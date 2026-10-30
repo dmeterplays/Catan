@@ -233,7 +233,7 @@ function HexBoard({
     }
     if (gamePhase === 'playing') {
       if (!canBuildNow) return false;
-      if ((turnPhase === 'main' || turnPhase === 'specialBuild') && selectedAction === 'settlement') return true;
+      if ((turnPhase === 'main' || turnPhase === 'specialBuild') && selectedAction === 'settlement') return legalActions.some(a => a.type === 'placeSettlement' && a.vertexKey === vKey);
     }
     return false;
   };
@@ -256,8 +256,8 @@ function HexBoard({
     }
     if (gamePhase === 'playing') {
       if (!canBuildNow) return false;
-      if ((turnPhase === 'main' || turnPhase === 'specialBuild') && selectedAction === 'road') return true;
-      if (freeRoads > 0 && selectedAction === 'road') return true;
+      if ((turnPhase === 'main' || turnPhase === 'specialBuild') && selectedAction === 'road') return legalActions.some(a => a.type === 'placeRoad' && a.edgeKey === edgeKey);
+      if (freeRoads > 0 && selectedAction === 'road') return legalActions.some(a => a.type === 'placeRoad' && a.edgeKey === edgeKey);
     }
     return false;
   };
@@ -416,7 +416,7 @@ function HexBoard({
     return [...edgeMap.values()].filter((edge) => edge.count === 1);
   }, [hexes]);
 
-  const showEdgePlaceholders = canPlaceAtEdge(edge.key);
+  const showEdgePlaceholders = canPlaceAtEdge();
 
   return (
     <div className="hex-board-shell">
@@ -599,7 +599,7 @@ function HexBoard({
         })}
 
         {/* Clickable edge areas (only shown when placing roads and no road exists) */}
-        {showEdgePlaceholders && clickableEdges.map(({ key, v1, v2 }) => (
+        {clickableEdges.filter(({ key }) => canPlaceAtEdge(key)).map(({ key, v1, v2 }) => (
           <line
             key={`click-${key}`}
             x1={v1.x}
