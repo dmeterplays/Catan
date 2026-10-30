@@ -1183,7 +1183,7 @@ export function rollDice(game, playerId) {
     } else {
       game.turnPhase = 'robber';
     }
-    game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, gains: null };
+    game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, playerName: player.name, gains: null };
     return { success: true, roll: game.diceRoll, resourceGains: null };
   } else {
     // Distribute resources
