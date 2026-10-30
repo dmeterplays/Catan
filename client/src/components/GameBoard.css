@@ -730,3 +730,10 @@
 .activity-feed-empty { font-size: 12px; color: #aaa; padding: 10px 4px; }
 .right-sidebar .chat-toggle { flex-shrink: 0; margin-top: auto; }
 @media(max-width:800px) { .bank-resources { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+
+
+/* Resource flight is visual only; resource accounting stays server-side. */
+.card-flight { position: fixed; z-index: 1400; pointer-events: none; left: 50%; top: 15%; transform: translateX(-50%); }
+.card-flight-card { display: block; padding: 12px 17px; background: #e9d5a7; color: #36210c; border: 2px solid #a17a36; border-radius: 8px; font-weight: bold; box-shadow: 0 6px 20px #0007; animation: catanCardToHand .8s ease-in forwards; }
+@keyframes catanCardToHand { 0% { opacity: .2; transform: translate(0,0) scale(.6); } 25% { opacity: 1; } 100% { opacity: .15; transform: translate(0,65vh) scale(.85); } }
+@media (prefers-reduced-motion: reduce) { .card-flight-card { animation: none; } }
