@@ -610,8 +610,14 @@ function HexBoard({
               )}
               {isGold && (
                 <g>
-                  <path d={hexPath(pos.x,pos.y,HEX_SIZE-HEX_TEXTURE_INSET)} fill="#edc44a" stroke="#aa8023" strokeWidth="2" />
-                  <text x={pos.x} y={pos.y-17} textAnchor="middle" fontSize="17">✨</text>
+                  <path d={hexPath(pos.x,pos.y,HEX_SIZE-HEX_TEXTURE_INSET)} fill="#ae7907" stroke="#754500" strokeWidth="2" />
+                  <path d={hexPath(pos.x,pos.y,HEX_SIZE-HEX_TEXTURE_INSET-3)} fill="#f6c928" stroke="#ffeb86" strokeWidth="1.5" />
+                  <g transform={`translate(${pos.x},${pos.y-30})`} stroke="#805000" strokeWidth="1.2">
+                    <path d="M-12 6 L-7 -4 L9 -4 L14 6 Z" fill="#fff0a0" />
+                    <path d="M-12 6 L14 6 L9 12 L-17 12 Z" fill="#d88c06" />
+                    <path d="M-4 -4 L1 6 M5 -4 L10 6" fill="none" />
+                  </g>
+                  <text x={pos.x} y={pos.y-10} textAnchor="middle" fontSize="10" fontWeight="900" fill="#593700" stroke="#ffeba7" strokeWidth="0.7" paintOrder="stroke">OURO</text>
                 </g>
               )}
               {isPirateHere && (
