@@ -21,9 +21,15 @@ const AVAILABLE_COLORS = [
   { value: '#e63946', label: 'Vermelho' },
   { value: '#457b9d', label: 'Azul' },
   { value: '#f4a261', label: 'Laranja' },
-  { value: '#2a9d8f', label: 'Verde-azulado' },
+  { value: '#2a9d8f', label: 'Verde-água' },
   { value: '#6a994e', label: 'Verde' },
   { value: '#9d4edd', label: 'Roxo' },
+  { value: '#f25ca2', label: 'Rosa' },
+  { value: '#f2cf3a', label: 'Amarelo' },
+  { value: '#25292f', label: 'Preto' },
+  { value: '#f5f4ed', label: 'Branco' },
+  { value: '#8d572e', label: 'Marrom' },
+  { value: '#13c7ee', label: 'Ciano' },
   { value: '#e07b53', label: 'Coral' },
   { value: '#4a90d9', label: 'Azul-aço' }
 ];
@@ -752,32 +758,40 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
           
           {isWaiting && (
             <div className="waiting-controls">
-              <div className="color-selector" style={{ marginBottom: '20px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#ccc' }}>Escolha Sua Cor</h4>
-                <div className="color-swatches" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {AVAILABLE_COLORS.map(c => {
-                    const isTaken = gameState.players.some(p => p.color === c.value && p.id !== myPlayer.id);
-                    return (
-                      <button
-                        key={c.value}
-                        className={`color-swatch ${myPlayer.color === c.value ? 'selected' : ''}`}
-                        style={{ 
-                          backgroundColor: c.value, 
-                          opacity: isTaken ? 0.3 : 1,
-                          width: '30px',
-                          height: '30px',
-                          borderRadius: '50%',
-                          border: myPlayer.color === c.value ? '2px solid white' : '2px solid transparent',
-                          cursor: isTaken ? 'not-allowed' : 'pointer'
-                        }}
-                        disabled={isTaken}
-                        title={isTaken ? 'Cor já escolhida' : c.label}
-                        onClick={() => handleColorChange(c.value)}
-                      />
-                    );
-                  })}
+              <details className="color-selector">
+                <summary className="color-selector-summary">
+                  <span>🎨 Escolher cor</span>
+                  <span className="color-selector-current" style={{ backgroundColor: myPlayer.color }} aria-hidden="true" />
+                  <span className="color-selector-current-name">{AVAILABLE_COLORS.find(c => c.value === myPlayer.color)?.label || 'Atual'}</span>
+                </summary>
+                <div className="color-selector-content">
+                  <p>As cores com <strong>✕</strong> já estão em uso.</p>
+                  <div className="color-selector-grid">
+                    {AVAILABLE_COLORS.map(c => {
+                      const owner = gameState.players.find(p => p.color === c.value && p.id !== myPlayer.id);
+                      const selected = myPlayer.color === c.value;
+                      return (
+                        <button
+                          type="button"
+                          key={c.value}
+                          className={`color-swatch-option ${selected ? 'is-selected' : ''} ${owner ? 'is-taken' : ''}`}
+                          disabled={Boolean(owner)}
+                          title={owner ? `${c.label} — usada por ${owner.name}` : selected ? `${c.label} — sua cor` : `Escolher ${c.label}`}
+                          aria-label={owner ? `${c.label} indisponível, usada por ${owner.name}` : selected ? `${c.label}, selecionada` : `Escolher ${c.label}`}
+                          aria-pressed={selected}
+                          onClick={() => handleColorChange(c.value)}
+                        >
+                          <span className="color-swatch-dot" style={{ backgroundColor: c.value }}>
+                            {owner && <span className="color-swatch-x" aria-hidden="true">✕</span>}
+                            {selected && <span className="color-swatch-check" aria-hidden="true">✓</span>}
+                          </span>
+                          <span className="color-swatch-name">{c.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              </details>
 
               {isHost && !gameState.isExtended && !gameState.isCitiesAndKnights && (
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
