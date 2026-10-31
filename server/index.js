@@ -491,8 +491,8 @@ io.on('connection', (socket) => {
     const game = info && games.get(info.gameId);
     if (!game || game.phase !== 'waiting' || game.players[0].id !== info.playerId)
       return callback({ success: false, error: 'Somente o anfitrião pode adicionar bots antes da partida.' });
-    if (game.isCitiesAndKnights || game.isSeafarers)
-      return callback({ success: false, error: 'Bots ainda não estão disponíveis em Navegantes/Cidades e Cavaleiros.' });
+    if (game.isCitiesAndKnights)
+      return callback({ success: false, error: 'Bots ainda não estão disponíveis em Cidades e Cavaleiros.' });
     if (game.players.length >= game.maxPlayers)
       return callback({ success: false, error: 'A sala já está cheia.' });
     const botId = 'bot-' + uuidv4();
