@@ -201,7 +201,8 @@ setInterval(() => {
       if (!player) continue;
       if (game.phase === 'setup') {
         const legal = getLegalActions(game, player.id);
-        const action = legal.find(a => a.type === (game.setupSettlementKey ? 'placeRoad' : 'placeSettlement'));
+        const action = legal.find(a => a.type === (game.setupSettlementKey ? 'placeRoad' : 'placeSettlement')) ||
+          (game.isSeafarers && game.setupSettlementKey ? legal.find(a=>a.type==='placeShip') : null);
         if (action) {
           const result = executeLegalAction(game, player.id, action);
           if (result.success) recordEvent(game, `⏱️ ${player.name}: posição inicial definida automaticamente`);
