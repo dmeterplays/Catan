@@ -1330,6 +1330,8 @@ export function discardCards(game, playerId, resources) {
     player.resources[resource] -= amount;
   }
   
+  // Keep discarded card identities private in the public event history.
+  game.__skipResourceDelta = true;
   // Remove from discarding list
   game.discardingPlayers = game.discardingPlayers.filter(d => d.playerIndex !== playerIndex);
   
