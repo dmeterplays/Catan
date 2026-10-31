@@ -2727,12 +2727,18 @@ function calculateRoadLength(game, playerIndex) {
       
       // Get adjacent edges and check for player's roads (checking all equivalents)
       const adjEdges = getVertexEdges(vKey);
-      const currentRoute = game.edges[edgeKey];
+      const physicalRoute = key => {
+        const match=key.match(/^e_(-?\\d+)_(-?\\d+)_(\\d+)$/);
+        if(!match)return null;
+        return getEquivalentEdges(...match.slice(1).map(Number))
+          .map(({q,r,dir})=>game.edges[`e_${q}_${r}_${dir}`])
+          .find(e=>e?.road||e?.ship)||null;
+      };
+      const currentRoute = physicalRoute(edgeKey);
       const ownSwitch = hasPlayerBuildingAtVertex(game,vKey,playerIndex);
       for (const adjEdge of adjEdges) {
         const adjCanonical = getCanonicalEdgeKey(adjEdge);
-        const nextRoute = game.edges[adjEdge] || getEquivalentEdges(...adjEdge.match(/^e_(-?\\d+)_(-?\\d+)_(\\d+)$/).slice(1).map(Number))
-          .map(({q,r,dir})=>game.edges[`e_${q}_${r}_${dir}`]).find(e=>e?.road||e?.ship);
+        const nextRoute = physicalRoute(adjEdge);
         const matched = nextRoute?.owner===playerIndex && (nextRoute.road || (game.isSeafarers && nextRoute.ship));
         // Road and ship only join through a settlement or city owned by this player.
         const compatible=!game.isSeafarers || !!currentRoute?.road===!!nextRoute?.road || ownSwitch;
