@@ -181,6 +181,8 @@ function HexBoard({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragState, setDragState] = useState(null);
   const dragMoved = useRef(false);
+  const touchPointers = useRef(new Map());
+  const pinchStart = useRef(null);
   const previousPieces = useRef(null);
   const [newPieces, setNewPieces] = useState({ roads: [], buildings: [] });
   useEffect(() => {
@@ -243,7 +245,20 @@ function HexBoard({
   };
 
   const handlePointerDown = (event) => {
-    if (zoom <= 1 || event.button !== 0) return;
+    if (event.pointerType === 'touch') {
+      touchPointers.current.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      if(touchPointers.current.size===2){
+        const [a,b]=[...touchPointers.current.values()];
+        pinchStart.current={distance:Math.hypot(a.x-b.x,a.y-b.y),zoom};
+        dragMoved.current=true;
+        setDragState(null);
+        for(const id of touchPointers.current.keys()){
+          try{event.currentTarget.setPointerCapture(id)}catch{}
+        }
+        return;
+      }
+    }
+    if (zoom <= 1 || (event.pointerType !== 'touch' && event.button !== 0)) return;
     dragMoved.current = false;
     // Do not capture a normal click: pointer capture retargets the click to
     // the SVG itself, preventing edge and vertex onClick handlers from firing.
@@ -257,6 +272,16 @@ function HexBoard({
   };
 
   const handlePointerMove = (event) => {
+    if(event.pointerType==='touch' && touchPointers.current.has(event.pointerId)){
+      touchPointers.current.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      if(pinchStart.current && touchPointers.current.size>=2){
+        const [a,b]=[...touchPointers.current.values()];
+        const distance=Math.hypot(a.x-b.x,a.y-b.y);
+        setZoom(Math.min(MAX_ZOOM,Math.max(MIN_ZOOM,
+          Number((pinchStart.current.zoom*distance/Math.max(1,pinchStart.current.distance)).toFixed(2)))));
+        return;
+      }
+    }
     if (!dragState || dragState.pointerId !== event.pointerId) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const deltaX = event.clientX - dragState.clientX;
@@ -279,6 +304,14 @@ function HexBoard({
   };
 
   const handlePointerUp = (event) => {
+    if(event.pointerType==='touch'){
+      touchPointers.current.delete(event.pointerId);
+      if(touchPointers.current.size<2){
+        pinchStart.current=null;
+        // After pinch, ignore the leftover finger until it is released.
+        if(touchPointers.current.size) setDragState(null);
+      }
+    }
     if (!dragState || dragState.pointerId !== event.pointerId) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
