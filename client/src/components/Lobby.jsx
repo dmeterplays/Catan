@@ -151,8 +151,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                   <div className="create-mode-content">
                     <p className="create-mode-help">Escolha uma modalidade. A quantidade máxima de participantes é ajustada automaticamente.</p>
                     <div className="create-mode-grid">
-                      <button type="button" className={`create-mode-card ${!isExtended && !isCitiesAndKnights ? 'active' : ''}`}
-                        aria-pressed={!isExtended && !isCitiesAndKnights}
+                      <button type="button" className={`create-mode-card ${!isExtended && !isCitiesAndKnights && !isSeafarers ? 'active' : ''}`}
+                        aria-pressed={!isExtended && !isCitiesAndKnights && !isSeafarers}
                         onClick={() => {setIsExtended(false);setIsCitiesAndKnights(false);setIsSeafarers(false);}}>
                         <strong>🎲 Clássico</strong><small>2–4 jogadores</small>
                       </button>
