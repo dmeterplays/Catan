@@ -789,7 +789,9 @@ function HexBoard({
         })}
 
         {/* Ports */}
-        {ports.map((port) => {
+        {(() => {
+          const usedLabels = [];
+          return ports.map((port) => {
           // Get positions of the two vertices this port connects to
           const v1Key = port.vertices[0];
           const v2Key = port.vertices[1];
@@ -854,8 +856,28 @@ function HexBoard({
           const cx = midX + perpX * 33;
           const cy = midY + perpY * 33;
           const badge = PORT_LABELS[port.resource];
-          const labelX = midX + perpX * 66;
-          const labelY = midY + perpY * 66;
+          // Keep harbour signs clear of one another, including on dense coastlines.
+          // Test their full rectangular footprint, not just their center points.
+          const baseX = midX + perpX * (isSeafarers ? 55 : 66);
+          const baseY = midY + perpY * (isSeafarers ? 55 : 66);
+          const offsets = [0, 48, -48, 96, -96, 144, -144];
+          const distances = [0, 20, 40, 60, 80, 110];
+          let labelX = baseX, labelY = baseY;
+          let placed = false;
+          for (const outward of distances) {
+            if (placed) break;
+            for (const along of offsets) {
+              const x = baseX + perpX * outward + uX * along;
+              const y = baseY + perpY * outward + uY * along;
+              if (usedLabels.every(p => Math.abs(p.x - x) >= 50 || Math.abs(p.y - y) >= 59)) {
+                labelX = x;
+                labelY = y;
+                placed = true;
+                break;
+              }
+            }
+          }
+          usedLabels.push({ x: labelX, y: labelY });
           
           return (
             <g key={port.id} className="port">
@@ -925,7 +947,8 @@ function HexBoard({
               </g>
             </g>
           );
-        })}
+          });
+        })()}
         </g>
       </svg>
 
