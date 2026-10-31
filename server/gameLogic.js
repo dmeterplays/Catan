@@ -1586,9 +1586,17 @@ export function placeSettlement(game, playerId, vKey) {
   }
   
   // Place settlement - stored at the key provided, lookups check all equivalents
-  game.vertices[vKey] = { building: 'settlement', owner: playerIndex };
-  player.settlements--;
-  player.victoryPoints++;
+  // C&K begins with an ordinary settlement and a city in the second setup
+  // round, ensuring commodity production is possible from the first dice roll.
+  const setupCity = game.isCitiesAndKnights && isSetup && game.setupPhase === 1;
+  game.vertices[vKey] = { building: setupCity ? 'city' : 'settlement', owner: playerIndex };
+  if (setupCity) {
+    player.cities--;
+    player.victoryPoints += 2;
+  } else {
+    player.settlements--;
+    player.victoryPoints++;
+  }
   if (game.isSeafarers && !isSetup && !player.firstIslandClaimed && isSmallIslandVertex(game,vKey)) {
     player.firstIslandClaimed=true;
     player.victoryPoints+=2;
