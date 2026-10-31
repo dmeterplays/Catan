@@ -953,7 +953,7 @@ export function createGame(gameId, hostPlayer, isExtended = false, enableSpecial
     id: gameId,
     isSeafarers,
     pirate: seaBoard?.pirate || null,
-    victoryTarget: isSeafarers ? 14 : 10,
+    victoryTarget: isSeafarers ? 14 : isCitiesAndKnights ? (isExtended ? 16 : 13) : 10,
     pendingGoldPicks: {},
     goldResumePhase: 'main',
     turnSequence: 0,
@@ -3200,11 +3200,12 @@ export function autoPlaceInitialBuildings(game) {
       
       const vKey = shuffled[0];
       
-      // Place settlement
-      game.vertices[vKey].building = 'settlement';
+      // C&K quick setup mirrors manual setup: settlement followed by city.
+      const cityStart=game.isCitiesAndKnights && i===1;
+      game.vertices[vKey].building = cityStart ? 'city' : 'settlement';
       game.vertices[vKey].owner = pIdx;
-      player.settlements--;
-      player.victoryPoints++;
+      if(cityStart){player.cities--;player.victoryPoints+=2;}
+      else {player.settlements--;player.victoryPoints++;}
       
       // Place road on first available adjacent edge
       const adjacentEdges = getVertexEdges(vKey);
