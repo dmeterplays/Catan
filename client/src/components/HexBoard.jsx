@@ -171,7 +171,11 @@ function HexBoard({
   onHexRightClick,
   lastPlacedSettlement,
   freeRoads,
-  legalActions = []
+  legalActions = [],
+  knightPieces = {},
+  selectedKnight = null,
+  onKnightSelect = () => {},
+  onKnightDestination = () => {}
 }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -796,6 +800,27 @@ function HexBoard({
           );
         })}
 
+        {/* Positioned knights: select a unit, then a destination intersection. */}
+        {Object.values(knightPieces||{}).map(unit=>{
+          const match=/^v_(-?\d+)_(-?\d+)_(\d+)$/.exec(unit.vertexKey);
+          if(!match)return null;
+          const pos=getVertexPosition(...match.slice(1).map(Number));
+          return (
+            <g key={unit.id} onClick={event=>{event.stopPropagation();onKnightSelect(unit.id);}}
+              style={{cursor:unit.owner===myIndex?'pointer':'default'}}>
+              <circle cx={pos.x} cy={pos.y} r="14"
+                fill={players[unit.owner]?.color||'#333'} stroke={selectedKnight===unit.id?'#fff':'#171717'}
+                strokeWidth={selectedKnight===unit.id?4:2}/>
+              <text x={pos.x} y={pos.y+5} textAnchor="middle" fontSize="15" style={{pointerEvents:'none'}}>⚔</text>
+              {unit.active && <circle cx={pos.x+10} cy={pos.y-10} r="4" fill="#51f36a" stroke="#fff"/>}
+            </g>
+          );
+        })}
+        {selectedKnight && uniqueVertices.filter(v=>!v.vertex.building).map(({key,pos})=>(
+          <circle key={`knight-target-${key}`} cx={pos.x} cy={pos.y} r="9"
+            fill="#40c9ff" fillOpacity="0.4" stroke="#0c548b" strokeWidth="1.5"
+            style={{cursor:'pointer'}} onClick={event=>{event.stopPropagation();onKnightDestination(key)}}/>
+        ))}
         {/* Ports */}
         {(() => {
           const usedLabels = [];
