@@ -63,6 +63,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const [selectedShipEdge,setSelectedShipEdge] = useState(null);
   const [selectedKnight,setSelectedKnight] = useState(null);
   const [mobilePanel, setMobilePanel] = useState(null);
+  const [mobileInfoMode, setMobileInfoMode] = useState(false);
   const [dismissedBarbarianResult, setDismissedBarbarianResult] = useState(false);
   const [lastPlacedSettlement, setLastPlacedSettlement] = useState(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
@@ -699,10 +700,11 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         ))}
       </div>
       <nav className="mobile-game-nav" aria-label="Painéis do jogo no celular">
-        <button type="button" className={mobilePanel === null ? 'active' : ''} onClick={() => setMobilePanel(null)}>🗺️ Mapa</button>
+        <button type="button" className={mobilePanel === null && !mobileInfoMode ? 'active' : ''} onClick={() => {setMobilePanel(null);setMobileInfoMode(false);}}>🗺️ Mapa</button>
         <button type="button" className={mobilePanel === 'actions' ? 'active' : ''} aria-expanded={mobilePanel === 'actions'} onClick={() => setMobilePanel(v=>v==='actions'?null:'actions')}>⚒️ Ações</button>
         <button type="button" className={mobilePanel === 'players' ? 'active' : ''} aria-expanded={mobilePanel === 'players'} onClick={() => setMobilePanel(v=>v==='players'?null:'players')}>👥 Jogadores</button>
         <button type="button" className={mobilePanel === 'chat' ? 'active' : ''} aria-expanded={mobilePanel === 'chat'} onClick={() => {setShowChat(true);setMobilePanel(v=>v==='chat'?null:'chat');}}>💬 Chat{unreadMessages>0?' ('+unreadMessages+')':''}</button>
+        <button type="button" className={mobileInfoMode ? 'active' : ''} aria-pressed={mobileInfoMode} onClick={() => {setMobilePanel(null);setMobileInfoMode(v=>!v);}}>ℹ️ Info</button>
       </nav>
       {mobilePanel && <button type="button" className="mobile-panel-backdrop" aria-label="Fechar painel" onClick={()=>setMobilePanel(null)} />}
       {/* Main game area */}
@@ -740,6 +742,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             onUpgradeToCity={handleUpgradeToCity}
             onHexClick={handleHexClick}
             onHexRightClick={showHexInfo}
+            mobileInfoMode={mobileInfoMode}
             lastPlacedSettlement={lastPlacedSettlement}
             freeRoads={gameState.freeRoads}
             legalActions={gameState.legalActions || []}
@@ -932,7 +935,10 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                 isMyTurn={isMyTurn}
                 turnPhase={gameState.turnPhase}
                 selectedAction={selectedAction}
-                setSelectedAction={setSelectedAction}
+                setSelectedAction={action => {
+                  setSelectedAction(action);
+                  if (action) setMobilePanel(null);
+                }}
                 onRollDice={handleRollDice}
                 onEndTurn={handleEndTurn}
                 onBuyDevCard={handleBuyDevCard}
