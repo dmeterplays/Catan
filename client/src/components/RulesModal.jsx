@@ -214,6 +214,11 @@ O cenário de até 4 jogadores mantém o arquipélago anterior. A opção até 8
     citiesAndKnights: {
       title: '⚔️ Cidades e Cavaleiros',
       content: `
+**Versão adaptada para até 8 jogadores**
+• Até 4 jogadores: 13 pontos de vitória; até 8 jogadores: 16 pontos
+• Cada participante começa com uma aldeia e uma cidade
+• Você pode completar a sala com bots
+
 **Mercadorias**
 • Florestas produzem 1 Madeira + 1 Papel para Cidades
 • Montanhas produzem 1 Minério + 1 Moeda para Cidades
@@ -234,6 +239,21 @@ O cenário de até 4 jogadores mantém o arquipélago anterior. A opção até 8
 • Recrute Cavaleiros com Minério + Lã
 • Ative-os com Trigo (necessário para defender Catan!)
 • Promova-os a cavaleiros Fortes ou Poderosos para ter mais defesa
+• Os cavaleiros aparecem nos cruzamentos conectados à sua estrada
+• Clique num cavaleiro ativo e depois em um cruzamento vizinho ligado por uma estrada própria para movê-lo
+• Um cavaleiro mais forte pode expulsar outro de um cruzamento; cavaleiros adversários interrompem rotas
+
+**Metrópoles e muralhas**
+• Alcance o nível 4 de Ciência, Política ou Comércio para conquistar uma metrópole (+2 PV)
+• Outro jogador pode tomá-la ao superar seu nível nessa área
+• Construa muralhas com 2 tijolos: cada muralha permite manter 2 cartas de recurso a mais antes do descarte ao sair 7
+• Cidades protegidas por metrópoles resistem ao saque bárbaro
+
+**Cartas de Progresso**
+• Ciência: Inventor, Engenheiro, Irrigação e Mineração
+• Política: Constituição, Diplomata e Sabotagem
+• Comércio: Monopólio, Mestre Mercador e Feira Comercial
+• Use as cartas na seção Progresso e Metrópoles durante seu turno
       `
     }
   };
