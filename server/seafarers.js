@@ -252,3 +252,94 @@ export function placeShip(game,playerId,eKey,{setup=false,settlementKey=null}={}
   player.ships--;
   return {success:true};
 }
+
+/** A ship can move only from the open end of its existing route,
+ * and only if it was built before the current turn. */
+export function canMoveShip(game,playerId,fromEdge,toEdge) {
+  if(!game.isSeafarers||game.phase!=='playing'||game.turnPhase!=='main' ||
+    game.players[game.currentPlayerIndex]?.id!==playerId)
+    return {valid:false,error:'Não é sua fase de movimentação'};
+  if(game.shipMovedThisTurn)return {valid:false,error:'Já moveu um barco neste turno'};
+  const owner=game.players.findIndex(p=>p.id===playerId);
+  const existing=shipAt(game,fromEdge);
+  if(!existing?.ship||existing.owner!==owner)
+    return {valid:false,error:'Barco de origem inválido'};
+  if((existing.builtTurn||0)===(game.turnSequence||0))
+    return {valid:false,error:'Não pode mover barco construído neste turno'};
+  if(isPirateBlocking(game,fromEdge)||isPirateBlocking(game,toEdge))
+    return {valid:false,error:'O pirata está bloqueando este trecho'};
+  const oldIndex=Object.entries(game.edges).find(([key,edge])=>edge===existing)?.[0];
+  const endpoints=oldIndex?.match(/^e_(-?\d+)_(-?\d+)_(\d+)$/)?.slice(1).map(Number);
+  if(!endpoints)return {valid:false,error:'Origem inválida'};
+  const ends=[makeVertex(endpoints[0],endpoints[1],endpoints[2]),
+    makeVertex(endpoints[0],endpoints[1],(endpoints[2]+1)%6)];
+  // A ship cannot be lifted from the middle of an open/closed chain,
+  // nor directly from a settlement/city anchoring that end.
+  let attached=0;
+  for(const v of ends){
+    if(buildingAt(game,v)?.owner===owner)attached++;
+    const adjacent=getVertexEdges(v).filter(edgeKey=>{
+      const other=shipAt(game,edgeKey);
+      return other?.ship && other.owner===owner && other!==existing;
+    });
+    if(adjacent.length) attached++;
+  }
+  if(attached>1)return {valid:false,error:'Só é possível mover um barco na ponta livre da rota'};
+  const old={...existing};
+  existing.ship=false;
+  const check=canPlaceShip(game,playerId,toEdge);
+  Object.assign(existing,old);
+  if(!check.valid)return check;
+  return {valid:true,storedEdge:oldIndex};
+}
+
+export function moveShip(game,playerId,fromEdge,toEdge){
+  const valid=canMoveShip(game,playerId,fromEdge,toEdge);
+  if(!valid.valid)return {success:false,error:valid.error};
+  const old=game.edges[valid.storedEdge];
+  old.ship=false;
+  old.owner=null;
+  game.edges[toEdge]={ship:true,road:false,owner:game.players.findIndex(p=>p.id===playerId),
+    builtTurn:game.turnSequence||0};
+  game.shipMovedThisTurn=true;
+  return {success:true};
+}
+
+export function getPirateVictims(game,hexKey,thiefPlayerId) {
+  if(game.hexes[hexKey]?.terrain!=='sea')return [];
+  const thief=game.players.findIndex(p=>p.id===thiefPlayerId);
+  const owners=new Set();
+  for(let dir=0;dir<6;dir++){
+    const route=shipAt(game,makeEdge(game.hexes[hexKey].q,game.hexes[hexKey].r,dir));
+    if(route?.ship && route.owner!==thief &&
+      Object.values(game.players[route.owner]?.resources||{}).some(n=>n>0))
+      owners.add(route.owner);
+  }
+  return [...owners].map(i=>game.players[i].id);
+}
+export function movePirate(game,playerId,hexKey,victimId=null) {
+  if(!game.isSeafarers||game.phase!=='playing'||game.turnPhase!=='robber'||
+    game.players[game.currentPlayerIndex]?.id!==playerId)
+    return {success:false,error:'Não é sua vez de mover o pirata'};
+  if(game.hexes[hexKey]?.terrain!=='sea'||hexKey===game.pirate)
+    return {success:false,error:'Escolha outro hexágono do mar'};
+  const victims=getPirateVictims(game,hexKey,playerId);
+  if(victimId && !victims.includes(victimId))
+    return {success:false,error:'Não há barco de jogador elegível nessa posição'};
+  game.pirate=hexKey;
+  let stolenInfo=null;
+  if(victimId){
+    const thief=game.players.find(p=>p.id===playerId);
+    const victim=game.players.find(p=>p.id===victimId);
+    const cards=Object.entries(victim.resources).flatMap(([r,n])=>Array(n).fill(r));
+    if(cards.length){
+      const resource=cards[Math.floor(Math.random()*cards.length)];
+      victim.resources[resource]--;
+      thief.resources[resource]++;
+      game.__skipResourceDelta=true;
+      stolenInfo={resource,thief:thief.id,thiefName:thief.name,victim:victim.id,victimName:victim.name};
+    }
+  }
+  game.turnPhase=game.hasRolledThisTurn?'main':'roll';
+  return {success:true,stolenInfo};
+}
