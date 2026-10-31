@@ -162,7 +162,11 @@ function HexBoard({
   turnPhase,
   onPlaceSettlement,
   onPlaceRoad,
+  onPlaceShip,
+  onShipSelect,
   onUpgradeToCity,
+  pirate = null,
+  isSeafarers = false,
   onHexClick,
   onHexRightClick,
   lastPlacedSettlement,
@@ -306,10 +310,13 @@ function HexBoard({
     if (gamePhase === 'setup') {
       if (!isMyTurn) return false;
       if (selectedAction === 'road') return legalActions.some(a => a.type === 'placeRoad' && a.edgeKey === edgeKey);
+      if (selectedAction === 'ship') return legalActions.some(a => a.type === 'placeShip' && a.edgeKey === edgeKey);
     }
     if (gamePhase === 'playing') {
       if (!canBuildNow) return false;
       if ((turnPhase === 'main' || turnPhase === 'specialBuild') && selectedAction === 'road') return legalActions.some(a => a.type === 'placeRoad' && a.edgeKey === edgeKey);
+      if ((turnPhase === 'main' || turnPhase === 'specialBuild') && selectedAction === 'ship') return legalActions.some(a => a.type === 'placeShip' && a.edgeKey === edgeKey);
+      if (selectedAction === 'moveShip') return true;
       if (freeRoads > 0 && selectedAction === 'road') return legalActions.some(a => a.type === 'placeRoad' && a.edgeKey === edgeKey);
     }
     return false;
@@ -359,7 +366,7 @@ function HexBoard({
     const roadList = [];
     
     Object.entries(edges).forEach(([key, edge]) => {
-      if (!edge.road) return;
+      if (!edge.road && !edge.ship) return;
       
       const parsed = parseEdgeKey(key);
       if (!parsed) return;
@@ -370,6 +377,7 @@ function HexBoard({
       roadList.push({
         key,
         owner: edge.owner,
+        isShip: !!edge.ship,
         v1,
         v2
       });
@@ -386,7 +394,7 @@ function HexBoard({
     // First, mark all positions that have roads
     const roadPositions = new Set();
     Object.entries(edges).forEach(([key, edge]) => {
-      if (!edge.road) return;
+      if (!edge.road && !edge.ship) return;
       const parsed = parseEdgeKey(key);
       if (!parsed) return;
       const { v1, v2 } = getEdgeEndpoints(parsed.q, parsed.r, parsed.dir);
@@ -557,6 +565,9 @@ function HexBoard({
         {Object.entries(hexes).map(([key, hex]) => {
           const pos = axialToPixel(hex.q, hex.r);
           const isRobberHere = robber === key;
+          const isPirateHere = isSeafarers && pirate === key;
+          const isOcean = hex.terrain === 'sea';
+          const isGold = hex.terrain === 'gold';
           
           return (
             <g 
@@ -579,7 +590,7 @@ function HexBoard({
                 strokeWidth="3"
               />
               <image
-                href={TERRAIN_ASSETS[hex.terrain]}
+                href={isOcean || isGold ? undefined : TERRAIN_ASSETS[hex.terrain]}
                 x={pos.x - HEX_SIZE}
                 y={pos.y - HEX_SIZE}
                 width={HEX_SIZE * 2}
@@ -594,6 +605,22 @@ function HexBoard({
                 strokeWidth="2"
               />
               
+              {isOcean && (
+                <path d={hexPath(pos.x,pos.y,HEX_SIZE-HEX_TEXTURE_INSET)} fill="#178fbe" stroke="#62cfed" strokeWidth="1.5" />
+              )}
+              {isGold && (
+                <g>
+                  <path d={hexPath(pos.x,pos.y,HEX_SIZE-HEX_TEXTURE_INSET)} fill="#edc44a" stroke="#aa8023" strokeWidth="2" />
+                  <text x={pos.x} y={pos.y-17} textAnchor="middle" fontSize="17">✨</text>
+                </g>
+              )}
+              {isPirateHere && (
+                <g style={{pointerEvents:'none'}}>
+                  <circle cx={pos.x} cy={pos.y-4} r="19" fill="#18232cd9" stroke="#f0ebd0" strokeWidth="2" />
+                  <text x={pos.x} y={pos.y+3} textAnchor="middle" fontSize="23">🏴‍☠️</text>
+                </g>
+              )}
+
               {/* Number token */}
               {hex.number && (
                 <g>
@@ -663,13 +690,15 @@ function HexBoard({
             strokeWidth="10"
             strokeLinecap="round"
             className="edge-placeholder"
-            onClick={() => onPlaceRoad(key)}
+            onClick={() => selectedAction === 'moveShip' ? onShipSelect(key) : selectedAction === 'ship' ? onPlaceShip(key) : onPlaceRoad(key)}
           />
         ))}
 
         {/* Roads - rendered separately from clickable areas */}
-        {roads.map(({ key, owner, v1, v2 }) => (
-          <g key={`road-${key}`} className={newPieces.roads.includes(key) ? "piece-road-appear" : ""}>
+        {roads.map(({ key, owner, isShip, v1, v2 }) => (
+          <g key={`road-${key}`} className={newPieces.roads.includes(key) ? "piece-road-appear" : ""}
+            onClick={() => isShip && selectedAction === 'moveShip' && onShipSelect(key)}
+            style={{cursor:isShip && selectedAction==='moveShip' ? 'pointer' : 'inherit'}}>
             {/* Black outline behind the road for visibility */}
             <line
               x1={v1.x}
@@ -677,7 +706,7 @@ function HexBoard({
               x2={v2.x}
               y2={v2.y}
               stroke="#000"
-              strokeWidth="10"
+              strokeWidth={isShip ? "12" : "10"}
               strokeLinecap="round"
             />
             {/* Colored road */}
@@ -687,8 +716,9 @@ function HexBoard({
               x2={v2.x}
               y2={v2.y}
               stroke={players[owner]?.color || '#ff0000'}
-              strokeWidth="7"
+              strokeWidth={isShip ? "8" : "7"}
               strokeLinecap="round"
+              strokeDasharray={isShip ? "11 5" : undefined}
             />
           </g>
         ))}
