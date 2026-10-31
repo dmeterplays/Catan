@@ -364,6 +364,7 @@ function HexBoard({
   // No deduplication - if same road appears twice, it just overlaps (no visual issue)
   const roads = useMemo(() => {
     const roadList = [];
+    const occupiedPositions = new Set();
     
     Object.entries(edges).forEach(([key, edge]) => {
       if (!edge.road && !edge.ship) return;
@@ -374,6 +375,9 @@ function HexBoard({
       // Calculate the two vertex positions for this edge
       const { v1, v2 } = getEdgeEndpoints(parsed.q, parsed.r, parsed.dir);
       
+      const positionKey = [posKey(v1.x, v1.y), posKey(v2.x, v2.y)].sort().join('|');
+      if (occupiedPositions.has(positionKey)) return;
+      occupiedPositions.add(positionKey);
       roadList.push({
         key,
         owner: edge.owner,
