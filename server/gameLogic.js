@@ -2779,7 +2779,9 @@ function hasOpponentBuildingAtVertex(game, vKey, playerIndex) {
  * - If current holder loses longest and there's a tie, nobody gets it
  * - Worth 2 Victory Points
  */
-export function updateLongestRoad(game) {
+export export function refreshLongestRoad(game) { return updateLongestRoad(game); }
+
+function updateLongestRoad(game) {
   // Calculate road lengths for all players
   const roadLengths = game.players.map((player, idx) => {
     const length = calculateRoadLength(game, idx);
