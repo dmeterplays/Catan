@@ -142,6 +142,21 @@ export async function runBotTurn(game, broadcast, { delayMs = 500, maxActions = 
       if (game.isCitiesAndKnights && game.phase === 'playing' &&
           game.turnPhase === 'main' && !game.__ckBotActed?.[player.id]) {
         game.__ckBotActed ||= {};
+        // Use one progress card per turn, choosing an actual resource to steal.
+        const priorities=['constitution','commercialMonopoly','inventor','engineer'];
+        const candidates=Object.entries(player.progressCards||{})
+          .flatMap(([track,cards])=>cards.map(cardType=>({track,cardType})))
+          .sort((a,b)=>priorities.indexOf(a.cardType)-priorities.indexOf(b.cardType));
+        for(const card of candidates) {
+          const richest=RESOURCES.map(r=>({resource:r,count:game.players.reduce((n,p)=>n+(p.id===player.id?0:(p.resources?.[r]||0)),0)}))
+            .sort((a,b)=>b.count-a.count)[0]?.resource || 'ore';
+          const result=Game.playProgressCard(game,player.id,card.track,card.cardType,{resource:richest});
+          if(result.success) {
+            log(game,`📜 ${player.name} utilizou uma carta de progresso`);
+            broadcast();
+            break;
+          }
+        }
         const available = [];
         const ck = player.cKKnights;
         const commodity = {science:'paper',politics:'coin',trade:'cloth'};
