@@ -22,7 +22,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import * as GameLogic from './gameLogic.js';
-import { runBotTurn, runBotDiscards, runBotTradeResponses } from './bots.js';
+import { runBotTurn, runBotDiscards, runBotTradeResponses, getBotActor } from './bots.js';
 import { soundEventsForTransition } from './soundEvents.js';
 import { getLegalActions, executeLegalAction } from './legalActions.js';
 
@@ -236,8 +236,7 @@ setInterval(() => {
         game.turnDeadline = Date.now() + 30000;
       }
       broadcastGameState(gameId);
-      if (game.players[game.currentPlayerIndex]?.isBot && game.phase !== 'setup')
-        void runBotTurn(game, () => broadcastGameState(gameId));
+      if (getBotActor(game)) void runBotTurn(game, () => broadcastGameState(gameId));
     } catch (error) {
       console.error('[Catan timer] Falha ao executar ação automática:', error);
       game.turnDeadline = Date.now() + 15000;
@@ -390,7 +389,7 @@ io.on('connection', (socket) => {
       if (action.type === 'moveRobber') broadcastToGame(info.gameId, 'robberMoved', { hexKey: action.hexKey, playerId: info.playerId });
       broadcastGameState(info.gameId);
       runBotDiscards(game, () => broadcastGameState(info.gameId));
-      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(info.gameId));
+      if (getBotActor(game)) void runBotTurn(game, () => broadcastGameState(info.gameId));
     }
     callback(result);
   });
@@ -462,8 +461,8 @@ io.on('connection', (socket) => {
     const game = info && games.get(info.gameId);
     if (!game || game.phase !== 'waiting' || game.players[0].id !== info.playerId)
       return callback({ success: false, error: 'Somente o anfitrião pode adicionar bots antes da partida.' });
-    if (game.isExtended || game.isCitiesAndKnights)
-      return callback({ success: false, error: 'Bots estão disponíveis inicialmente apenas no Catan clássico.' });
+    if (game.isCitiesAndKnights)
+      return callback({ success: false, error: 'Bots ainda não estão disponíveis em Cidades e Cavaleiros.' });
     if (game.players.length >= game.maxPlayers)
       return callback({ success: false, error: 'A sala já está cheia.' });
     const botId = 'bot-' + uuidv4();
@@ -585,9 +584,7 @@ io.on('connection', (socket) => {
         turnOrder: result.turnOrder 
       });
       broadcastGameState(playerInfo.gameId);
-      if (game.players[game.currentPlayerIndex]?.isBot) {
-        runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
-      }
+      if (getBotActor(game)) void runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
     }
     
     callback(result);
@@ -708,7 +705,7 @@ io.on('connection', (socket) => {
       // once all human/bot discards are resolved.
       runBotDiscards(game, () => broadcastGameState(playerInfo.gameId));
       broadcastGameState(playerInfo.gameId);
-      if (game.players[game.currentPlayerIndex]?.isBot && game.turnPhase !== 'discard') {
+      if (getBotActor(game) && game.turnPhase !== 'discard') {
         void runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
       }
     }
@@ -1092,7 +1089,7 @@ io.on('connection', (socket) => {
     
     if (result.success) {
       broadcastGameState(playerInfo.gameId);
-      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
+      if (getBotActor(game)) void runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
     }
     
     callback(result);
@@ -1119,7 +1116,7 @@ io.on('connection', (socket) => {
         broadcastToGame(playerInfo.gameId, 'turnEnded', { playerId: playerInfo.playerId });
       }
       broadcastGameState(playerInfo.gameId);
-      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
+      if (getBotActor(game)) void runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
     }
     
     callback(result);
@@ -1146,11 +1143,12 @@ io.on('connection', (socket) => {
         });
       }
       broadcastGameState(playerInfo.gameId);
+      if (getBotActor(game)) void runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
     }
-    
+
     callback(result);
   });
-  
+
   // --------------------------------------------------------------------
   // UTILITY QUERIES
   // --------------------------------------------------------------------
