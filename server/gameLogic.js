@@ -2106,6 +2106,8 @@ export function resolveBarbarianAttack(game) {
         player.cities += 1;
         player.settlements -= 1;
         player.victoryPoints -= 1;
+        const remainingCities=Object.values(game.vertices).filter(v=>v.owner===ownerIndex&&v.building==='city').length;
+        player.cityWalls=Math.min(player.cityWalls||0,remainingCities);
       }
     });
     
