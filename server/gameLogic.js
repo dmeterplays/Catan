@@ -34,6 +34,7 @@
 // ============================================================================
 
 /** Available resource types in the game */
+import { deployKnight, syncKnightState } from './knightBoard.js';
 import { buildSeafarersBoard, isMainIslandSetupVertex, isSmallIslandVertex, getWaterEdgeType, getWaterEdgeType as seaEdgeType } from './seafarers.js';
 
 export const RESOURCES = {
@@ -969,7 +970,8 @@ export function createGame(gameId, hostPlayer, isExtended = false, enableSpecial
     specialBuildingPhase: false, // True during special building phase
     specialBuildIndex: 0, // Which player is currently in special build phase
     isCitiesAndKnights, // Cities & Knights mode enabled
-    barbarianPosition: isCitiesAndKnights ? 0 : null, // 0 to 7
+    barbarianPosition: isCitiesAndKnights ? 0 : null,
+    knightPieces: isCitiesAndKnights ? {} : null, // 0 to 7
     ports, // Port locations and types
     players: [{
       id: hostPlayer.id,
@@ -987,7 +989,6 @@ export function createGame(gameId, hostPlayer, isExtended = false, enableSpecial
         },
         progressCards: { science: [], politics: [], trade: [] },
       metropolisTracks: [],
-        metropolisTracks: [],
         newProgressCards: { science: [], politics: [], trade: [] }
       } : {}),
       developmentCards: [],
@@ -1059,6 +1060,7 @@ export function addPlayer(game, player) {
     } : {}),
     developmentCards: [],
     newDevCards: [],
+    metropolisTracks: [],
     knightsPlayed: 0,
     victoryPoints: 0,
     hiddenVictoryPoints: 0, // VP from dev cards (secret until win)
@@ -1896,6 +1898,11 @@ export function recruitKnight(game, playerId) {
   if (totalBasicKnights >= 2) return { success: false, error: 'Maximum of 2 basic knights allowed' };
   
   deductResources(player, BUILDING_COSTS.knight);
+  const piece=deployKnight(game,playerIndex,'basic');
+  if(!piece) {
+    player.resources.ore++;player.resources.wool++;
+    return {success:false,error:'Construa uma estrada com cruzamento livre para recrutar'};
+  }
   player.cKKnights.inactive.basic += 1;
   player.cKKnights.hasMovedThisTurn.basic += 1;
   
@@ -1928,7 +1935,7 @@ export function activateKnight(game, playerId, level) {
   deductResources(player, BUILDING_COSTS.activateKnight);
   player.cKKnights.inactive[level] -= 1;
   player.cKKnights.active[level] += 1;
-  
+  syncKnightState(game,playerIndex,level,null,true);
   return { success: true };
 }
 
@@ -1975,6 +1982,7 @@ export function upgradeKnight(game, playerId, fromLevel) {
   
   player.cKKnights.inactive[toLevel] += 1;
   player.cKKnights.hasMovedThisTurn[toLevel] += 1;
+  syncKnightState(game,playerIndex,fromLevel,toLevel);
   
   return { success: true };
 }
@@ -2061,6 +2069,7 @@ export function resolveBarbarianAttack(game) {
   }
   
   game.barbarianPosition = 0;
+  Object.values(game.knightPieces||{}).forEach(k=>{k.active=false});
   game.players.forEach(p => {
     p.cKKnights.inactive.basic += p.cKKnights.active.basic;
     p.cKKnights.inactive.strong += p.cKKnights.active.strong;
@@ -3035,6 +3044,7 @@ export function getPlayerView(game, playerId) {
   const {
     __publicSnapshot, __publicRollEvent, __publicRobberyEvent,
     __skipResourceDelta, __eventSeq, __rollSerial, __robberySerial,
+    __knightSequence,
     ...clientSafeGame
   } = game;
   
@@ -3050,6 +3060,10 @@ export function getPlayerView(game, playerId) {
       // After game over, show everyone's dev cards; during game, only show own cards
       developmentCards: isGameOver || idx === playerIndex ? p.developmentCards : p.developmentCards.length,
       newDevCards: isGameOver || idx === playerIndex ? p.newDevCards : p.newDevCards.length,
+      progressCards: game.isCitiesAndKnights && !isGameOver && idx!==playerIndex
+        ? Object.fromEntries(Object.entries(p.progressCards||{}).map(([k,v])=>[k,v.length])) : p.progressCards,
+      newProgressCards: game.isCitiesAndKnights && !isGameOver && idx!==playerIndex
+        ? Object.fromEntries(Object.entries(p.newProgressCards||{}).map(([k,v])=>[k,v.length])) : p.newProgressCards,
       // After game over, show everyone's resources; during game, only show own resources
       resources: isGameOver || idx === playerIndex ? p.resources : Object.values(p.resources).reduce((a, b) => a + b, 0),
       // After game over, show everyone's hidden VP; during game, only show own
