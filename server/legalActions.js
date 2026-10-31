@@ -111,7 +111,7 @@ export function getLegalActions(game, playerId) {
       }
     }
   }
-  if (hasCost(player, { ore: 1, grain: 1, wool: 1 }) && game.devCardDeck?.length) add('buyDevCard');
+  if (!game.isCitiesAndKnights && hasCost(player, { ore: 1, grain: 1, wool: 1 }) && game.devCardDeck?.length) add('buyDevCard');
   if (special) add('endSpecialBuild');
   else add('endTurn');
   return actions;
