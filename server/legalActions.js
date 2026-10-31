@@ -90,7 +90,8 @@ export function getLegalActions(game, playerId) {
     }
   }
   if (hasCost(player, { ore: 1, grain: 1, wool: 1 }) && game.devCardDeck?.length) add('buyDevCard');
-  if (!special) add('endTurn');
+  if (special) add('endSpecialBuild');
+  else add('endTurn');
   return actions;
 }
 
@@ -123,6 +124,7 @@ export function executeLegalAction(game, playerId, action) {
     case 'bankTrade': return Game.bankTrade(game, playerId, action.giveResource, action.giveAmount, action.getResource);
     case 'respondToTrade': return Game.respondToTrade(game, playerId, action.accept);
     case 'endTurn': return Game.endTurn(game, playerId);
+    case 'endSpecialBuild': return Game.endSpecialBuild(game, playerId);
     case 'discard': {
       const counts = action.resources;
       if (!counts || typeof counts !== 'object' || RESOURCES.some(r => !Number.isInteger(counts[r] || 0) || (counts[r] || 0) < 0 || (counts[r] || 0) > (option.available[r] || 0)) ||
