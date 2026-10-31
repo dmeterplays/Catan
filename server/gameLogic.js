@@ -1831,6 +1831,7 @@ export function buyCityImprovement(game, playerId, track) {
   if (!canPlayerBuildNow(game, playerId)) return { success: false, error: 'Cannot buy now' };
   
   const player = game.players[playerIndex];
+  if (!['science','politics','trade'].includes(track)) return {success:false,error:'Melhoria inválida'};
   const currentLevel = player.cityImprovements[track];
   
   if (currentLevel >= 5) return { success: false, error: 'Maximum level reached' };
@@ -1899,6 +1900,7 @@ export function activateKnight(game, playerId, level) {
     return { success: false, error: 'Not enough grain' };
   }
   
+  if (!['basic','strong','mighty'].includes(level)) return {success:false,error:'Nível de cavaleiro inválido'};
   if (player.cKKnights.inactive[level] <= 0) {
     return { success: false, error: `No inactive ${level} knight to activate` };
   }
@@ -1963,7 +1965,7 @@ export function upgradeKnight(game, playerId, fromLevel) {
 export function resolveBarbarianAttack(game) {
   let barbarianStrength = 0;
   game.players.forEach(p => {
-    barbarianStrength += (4 - p.cities);
+    barbarianStrength += Object.values(game.vertices).filter(v=>v.owner===game.players.indexOf(p)&&v.building==='city').length;
   });
   
   let catanStrength = 0;
@@ -2007,7 +2009,7 @@ export function resolveBarbarianAttack(game) {
     let lowestPlayers = [];
     
     game.players.forEach(p => {
-      const builtCities = 4 - p.cities;
+      const builtCities = Object.values(game.vertices).filter(v=>v.owner===game.players.indexOf(p)&&v.building==='city').length;
       if (builtCities > 0) { 
         const strength = playerStrengths[p.id];
         if (strength < lowestStrength) {
