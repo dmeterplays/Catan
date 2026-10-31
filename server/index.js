@@ -22,6 +22,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import * as GameLogic from './gameLogic.js';
+import * as Seafarers from './seafarers.js';
 import { runBotTurn, runBotDiscards, runBotTradeResponses, getBotActor } from './bots.js';
 import { soundEventsForTransition } from './soundEvents.js';
 import { getLegalActions, executeLegalAction } from './legalActions.js';
@@ -218,6 +219,15 @@ setInterval(() => {
           const roll = GameLogic.rollDice(game, player.id);
           if (roll.success) recordEvent(game, `⏱️ ${player.name}: dados lançados automaticamente após 5 segundos`);
         }
+      } else if (game.turnPhase === 'goldPick') {
+        for(const [index,amount] of Object.entries(game.pendingGoldPicks||{})){
+          const winner=game.players[Number(index)];
+          for(let n=0;n<amount;n++){
+            const resource=['grain','lumber','brick','ore','wool'].find(r=>GameLogic.getBankResourceCount(game,r)>0);
+            if(resource)GameLogic.pickGoldResource(game,winner.id,resource);
+          }
+        }
+        recordEvent(game,'⏱️ Recursos de ouro pendentes escolhidos automaticamente');
       } else if (game.turnPhase === 'main') {
         if (!player.isBot) {
           game.tradeOffer = null;
@@ -384,6 +394,23 @@ io.on('connection', (socket) => {
     if (result.success) {
       if (action.type === 'placeSettlement') broadcastToGame(info.gameId, 'settlementPlaced', { vertexKey: action.vertexKey, playerId: info.playerId });
       if (action.type === 'placeRoad') broadcastToGame(info.gameId, 'roadPlaced', { edgeKey: action.edgeKey, playerId: info.playerId });
+      if (action.type === 'placeShip') {
+        const player=game.players.find(p=>p.id===info.playerId);
+        recordEvent(game,`⛵ ${player?.name || 'Jogador'} construiu um barco`);
+      }
+      if (action.type === 'movePirate') {
+        recordEvent(game,'🏴‍☠️ O pirata mudou de posição');
+        if(result.stolenInfo) {
+          const stolen=result.stolenInfo;
+          game.__skipResourceDelta=true;
+          for(const [id,type] of [[stolen.thief,'stole'],[stolen.victim,'stolen']]){
+            const recipient=[...playerSockets.entries()].find(([,v])=>v.gameId===info.gameId&&v.playerId===id)?.[0];
+            if(recipient)io.to(recipient).emit('stealResult',{
+              type,resource:stolen.resource,
+              otherPlayer:type==='stole'?stolen.victimName:stolen.thiefName});
+          }
+        }
+      }
       if (action.type === 'upgradeToCity') broadcastToGame(info.gameId, 'cityBuilt', { vertexKey: action.vertexKey, playerId: info.playerId });
       if (action.type === 'endTurn') broadcastToGame(info.gameId, 'turnEnded', { playerId: info.playerId });
       if (action.type === 'moveRobber') broadcastToGame(info.gameId, 'robberMoved', { hexKey: action.hexKey, playerId: info.playerId });
@@ -418,7 +445,9 @@ io.on('connection', (socket) => {
   // --------------------------------------------------------------------
   
   /** Create a new game room as the host */
-  socket.on('createGame', ({ playerName, isExtended = false, enableSpecialBuild = true, mapType = 'random', autoSetup = false, isCitiesAndKnights = false, turnTimeLimit = 120 }, callback) => {
+  socket.on('createGame', ({ playerName, isExtended = false, enableSpecialBuild = true, mapType = 'random', autoSetup = false, isCitiesAndKnights = false, turnTimeLimit = 120, isSeafarers = false }, callback) => {
+    if (isSeafarers && (isExtended || isCitiesAndKnights))
+      return callback({success:false,error:'Navegantes é um modo independente para 4 jogadores'});
     // Check game limit
     if (games.size >= MAX_CONCURRENT_GAMES) {
       callback({ 
@@ -434,7 +463,7 @@ io.on('connection', (socket) => {
     const game = GameLogic.createGame(gameCode, {
       id: playerId,
       name: playerName
-    }, isExtended, enableSpecialBuild, mapType, autoSetup, isCitiesAndKnights);
+    }, isExtended, enableSpecialBuild, mapType, autoSetup && !isSeafarers, isCitiesAndKnights, isSeafarers);
     
     game.turnTimeLimit = [0, 60, 120, 180, 300].includes(Number(turnTimeLimit)) ? Number(turnTimeLimit) : 120;
     game.eventLog = [];
@@ -461,8 +490,8 @@ io.on('connection', (socket) => {
     const game = info && games.get(info.gameId);
     if (!game || game.phase !== 'waiting' || game.players[0].id !== info.playerId)
       return callback({ success: false, error: 'Somente o anfitrião pode adicionar bots antes da partida.' });
-    if (game.isCitiesAndKnights)
-      return callback({ success: false, error: 'Bots ainda não estão disponíveis em Cidades e Cavaleiros.' });
+    if (game.isCitiesAndKnights || game.isSeafarers)
+      return callback({ success: false, error: 'Bots ainda não estão disponíveis em Navegantes/Cidades e Cavaleiros.' });
     if (game.players.length >= game.maxPlayers)
       return callback({ success: false, error: 'A sala já está cheia.' });
     const botId = 'bot-' + uuidv4();
@@ -689,6 +718,20 @@ io.on('connection', (socket) => {
     callback(result);
   });
   
+  /** Validate ship re-positioning entirely on the server. */
+  socket.on('moveShip',({fromEdge,toEdge}={},callback=()=>{})=>{
+    const info=playerSockets.get(socket.id);
+    const game=info&&games.get(info.gameId);
+    if(!game)return callback({success:false,error:'Partida não encontrada'});
+    const result=Seafarers.moveShip(game,info.playerId,fromEdge,toEdge);
+    if(result.success){
+      GameLogic.refreshLongestRoad(game);
+      recordEvent(game,`⛵ ${game.players.find(p=>p.id===info.playerId)?.name} moveu um barco`);
+      broadcastGameState(info.gameId);
+    }
+    callback(result);
+  });
+
   /** Discard cards when a 7 is rolled (for players with >7 cards) */
   socket.on('discardCards', ({ resources }, callback) => {
     const playerInfo = playerSockets.get(socket.id);
@@ -1163,6 +1206,11 @@ io.on('connection', (socket) => {
     
     const game = games.get(playerInfo.gameId);
     const playerIdx = game.players.findIndex(p => p.id === playerInfo.playerId);
+    if(game.isSeafarers && game.hexes[hexKey]?.terrain==='sea') {
+      const victims=Seafarers.getPirateVictims(game,hexKey,playerInfo.playerId);
+      return callback({success:true,players:victims.map(id=>({
+        id,name:game.players.find(p=>p.id===id)?.name,hasResources:true}))});
+    }
     const playerIndices = GameLogic.getPlayersOnHex(game, hexKey, playerIdx);
     
     const players = playerIndices.map(idx => ({
