@@ -14,6 +14,7 @@ import InfoPopup, { useInfoPopup, INFO_DATA } from './InfoPopup';
 import Confetti from './Confetti';
 import { nomeRecurso, nomeTrilha } from '../i18n';
 import './GameBoard.css';
+import ConstructionCosts from './ConstructionCosts';
 import { playGameAudio, preloadGameAudio } from './gameAudioFiles';
 
 const AVAILABLE_COLORS = [
@@ -69,6 +70,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const [lastTradeOfferId, setLastTradeOfferId] = useState(null);
   const [dismissedTradeId, setDismissedTradeId] = useState(null);
   const [showDice, setShowDice] = useState(false);
+  const [showBuildCosts, setShowBuildCosts] = useState(false);
   const [clockNow, setClockNow] = useState(Date.now());
 
   useEffect(() => { const id = setInterval(() => setClockNow(Date.now()), 500); return () => clearInterval(id); }, []);
@@ -140,24 +142,18 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const isMySpecialBuild = isSpecialBuildPhase && gameState.specialBuildIndex === gameState.myIndex;
   const canBuildNow = isMyTurn || isMySpecialBuild;
 
-  // Auto-hide dice display after 5 seconds
+  // Only a NEW authoritative dice roll displays the result. Switching to
+  // robber, discard or a development-card phase must not replay old dice.
+  const lastDisplayedRoll = useRef(gameState.rollSerial || 0);
   useEffect(() => {
-    if (gameState.diceRoll && gameState.turnPhase !== 'roll') {
-      // Show the dice
-      setShowDice(true);
-      setDismissedBarbarianResult(false);
-      
-      // Hide dice after 5 seconds
-      const timer = setTimeout(() => {
-        setShowDice(false);
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    } else if (gameState.turnPhase === 'roll') {
-      // Reset when new turn starts (waiting for roll)
-      setShowDice(false);
-    }
-  }, [gameState.diceRoll?.dice1, gameState.diceRoll?.dice2, gameState.turnPhase, gameState.currentPlayerIndex]);
+    const serial = gameState.rollSerial || 0;
+    if (serial <= lastDisplayedRoll.current || !gameState.diceRoll) return;
+    lastDisplayedRoll.current = serial;
+    setShowDice(true);
+    setDismissedBarbarianResult(false);
+    const timeout = setTimeout(() => setShowDice(false), 4300);
+    return () => clearTimeout(timeout);
+  }, [gameState.rollSerial]);
 
   // Listen for personal resource received events (shows center popup for your own gains)
   useEffect(() => {
@@ -827,6 +823,12 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         </div>
       ))}
       <div className="command-dock">
+        <div className="construction-costs-container">
+          <button type="button" className="costs-toggle" onClick={() => setShowBuildCosts(open => !open)} aria-expanded={showBuildCosts}>
+            📖 Custos {showBuildCosts ? '▴' : '▾'}
+          </button>
+          {showBuildCosts && <ConstructionCosts onClose={() => setShowBuildCosts(false)} />}
+        </div>
         <div className="turn-clock-dock">
           <span className="turn-clock-player" style={{borderColor:currentPlayer?.color || '#b99448'}}>{currentPlayer ? currentPlayer.name : 'Sala de espera'}</span>
           <strong className={remainingSeconds !== null && remainingSeconds <= 20 ? 'clock-urgent' : ''}>⏱️ {clockLabel}</strong>
@@ -1005,6 +1007,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             gameState.discardingPlayers.find(d => d.playerIndex === gameState.myIndex)?.cardsToDiscard
           }
           addNotification={addNotification}
+          secondsLeft={remainingSeconds}
         />
       )}
 

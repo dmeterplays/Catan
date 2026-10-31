@@ -1330,6 +1330,8 @@ export function discardCards(game, playerId, resources) {
     player.resources[resource] -= amount;
   }
   
+  // Keep discarded card identities private in the public event history.
+  game.__skipResourceDelta = true;
   // Remove from discarding list
   game.discardingPlayers = game.discardingPlayers.filter(d => d.playerIndex !== playerIndex);
   
@@ -2862,6 +2864,11 @@ export function getPlayerView(game, playerId) {
   
   return {
     ...clientSafeGame,
+    // Public phase, private development-card effects: only the active player
+    // may see/use pending free roads and Year of Plenty picks.
+    freeRoads: game.players[game.currentPlayerIndex]?.id === playerId ? game.freeRoads : 0,
+    yearOfPlentyPicks: game.players[game.currentPlayerIndex]?.id === playerId ? game.yearOfPlentyPicks : 0,
+    rollSerial: game.__publicRollEvent?.id || 0,
     players: game.players.map((p, idx) => ({
       ...p,
       // After game over, show everyone's dev cards; during game, only show own cards

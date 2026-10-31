@@ -149,17 +149,47 @@ function recordEvent(game, message) {
   if (game.eventLog.length > 100) game.eventLog.shift();
 }
 function syncTurnTimer(game) {
-  if (!game.turnTimeLimit || game.phase !== 'playing') {
+  if (game.phase === 'waiting' || game.phase === 'finished') {
     game.turnDeadline = null;
     game.__timerOwner = null;
     return;
   }
-  const owner = game.players[game.currentPlayerIndex]?.id;
-  if (owner !== game.__timerOwner) {
-    game.__timerOwner = owner;
-    game.turnDeadline = Date.now() + game.turnTimeLimit * 1000;
+  const phase = game.phase === 'setup' ? 'setup' : game.turnPhase;
+  const activeIndex = phase === 'specialBuild' ? game.specialBuildIndex : game.currentPlayerIndex;
+  const owner = game.players[activeIndex]?.id || '';
+  // Discard deadline is SHARED across every pending player; individual discards
+  // must not restart the 15-second clock.
+  const key = phase === 'discard'
+    ? `discard:${game.__publicRollEvent?.id || 0}`
+    : phase === 'setup'
+      ? `setup:${owner}:${game.setupPhase}:${game.setupSettlementKey || 'settlement'}`
+      : `${phase}:${owner}`;
+  const seconds = phase === 'roll' ? 5
+    : phase === 'discard' ? 15
+    : phase === 'setup' ? 45
+    : phase === 'specialBuild' ? 45
+    : phase === 'main' ? game.turnTimeLimit : 30;
+  if (key !== game.__timerOwner) {
+    game.__timerOwner = key;
+    game.turnDeadline = seconds > 0 ? Date.now() + seconds * 1000 : null;
   }
 }
+
+function automaticDiscard(game, playerId, amount) {
+  const player = game.players.find(p => p.id === playerId);
+  if (!player) return { success: false };
+  const resources = {brick:0,lumber:0,wool:0,grain:0,ore:0};
+  const cards = Object.entries(resources).flatMap(([resource]) =>
+    Array.from({length:player.resources?.[resource] || 0}, () => resource));
+  // Random discard keeps the player's concealed resource composition private.
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  cards.slice(0, amount).forEach(resource => { resources[resource]++; });
+  return GameLogic.discardCards(game, playerId, resources);
+}
+
 setInterval(() => {
   for (const [gameId, game] of games) {
     syncTurnTimer(game);
@@ -167,24 +197,53 @@ setInterval(() => {
     game.__timerExpiring = true;
     try {
       const player = game.players[game.currentPlayerIndex];
-      if (!player || player.isBot) continue;
-      if (game.turnPhase === 'roll') {
-        const roll = GameLogic.rollDice(game, player.id);
-        if (roll.success) recordEvent(game, `⏱️ ${player.name}: dados lançados automaticamente`);
-      }
-      if (game.turnPhase === 'main') {
-        game.tradeOffer = null;
-        const result = GameLogic.endTurn(game, player.id);
-        if (result.success) recordEvent(game, `⏱️ Tempo esgotado: turno de ${player.name} encerrado`);
-      }
-      // Discards, robber and special-build phases require separate resolution; keep
-      // the game playable rather than forcing an invalid endTurn.
-      if (game.players[game.currentPlayerIndex]?.id === player.id) {
+      if (!player) continue;
+      if (game.phase === 'setup') {
+        const legal = getLegalActions(game, player.id);
+        const action = legal.find(a => a.type === (game.setupSettlementKey ? 'placeRoad' : 'placeSettlement'));
+        if (action) {
+          const result = executeLegalAction(game, player.id, action);
+          if (result.success) recordEvent(game, `⏱️ ${player.name}: posição inicial definida automaticamente`);
+        }
+      } else if (game.turnPhase === 'discard') {
+        for (const pending of [...(game.discardingPlayers || [])]) {
+          const discarding = game.players[pending.playerIndex];
+          if (!discarding || discarding.isBot) continue;
+          const result = automaticDiscard(game, discarding.id, pending.cardsToDiscard);
+          if (result.success) recordEvent(game, `⏱️ ${discarding.name} descartou ${pending.cardsToDiscard} cartas automaticamente (ocultas)`);
+        }
+        runBotDiscards(game, () => broadcastGameState(gameId));
+      } else if (game.turnPhase === 'roll') {
+        if (!player.isBot) {
+          const roll = GameLogic.rollDice(game, player.id);
+          if (roll.success) recordEvent(game, `⏱️ ${player.name}: dados lançados automaticamente após 5 segundos`);
+        }
+      } else if (game.turnPhase === 'main') {
+        if (!player.isBot) {
+          game.tradeOffer = null;
+          const result = GameLogic.endTurn(game, player.id);
+          if (result.success) recordEvent(game, `⏱️ Tempo esgotado: turno de ${player.name} encerrado`);
+        }
+      } else if (game.turnPhase === 'specialBuild') {
+        const builder = game.players[game.specialBuildIndex];
+        if (builder) {
+          const result = GameLogic.endSpecialBuild(game, builder.id);
+          if (result.success) recordEvent(game, `⏱️ ${builder.name} passou a construção especial automaticamente`);
+        }
+      } else {
+        // Robber decisions retain a grace period rather than forcing a
+        // potentially illegal action or consuming a development-card effect.
         game.turnDeadline = Date.now() + 30000;
       }
       broadcastGameState(gameId);
-      if (game.players[game.currentPlayerIndex]?.isBot) runBotTurn(game, () => broadcastGameState(gameId));
-    } finally { game.__timerExpiring = false; }
+      if (game.players[game.currentPlayerIndex]?.isBot && game.phase !== 'setup')
+        void runBotTurn(game, () => broadcastGameState(gameId));
+    } catch (error) {
+      console.error('[Catan timer] Falha ao executar ação automática:', error);
+      game.turnDeadline = Date.now() + 15000;
+    } finally {
+      game.__timerExpiring = false;
+    }
   }
 }, 1000);
 

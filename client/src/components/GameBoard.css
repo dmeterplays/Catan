@@ -833,3 +833,6 @@
 .sound-preview button {background:#244c63;color:#fff;border:1px solid #64859d;border-radius:5px;padding:6px 4px;font-size:11px;cursor:pointer}
 .sound-preview button:hover {background:#356b86}
 @media(max-width:700px){.sound-toggle{padding:5px;font-size:11px}.sound-controls{margin-right:4px}.sound-settings{right:-40px}.game-header{gap:4px}}
+
+
+.command-dock .construction-costs-container{align-self:center;z-index:100}.command-dock .costs-toggle{white-space:nowrap}

@@ -138,3 +138,6 @@
   cursor: not-allowed;
 }
 
+
+
+.discard-deadline{font-size:13px;font-weight:700;color:#f7ce72;background:rgba(80,43,18,.38);border:1px solid #bd8e4e;border-radius:7px;padding:8px;text-align:center;margin:8px 0;}

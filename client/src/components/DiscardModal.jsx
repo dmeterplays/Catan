@@ -11,7 +11,7 @@ const RESOURCE_ICONS = {
   ore: '⛏️'
 };
 
-function DiscardModal({ socket, player, cardsToDiscard, addNotification }) {
+function DiscardModal({ socket, player, cardsToDiscard, addNotification, secondsLeft }) {
   const [selected, setSelected] = useState({ brick: 0, lumber: 0, wool: 0, grain: 0, ore: 0 });
 
   const totalSelected = Object.values(selected).reduce((a, b) => a + b, 0);
@@ -40,6 +40,7 @@ function DiscardModal({ socket, player, cardsToDiscard, addNotification }) {
     <div className="modal-overlay">
       <div className="discard-modal">
         <h2>🎲 Saiu o Sete!</h2>
+        <p className="discard-deadline" role="timer">⏱️ {secondsLeft ?? 15}s para descartar — depois o servidor escolherá automaticamente</p>
         <p className="discard-info">
           Você tem mais de 7 cartas. Descarte <strong>{cardsToDiscard}</strong> cartas.
         </p>
