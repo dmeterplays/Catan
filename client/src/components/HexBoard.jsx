@@ -930,7 +930,7 @@ function HexBoard({
 
                 {/* Decorative boat only for classic boards. */}
               </g>}
-              <g transform={`translate(${isSeafarers ? cx : labelX}, ${isSeafarers ? cy : labelY})`} className="port-label" style={{ pointerEvents: 'none' }}>
+              <g transform={`translate(${labelX}, ${labelY})`} className="port-label" style={{ pointerEvents: 'none' }}>
                 <title>{badge ? `Porto de ${badge.name.toLowerCase()} — 2 para 1` : 'Porto genérico — 3 para 1'}</title>
                 <rect x="-23" y="-26" width="46" height="54" rx="8" fill="#fff9e9" stroke="#624421" strokeWidth="2.2" />
                 <rect x="-20" y="-23" width="40" height="19" rx="5" fill="#214c80" />
