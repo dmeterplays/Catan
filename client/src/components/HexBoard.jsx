@@ -573,7 +573,7 @@ function HexBoard({
             <g 
               key={key} 
               className={`hex ${canClickHex ? 'clickable' : ''} ${isRobberHere ? 'has-robber' : ''}`}
-              onClick={() => canClickHex && legalActions.some(a => a.type === 'moveRobber' && a.hexKey === key) && onHexClick(key)}
+              onClick={() => canClickHex && legalActions.some(a => (a.type === 'moveRobber' || a.type === 'movePirate') && a.hexKey === key) && onHexClick(key)}
               onContextMenu={(e) => onHexRightClick && onHexRightClick(e, hex)}
               style={{ cursor: 'context-menu' }}
             >
