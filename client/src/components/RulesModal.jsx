@@ -188,7 +188,7 @@ Com mais jogadores, os recursos ficam mais escassos. Concentre-se em construir c
     seafarers: {
       title: '⛵ Navegantes — Rumo a Novas Margens',
       content: `
-**Cenário 1 — para 4 jogadores (14 PV)**
+**Navegantes — até 4 ou até 8 jogadores (14 PV)**
 • As duas aldeias iniciais devem ficar na ilha principal
 • Ao colocar uma aldeia costeira na preparação, você pode construir uma estrada ou um barco
 • Sua primeira aldeia numa das ilhotas vale +2 PV especiais
@@ -208,7 +208,7 @@ Com mais jogadores, os recursos ficam mais escassos. Concentre-se em construir c
 • A partida termina quando alguém alcança 14 PV no próprio turno
 
 **Observação**
-Este tabuleiro utiliza uma disposição digital adaptada, mantendo os componentes do cenário de quatro jogadores.
+O cenário de até 4 jogadores mantém o arquipélago anterior. A opção até 8 jogadores usa ilha principal ampliada, oito arquipélagos e 15 portos, com mais recursos e cartas. O anfitrião pode ativar a fase de construção especial.
       `
     },
     citiesAndKnights: {
