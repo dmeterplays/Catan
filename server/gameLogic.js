@@ -3158,6 +3158,13 @@ export function getPlayerView(game, playerId) {
       hiddenVictoryPoints: isGameOver || idx === playerIndex ? p.hiddenVictoryPoints : 0
     })),
     devCardDeck: game.devCardDeck.length,
+    // Only counts of the shuffled decks are public; card order stays on server.
+    progressCardDecks: game.isCitiesAndKnights
+      ? Object.fromEntries(Object.entries(game.progressCardDecks||{}).map(([track,deck])=>[track,deck.length]))
+      : null,
+    lastDrawnProgressCards: (game.lastDrawnProgressCards||[])
+      .filter(draw=>draw.playerId===playerId)
+      .map(draw=>({...draw})),
     myIndex: playerIndex,
     myPorts: getPlayerPorts(game, playerIndex),
     tradeRatios,
