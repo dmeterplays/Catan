@@ -882,8 +882,8 @@ function HexBoard({
                   strokeWidth="1"
                 />
               ))}
-              {/* Ship */}
-              <g className="ship">
+              {/* In Navegantes, use a clean harbour plaque instead of a decorative\n                  ship behind the plaque (which obscured the 3:1 label). */}
+              {!isSeafarers && <g className="ship">
                 {/* Foam and rounded wooden hull. */}
                 <ellipse cx={cx} cy={cy + 13} rx="22" ry="5" fill="#8de1f0" opacity="0.9" />
                 <ellipse cx={cx} cy={cy + 11} rx="18" ry="3.5" fill="#d9fbff" />
@@ -906,9 +906,9 @@ function HexBoard({
                 />
                 <path d={`M${cx+1},${cy-37} L${cx+15},${cy-36} L${cx+3},${cy-31} Z`} fill="#fffef7" stroke="#d7d1c4" strokeWidth="0.8" />
 
-                {/* Large, separate plaque: type and trade ratio remain readable. */}
-              </g>
-              <g transform={`translate(${labelX}, ${labelY})`} className="port-label" style={{ pointerEvents: 'none' }}>
+                {/* Decorative boat only for classic boards. */}
+              </g>}
+              <g transform={`translate(${isSeafarers ? cx : labelX}, ${isSeafarers ? cy : labelY})`} className="port-label" style={{ pointerEvents: 'none' }}>
                 <title>{badge ? `Porto de ${badge.name.toLowerCase()} — 2 para 1` : 'Porto genérico — 3 para 1'}</title>
                 <rect x="-23" y="-26" width="46" height="54" rx="8" fill="#fff9e9" stroke="#624421" strokeWidth="2.2" />
                 <rect x="-20" y="-23" width="40" height="19" rx="5" fill="#214c80" />
