@@ -141,7 +141,7 @@ const SCENARIO_SEA = buildOceanCoordinates();
 const EIGHT_MAINLAND = [];
 for(let q=-3;q<=3;q++) for(let r=-3;r<=3;r++)
   if(Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r))<=3) EIGHT_MAINLAND.push([q,r]);
-const EIGHT_ISLAND_CENTERS = [[0,-7],[4,-7],[7,-4],[7,1],[2,5],[-3,7],[-7,3],[-7,-2]];
+const EIGHT_ISLAND_CENTERS = [[0,-7],[4,-7],[7,-4],[6,0],[2,5],[-3,7],[-7,3],[-6,-1]];
 const EIGHT_ISLANDS = EIGHT_ISLAND_CENTERS.flatMap(([q,r])=>
   [[q,r],[q+1,r],[q,r+1],[q-1,r+1],[q-1,r]].filter(([a,b])=>
     Math.max(Math.abs(a),Math.abs(b),Math.abs(a+b))<=8));
