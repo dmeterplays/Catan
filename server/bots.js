@@ -137,6 +137,46 @@ export async function runBotTurn(game, broadcast, { delayMs = 500, maxActions = 
         specialActions = 0;
       }
       if (delayMs > 0) await sleep(special ? Math.min(delayMs, 220) : delayMs);
+      // Cities & Knights actions use dedicated server functions instead of
+      // classic legal actions. Protect the bot from unbounded repeat attempts.
+      if (game.isCitiesAndKnights && game.phase === 'playing' &&
+          game.turnPhase === 'main' && !game.__ckBotActed?.[player.id]) {
+        game.__ckBotActed ||= {};
+        const available = [];
+        const ck = player.cKKnights;
+        const commodity = {science:'paper',politics:'coin',trade:'cloth'};
+        for (const track of ['science','politics','trade']) {
+          const level = player.cityImprovements[track];
+          if (level < 5 && (player.commodities[commodity[track]] || 0) >= level+1)
+            available.push({priority:track==='politics'?75:70,kind:'improve',track});
+        }
+        if (ck && player.resources.ore>0 && player.resources.wool>0) {
+          if (ck.inactive.basic+ck.active.basic<2)
+            available.push({priority:65,kind:'recruit'});
+          if (ck.inactive.basic+ck.active.basic>0 && ck.inactive.strong+ck.active.strong<2)
+            available.push({priority:50,kind:'upgrade',level:'basic'});
+        }
+        if (ck && player.resources.grain>0) {
+          for (const level of ['mighty','strong','basic'])
+            if (ck.inactive[level]>0) available.push({priority:90,kind:'activate',level});
+        }
+        available.sort((a,b)=>b.priority-a.priority);
+        for(const candidate of available) {
+          const outcome=candidate.kind==='improve'
+            ? Game.buyCityImprovement(game,player.id,candidate.track)
+            :candidate.kind==='recruit'
+              ?Game.recruitKnight(game,player.id)
+              :candidate.kind==='upgrade'
+                ?Game.upgradeKnight(game,player.id,candidate.level)
+                :Game.activateKnight(game,player.id,candidate.level);
+          if(outcome.success) {
+            log(game,`🏰 ${player.name} ${candidate.kind==='improve'?'melhorou sua cidade':candidate.kind==='recruit'?'recrutou um cavaleiro':candidate.kind==='activate'?'ativou um cavaleiro':'promoveu um cavaleiro'}`);
+            broadcast();
+            break;
+          }
+        }
+        game.__ckBotActed[player.id]=true;
+      }
       const options = getLegalActions(game, player.id);
       const action = special && specialActions >= 2
         ? options.find(option => option.type === 'endSpecialBuild')
@@ -161,7 +201,7 @@ export async function runBotTurn(game, broadcast, { delayMs = 500, maxActions = 
       }
       if (special && action.type !== 'endSpecialBuild') specialActions++;
       if (action.type === 'bankTrade') game.__botBankTrades = (game.__botBankTrades || 0) + 1;
-      if (action.type === 'endTurn') game.__botBankTrades = 0;
+      if (action.type === 'endTurn') { game.__botBankTrades = 0; if(game.__ckBotActed) delete game.__ckBotActed[player.id]; }
       broadcast();
       if (action.type === 'endTurn') break;
       if (game.isSeafarers && game.turnPhase === 'goldPick' && !getBotActor(game)) break;
