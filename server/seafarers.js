@@ -16,18 +16,19 @@ export const NAVIGATORS_SCENARIO_1 = Object.freeze({
   initialPlacementArea: 'main-island',
   initialPortCount: 9,
   shipCost: Object.freeze({ lumber: 1, wool: 1 }),
-  // Official manual p. 5; figures include sea hexes.
+  // Terrenos preservados; mar ampliado para oferecer rotas alternativas.
   mainIsland: Object.freeze({
-    sea: 10, desert: 1, gold: 0,
+    desert: 1, gold: 0,
     fields: 4, hills: 3, mountains: 3, pasture: 4, forest: 4,
     numberTokens: 18
   }),
   smallIslands: Object.freeze({
-    sea: 4, desert: 0, gold: 2,
+    desert: 0, gold: 2,
     fields: 1, hills: 2, mountains: 2, pasture: 1, forest: 1,
     numberTokens: 9
   }),
   ports: Object.freeze({ specific: 5, generic: 4 }),
+  oceanHexes: 99, // raio 6: 127 hexágonos, 28 de terra
   piratesAndRobber: true
 });
 
@@ -114,15 +115,27 @@ const SCENARIO_LAND = [
   [-2,0],[-1,0],[0,0],[1,0],[2,0],
   [-2,1],[-1,1],[0,1],[1,1],[-2,2],[-1,2],[0,2]
 ];
-const SCENARIO_MAIN_SEA = [
-  [3,-3],[3,-2],[3,-1],[3,0],[2,1],[1,2],[0,3],[-1,3],[-2,3],[-3,3]
-];
+// Layout balanceado: continente central + quatro arquipélagos em quadrantes
+// diferentes. O oceano é preenchido automaticamente, sem corredores únicos.
 const SCENARIO_ISLANDS = [
-  [4,-4],[5,-4],[4,-3],
-  [5,-1],[6,-1],[6,0],
-  [4,2],[5,2],[4,3]
+  [3,-5],[4,-5],[4,-4], // nordeste: 3 terrenos
+  [5,-1],[5,0],         // leste: 2 terrenos
+  [-4,4],[-5,5],        // sudoeste: 2 terrenos
+  [-4,-2],[-3,-3]       // noroeste: 2 terrenos
 ];
-const SCENARIO_OTHER_SEA = [[3,-4],[4,-5],[3,1],[3,2]];
+const OCEAN_RADIUS = 6;
+function buildOceanCoordinates() {
+  const land = new Set([...SCENARIO_LAND, ...SCENARIO_ISLANDS].map(([q,r]) => `${q},${r}`));
+  const sea = [];
+  for (let q = -OCEAN_RADIUS; q <= OCEAN_RADIUS; q++) {
+    for (let r = -OCEAN_RADIUS; r <= OCEAN_RADIUS; r++) {
+      if (Math.max(Math.abs(q), Math.abs(r), Math.abs(q+r)) > OCEAN_RADIUS) continue;
+      if (!land.has(`${q},${r}`)) sea.push([q,r]);
+    }
+  }
+  return sea;
+}
+const SCENARIO_SEA = buildOceanCoordinates();
 const LAND_TERRAINS = {
   fields:{resource:'grain',color:'#d4a942'},
   hills:{resource:'brick',color:'#c45a2c'},
@@ -155,9 +168,8 @@ const makeKey=([q,r])=>`${q},${r}`;
 const makeEdge=(q,r,d)=>`e_${q}_${r}_${d}`;
 const makeVertex=(q,r,d)=>`v_${q}_${r}_${d}`;
 /**
- * The distribution follows the 4-player component table on p.5.
- * This is an original, repeatable axial layout, not a tracing of the
- * printed copyrighted hex artwork. Terrain and number placements shuffle.
+ * Fan-made balance-focused map: 19 mainland tiles, 9 outer-island tiles and
+ * 99 sea tiles. Terrain and number placements shuffle.
  */
 export function buildSeafarersBoard({random=true}={}) {
   const hexes={};
@@ -173,7 +185,7 @@ export function buildSeafarersBoard({random=true}={}) {
   }
   put(SCENARIO_LAND,MAIN_LAND_TYPES,MAIN_TOKENS,'main');
   put(SCENARIO_ISLANDS,ISLAND_LAND_TYPES,ISLAND_TOKENS,'islet');
-  [...SCENARIO_MAIN_SEA,...SCENARIO_OTHER_SEA].forEach(([q,r])=>{
+  SCENARIO_SEA.forEach(([q,r])=>{
     hexes[`${q},${r}`]={q,r,terrain:'sea',resource:null,color:LAND_TERRAINS.sea.color,number:null,island:null};
   });
   const vertices={},edges={};
@@ -209,7 +221,7 @@ export function buildSeafarersBoard({random=true}={}) {
   const ports=picked.map((e,i)=>({id:i,vertices:[makeVertex(e.q,e.r,e.d),makeVertex(e.q,e.r,(e.d+1)%6)],
     type:portTypes[i],...portValues[portTypes[i]]}));
   const robber=Object.keys(hexes).find(k=>hexes[k].terrain==='desert');
-  return {hexes,edges,vertices,ports,robber,pirate:'3,-2'};
+  return {hexes,edges,vertices,ports,robber,pirate:'0,-3'};
 }
 
 export function isMainIslandSetupVertex(game,vKey) {
