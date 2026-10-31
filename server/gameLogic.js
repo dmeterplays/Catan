@@ -1940,7 +1940,7 @@ export function recruitKnight(game, playerId) {
   }
   player.cKKnights.inactive.basic += 1;
   player.cKKnights.hasMovedThisTurn.basic += 1;
-  
+  refreshLongestRoad(game);
   return { success: true };
 }
 
@@ -2895,6 +2895,9 @@ function hasOpponentBuildingAtVertex(game, vKey, playerIndex) {
       return true;
     }
   }
+  if(game.isCitiesAndKnights && Object.values(game.knightPieces||{}).some(
+    piece=>piece.owner!==playerIndex && areVerticesEqual(piece.vertexKey,vKey)
+  ))return true;
   return false;
 }
 
