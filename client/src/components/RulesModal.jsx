@@ -185,6 +185,32 @@ Isso evita que os jogadores acumulem cartas demais entre os turnos.
 Com mais jogadores, os recursos ficam mais escassos. Concentre-se em construir com eficiência e em conseguir bons portos logo no início!
       `
     },
+    seafarers: {
+      title: '⛵ Navegantes — Rumo a Novas Margens',
+      content: `
+**Cenário 1 — para 4 jogadores (14 PV)**
+• As duas aldeias iniciais devem ficar na ilha principal
+• Ao colocar uma aldeia costeira na preparação, você pode construir uma estrada ou um barco
+• Sua primeira aldeia numa das ilhotas vale +2 PV especiais
+
+**Barcos e rotas marítimas**
+• Um barco custa 1 madeira + 1 lã (máximo: 15 barcos por pessoa)
+• Barcos só podem ocupar as bordas marítimas e costeiras
+• Uma estrada só se liga a um barco através de uma aldeia ou cidade própria
+• Um barco da extremidade livre pode ser movido uma vez por turno, mas nunca no turno em que foi construído
+• Barcos também contam para a Maior Estrada Comercial
+
+**Pirata e filões de ouro**
+• Ao sair 7 ou jogar Cavaleiro, escolha mover o ladrão na terra ou o pirata no mar
+• O pirata impede a construção e movimentação de barcos nos seis lados do hexágono ocupado
+• O pirata permite roubar uma carta de um jogador com barco adjacente
+• Quando um filão de ouro produz, você escolhe uma carta de recurso disponível no banco por aldeia, ou duas por cidade
+• A partida termina quando alguém alcança 14 PV no próprio turno
+
+**Observação**
+Este tabuleiro utiliza uma disposição digital adaptada, mantendo os componentes do cenário de quatro jogadores.
+      `
+    },
     citiesAndKnights: {
       title: '⚔️ Cidades e Cavaleiros',
       content: `
