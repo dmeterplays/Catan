@@ -935,7 +935,7 @@ export function createGame(gameId, hostPlayer, isExtended = false, enableSpecial
     ...PORT_TYPES[portTypes[idx]]
   }));
 
-  const seaBoard = isSeafarers ? buildSeafarersBoard({random:mapType !== 'standard'}) : null;
+  const seaBoard = isSeafarers ? buildSeafarersBoard({random:mapType !== 'standard',extended:isExtended}) : null;
   if(seaBoard) {
     for (const key of Object.keys(hexes)) delete hexes[key];
     for (const key of Object.keys(vertices)) delete vertices[key];
@@ -1077,8 +1077,8 @@ export function addPlayer(game, player) {
  * Requires at least 2 players
  */
 export function startGame(game) {
-  if (game.isSeafarers && game.players.length !== 4)
-    return {success:false,error:'Rumo a Novas Margens requer exatamente 4 jogadores'};
+  if (game.isSeafarers && (game.players.length < 2 || game.players.length > game.maxPlayers))
+    return {success:false,error:`Navegantes requer de 2 a ${game.maxPlayers} jogadores`};
   if (game.players.length < 2) {
     return { success: false, error: 'Need at least 2 players' };
   }
@@ -1115,7 +1115,7 @@ export function startGame(game) {
 export function shuffleBoard(game) {
   if (game.isSeafarers) {
     if (game.phase !== 'waiting') return {success:false,error:'Partida já começou'};
-    const board=buildSeafarersBoard({random:true});
+    const board=buildSeafarersBoard({random:true,extended:game.isExtended});
     Object.assign(game,{...board});
     return {success:true};
   }
