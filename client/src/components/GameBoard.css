@@ -836,3 +836,25 @@
 
 
 .command-dock .construction-costs-container{align-self:center;z-index:100}.command-dock .costs-toggle{white-space:nowrap}
+
+
+/* Lobby color chooser: compact until opened, with clearly marked occupied colors. */
+.color-selector{margin:7px 0 13px;border:1px solid #947044;border-radius:8px;background:#172c36;overflow:hidden}
+.color-selector-summary{display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none;padding:10px 11px;color:#f4dba8;font-weight:700;font-size:13px}
+.color-selector-summary::-webkit-details-marker{display:none}
+.color-selector-summary::after{content:"▾";margin-left:auto;color:#f4dba8}
+.color-selector[open] .color-selector-summary::after{content:"▴"}
+.color-selector-current{display:inline-block;width:18px;height:18px;border:2px solid #fff8;border-radius:50%;box-shadow:0 1px 4px #0007}
+.color-selector-current-name{color:#eee;font-size:12px;font-weight:400}
+.color-selector-content{padding:5px 9px 11px;border-top:1px solid #ffffff20}
+.color-selector-content p{font-size:11px;color:#cbd6dc;margin:5px 2px 10px}
+.color-selector-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.color-swatch-option{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 2px;border:1px solid transparent;background:#ffffff0d;border-radius:7px;color:#e7edf1;cursor:pointer;min-width:0}
+.color-swatch-option:hover:not(:disabled){border-color:#e6c98d;background:#ffffff20}
+.color-swatch-option.is-selected{border-color:#e6c98d;background:#b9984633}
+.color-swatch-option.is-taken{opacity:.78;cursor:not-allowed}
+.color-swatch-dot{position:relative;display:flex;align-items:center;justify-content:center;width:31px;height:31px;border-radius:50%;border:2px solid #d2d7dc;box-shadow:0 2px 5px #0008}
+.color-swatch-x{font-size:24px;font-weight:900;color:#fff;text-shadow:-2px -2px #20232b,2px 2px #20232b,2px -2px #20232b,-2px 2px #20232b}
+.color-swatch-check{font-size:21px;font-weight:900;color:#fff;text-shadow:0 1px 3px #111,-1px -1px #111}
+.color-swatch-name{font-size:10px;text-align:center;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:100%}
+@media(max-width:350px){.color-selector-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
