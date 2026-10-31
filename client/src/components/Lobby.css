@@ -709,3 +709,69 @@
 .create-mode-card.active{border:2px solid #f0cb7e;background:#31505d}
 .create-mode-card.upcoming{cursor:not-allowed;opacity:.63;border-style:dashed}
 @media(max-width:440px){.create-mode-summary{flex-wrap:wrap}.create-mode-current{margin-left:0}.create-mode-grid{grid-template-columns:1fr}}
+
+
+/* Lobby contrast: parchment uses dark ink; dark controls use light text. */
+.lobby-form {
+  --lobby-ink: #2f2115;
+  --lobby-muted: #58452f;
+  --lobby-light: #fff2d6;
+  --lobby-light-muted: #e8d5b3;
+  color: var(--lobby-ink);
+}
+.lobby-form .form-group > label,
+.lobby-form .game-mode-group > label,
+.lobby-form .form-group > small,
+.lobby-form .form-group > p,
+.lobby-form .form-group > span,
+.lobby-form .checkbox-title,
+.lobby-form .checkbox-desc,
+.lobby-form .checkbox-label,
+.lobby-form .back-btn {
+  color: var(--lobby-ink);
+  opacity: 1;
+}
+.lobby-form .checkbox-desc,
+.lobby-form .form-group > small { color: var(--lobby-muted); }
+.lobby-form .mode-option {
+  background: #ead6b3;
+  border-color: #987245;
+  color: var(--lobby-ink);
+  text-shadow: none;
+}
+.lobby-form .mode-option .mode-label,
+.lobby-form .mode-option .mode-desc {
+  color: var(--lobby-ink);
+  text-shadow: none;
+}
+.lobby-form .mode-option .mode-desc { color: var(--lobby-muted); }
+.lobby-form .mode-option.active {
+  background: #24170e;
+  border-color: #d5a344;
+  color: var(--lobby-light);
+}
+.lobby-form .mode-option.active .mode-label { color: var(--lobby-light); }
+.lobby-form .mode-option.active .mode-desc { color: var(--lobby-light-muted); }
+.lobby-form .mode-option:hover:not(.active) { background: #f5e5c9; }
+.lobby-form .create-mode-summary,
+.lobby-form .create-mode-current { color: var(--lobby-light); }
+.lobby-form .create-mode-help { color: #f4e5c7; }
+.lobby-form .create-mode-card { color: var(--lobby-light); }
+.lobby-form .create-mode-card strong { color: var(--lobby-light); }
+.lobby-form .create-mode-card small { color: var(--lobby-light-muted); }
+.lobby-form select {
+  background: #fff9ed;
+  color: #25180f;
+  border: 1px solid #74502c;
+  border-radius: 5px;
+  padding: 7px 8px;
+  max-width: 100%;
+}
+.lobby-form select option { background: #fff9ed; color: #25180f; }
+.lobby-form .special-build-option {
+  background: #d2b995;
+  border-color: #977248;
+}
+.lobby-form .special-build-option .checkbox-title { color: #2f2115; }
+.lobby-form .special-build-option .checkbox-desc { color: #58452f; }
+.lobby-form .back-btn:hover { color: #77491e; }
