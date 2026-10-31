@@ -28,7 +28,7 @@ export const NAVIGATORS_SCENARIO_1 = Object.freeze({
     numberTokens: 9
   }),
   ports: Object.freeze({ specific: 5, generic: 4 }),
-  oceanHexes: 99, // raio 6: 127 hexágonos, 28 de terra
+  oceanHexes: 90, // raio 6: 127 hexágonos, 37 de terra
   piratesAndRobber: true
 });
 
@@ -118,10 +118,10 @@ const SCENARIO_LAND = [
 // Layout balanceado: continente central + quatro arquipélagos em quadrantes
 // diferentes. O oceano é preenchido automaticamente, sem corredores únicos.
 const SCENARIO_ISLANDS = [
-  [3,-5],[4,-5],[4,-4], // nordeste: 3 terrenos
-  [5,-1],[5,0],         // leste: 2 terrenos
-  [-4,4],[-5,5],        // sudoeste: 2 terrenos
-  [-4,-2],[-3,-3]       // noroeste: 2 terrenos
+  [3,-5],[4,-5],[4,-4],[3,-4],[5,-5], // nordeste: 5 terrenos
+  [5,-1],[5,0],[4,0],[5,-2],[4,1],    // leste: 5 terrenos
+  [-4,4],[-5,5],[-4,5],[-3,4],         // sudoeste: 4 terrenos
+  [-4,-2],[-3,-3],[-4,-1],[-3,-2]      // noroeste: 4 terrenos
 ];
 const OCEAN_RADIUS = 6;
 function buildOceanCoordinates() {
@@ -152,10 +152,12 @@ const MAIN_LAND_TYPES=[
   ...Array(4).fill('forest'),'desert'
 ];
 const ISLAND_LAND_TYPES=[
-  'fields','hills','hills','mountains','mountains','pasture','forest','gold','gold'
+  ...Array(3).fill('fields'),...Array(4).fill('hills'),
+  ...Array(3).fill('mountains'),...Array(3).fill('pasture'),
+  ...Array(3).fill('forest'),'gold','gold'
 ];
 const MAIN_TOKENS=[2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12];
-const ISLAND_TOKENS=[2,3,4,5,6,8,9,10,11];
+const ISLAND_TOKENS=[2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12];
 function shuffleList(items) {
   const copy=[...items];
   for(let i=copy.length-1;i>0;i--) {
@@ -168,8 +170,8 @@ const makeKey=([q,r])=>`${q},${r}`;
 const makeEdge=(q,r,d)=>`e_${q}_${r}_${d}`;
 const makeVertex=(q,r,d)=>`v_${q}_${r}_${d}`;
 /**
- * Fan-made balance-focused map: 19 mainland tiles, 9 outer-island tiles and
- * 99 sea tiles. Terrain and number placements shuffle.
+ * Fan-made balance-focused map: 19 mainland tiles, 18 outer-island tiles and
+ * 90 sea tiles. Terrain and number placements shuffle.
  */
 export function buildSeafarersBoard({random=true}={}) {
   const hexes={};
