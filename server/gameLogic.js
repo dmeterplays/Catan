@@ -120,15 +120,15 @@ export const PROGRESS_CARDS = {
 
 const PROGRESS_CARD_DISTRIBUTION = {
   science: [
-    ...Array(9).fill(PROGRESS_CARDS.INVENTOR),
-    ...Array(9).fill(PROGRESS_CARDS.ENGINEER)
+    ...Array(18).fill(PROGRESS_CARDS.INVENTOR),
+    ...Array(18).fill(PROGRESS_CARDS.ENGINEER)
   ],
   politics: [
-    ...Array(9).fill(PROGRESS_CARDS.CONSTITUTION),
-    ...Array(9).fill(PROGRESS_CARDS.ENGINEER)
+    ...Array(18).fill(PROGRESS_CARDS.CONSTITUTION),
+    ...Array(18).fill(PROGRESS_CARDS.ENGINEER)
   ],
   trade: [
-    ...Array(18).fill(PROGRESS_CARDS.COMMERCIAL_MONOPOLY)
+    ...Array(36).fill(PROGRESS_CARDS.COMMERCIAL_MONOPOLY)
   ]
 };
 
@@ -2032,11 +2032,20 @@ export function resolveBarbarianAttack(game) {
     });
     
     if (highestStrength > 0) {
-      highestPlayers.forEach(pid => {
-        const player = game.players.find(p => p.id === pid);
-        player.victoryPoints += 1; 
-      });
-      result.details = `Catan won! Defender of Catan VP awarded to: ${highestPlayers.map(pid => game.players.find(p=>p.id===pid).name).join(', ')}`;
+      if(highestPlayers.length===1) {
+        game.players.find(p=>p.id===highestPlayers[0]).victoryPoints += 1;
+        checkWinner(game);
+        result.details = `Defensor de Catan: ${game.players.find(p=>p.id===highestPlayers[0]).name} (+1 PV)`;
+      } else {
+        // A tie rewards one randomly chosen progress card per tied defender
+        // instead of flooding an eight-player match with bonus victory points.
+        for(const pid of highestPlayers) {
+          const defender=game.players.find(p=>p.id===pid);
+          const deck=game.progressCardDecks?.politics;
+          if(deck?.length) defender.newProgressCards.politics.push(deck.pop());
+        }
+        result.details = `Defesa compartilhada: ${highestPlayers.map(pid=>game.players.find(p=>p.id===pid).name).join(', ')} recebem uma carta de progresso.`;
+      }
     } else {
       result.details = 'Catan won! (But no knights were present)';
     }
@@ -2046,7 +2055,8 @@ export function resolveBarbarianAttack(game) {
     
     game.players.forEach(p => {
       const builtCities = Object.values(game.vertices).filter(v=>v.owner===game.players.indexOf(p)&&v.building==='city').length;
-      if (builtCities > 0) { 
+      const protectedCities = (p.metropolisTracks || []).length;
+      if (builtCities > protectedCities) { 
         const strength = playerStrengths[p.id];
         if (strength < lowestStrength) {
           lowestStrength = strength;
@@ -2059,7 +2069,10 @@ export function resolveBarbarianAttack(game) {
     
     lowestPlayers.forEach(pid => {
       const player = game.players.find(p => p.id === pid);
-      const cityVertexKey = Object.entries(game.vertices).find(([vKey, v]) => v.owner === game.players.findIndex(p2 => p2.id === pid) && v.building === 'city')?.[0];
+      const ownerIndex=game.players.findIndex(p2=>p2.id===pid);
+      const cities=Object.entries(game.vertices).filter(([k,v])=>v.owner===ownerIndex&&v.building==='city');
+      const protectedCount=(player.metropolisTracks||[]).length;
+      const cityVertexKey=cities.length>protectedCount ? cities[cities.length-1]?.[0] : null;
       
       if (cityVertexKey) {
         game.vertices[cityVertexKey].building = 'settlement';
