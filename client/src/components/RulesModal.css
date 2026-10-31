@@ -255,3 +255,14 @@
 .rules-modal .rules-nav-btn { color: #211a13; }
 .rules-modal .rules-nav-btn.active { color: #783413; }
 .rules-modal .rules-text strong { font-weight: 800; }
+
+/* Texto preto em todas as áreas de leitura sobre o pergaminho. */
+.rules-modal .rules-content,
+.rules-modal .rules-text,
+.rules-modal .rules-text p,
+.rules-modal .rules-text li,
+.rules-modal .rules-text strong,
+.rules-modal .rules-text h4,
+.rules-modal .rules-content h3,
+.rules-modal .rules-nav-btn,
+.rules-modal .rules-nav-btn.active { color: #000 !important; }
