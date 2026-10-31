@@ -998,6 +998,7 @@ export function createGame(gameId, hostPlayer, isExtended = false, enableSpecial
       hiddenVictoryPoints: 0, // VP from dev cards (secret until win)
       settlements: 5,
       cities: 4,
+      cityWalls: 0,
       roads: 15,
       ships: isSeafarers ? 15 : 0,
       firstIslandClaimed: false,
@@ -1066,6 +1067,7 @@ export function addPlayer(game, player) {
     hiddenVictoryPoints: 0, // VP from dev cards (secret until win)
     settlements: 5,
     cities: 4,
+    cityWalls: 0,
     roads: 15,
     ships: game.isSeafarers ? 15 : 0,
     firstIslandClaimed: false,
@@ -1251,10 +1253,6 @@ export function rollDice(game, playerId) {
         const deck = game.progressCardDecks[eventDie];
         if (deck && deck.length > 0) {
           const card = deck.pop();
-          if (card === PROGRESS_CARDS.CONSTITUTION) {
-            p.hiddenVictoryPoints = (p.hiddenVictoryPoints || 0) + 1;
-            checkWinner(game);
-          }
           p.newProgressCards[eventDie].push(card);
           drawnProgressCards.push({ playerId: p.id, card, track: eventDie });
         }
@@ -1268,7 +1266,8 @@ export function rollDice(game, playerId) {
     const playersToDiscard = [];
     game.players.forEach((p, idx) => {
       const totalCards = Object.values(p.resources).reduce((a, b) => a + b, 0);
-      if (totalCards > 7) {
+      const safeLimit = 7 + (game.isCitiesAndKnights ? 2*(p.cityWalls||0) : 0);
+      if (totalCards > safeLimit) {
         playersToDiscard.push({
           playerIndex: idx,
           cardsToDiscard: Math.floor(totalCards / 2)
@@ -1888,6 +1887,23 @@ export function buyCityImprovement(game, playerId, track) {
  * Recruit a new basic knight (C&K)
  * Costs 1 Ore + 1 Wool
  */
+/**
+ * Adapted C&K city walls: spend 2 brick to raise the seven-card threshold
+ * by 2 per wall. Up to 3 walls, never more than existing cities.
+ */
+export function buildCityWall(game,playerId) {
+ if(!game?.isCitiesAndKnights)return {success:false,error:'Requer Cidades e Cavaleiros'};
+ if(!canPlayerBuildNow(game,playerId))return {success:false,error:'Não pode construir agora'};
+ const player=game.players.find(p=>p.id===playerId);
+ if(!player)return {success:false,error:'Jogador inválido'};
+ const cityCount=Object.values(game.vertices).filter(v=>v.owner===game.players.indexOf(player)&&v.building==='city').length;
+ if((player.cityWalls||0)>=Math.min(3,cityCount))return {success:false,error:'É necessário ter outra cidade sem muralha'};
+ if((player.resources.brick||0)<2)return {success:false,error:'São necessários 2 tijolos'};
+ player.resources.brick-=2;
+ player.cityWalls=(player.cityWalls||0)+1;
+ return {success:true};
+}
+
 export function recruitKnight(game, playerId) {
   if (!game.isCitiesAndKnights) return { success: false, error: 'Not playing Cities & Knights' };
   
