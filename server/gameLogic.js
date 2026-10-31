@@ -115,20 +115,31 @@ export const PROGRESS_CARDS = {
   CONSTITUTION: 'constitution', // +1 VP
   
   // Trade (Yellow)
-  COMMERCIAL_MONOPOLY: 'commercialMonopoly' // Steal all of one resource (Monopoly)
+  COMMERCIAL_MONOPOLY: 'commercialMonopoly', // Steal all of one resource
+  IRRIGATION: 'irrigation', // Collect grain from the bank
+  MINING: 'mining', // Collect ore from the bank
+  DIPLOMAT: 'diplomat', // Grants a free road
+  SABOTEUR: 'saboteur', // Strikes the player ahead in score
+  MASTER_MERCHANT: 'masterMerchant', // Steals a resource from the leader
+  TRADE_FAIR: 'tradeFair' // Collects a bundle of commodities
 };
 
 const PROGRESS_CARD_DISTRIBUTION = {
   science: [
-    ...Array(18).fill(PROGRESS_CARDS.INVENTOR),
-    ...Array(18).fill(PROGRESS_CARDS.ENGINEER)
+    ...Array(9).fill(PROGRESS_CARDS.INVENTOR),
+    ...Array(9).fill(PROGRESS_CARDS.ENGINEER),
+    ...Array(9).fill(PROGRESS_CARDS.IRRIGATION),
+    ...Array(9).fill(PROGRESS_CARDS.MINING)
   ],
   politics: [
-    ...Array(18).fill(PROGRESS_CARDS.CONSTITUTION),
-    ...Array(18).fill(PROGRESS_CARDS.ENGINEER)
+    ...Array(4).fill(PROGRESS_CARDS.CONSTITUTION),
+    ...Array(16).fill(PROGRESS_CARDS.DIPLOMAT),
+    ...Array(16).fill(PROGRESS_CARDS.SABOTEUR)
   ],
   trade: [
-    ...Array(36).fill(PROGRESS_CARDS.COMMERCIAL_MONOPOLY)
+    ...Array(12).fill(PROGRESS_CARDS.COMMERCIAL_MONOPOLY),
+    ...Array(12).fill(PROGRESS_CARDS.MASTER_MERCHANT),
+    ...Array(12).fill(PROGRESS_CARDS.TRADE_FAIR)
   ]
 };
 
@@ -2284,6 +2295,39 @@ export function playProgressCard(game, playerId, track, cardType, params = {}) {
     case PROGRESS_CARDS.CONSTITUTION:
       player.victoryPoints += 1;
       checkWinner(game);
+      break;
+    case PROGRESS_CARDS.IRRIGATION:
+    case PROGRESS_CARDS.MINING: {
+      const resource=cardType===PROGRESS_CARDS.IRRIGATION?'grain':'ore';
+      for(let i=0;i<2 && getBankResourceCount(game,resource)>0;i++)player.resources[resource]++;
+      break;
+    }
+    case PROGRESS_CARDS.DIPLOMAT:
+      game.freeRoads=(game.freeRoads||0)+1;
+      break;
+    case PROGRESS_CARDS.SABOTEUR: {
+      const rivals=game.players.filter(p=>p.id!==playerId)
+        .sort((a,b)=>b.victoryPoints-a.victoryPoints);
+      const victim=rivals[0];
+      if(victim) {
+        const items=Object.keys(victim.resources).filter(r=>victim.resources[r]>0);
+        if(items.length) victim.resources[items[Math.floor(Math.random()*items.length)]]--;
+      }
+      break;
+    }
+    case PROGRESS_CARDS.MASTER_MERCHANT: {
+      const rivals=game.players.filter(p=>p.id!==playerId)
+        .sort((a,b)=>b.victoryPoints-a.victoryPoints);
+      const victim=rivals.find(p=>Object.values(p.resources).some(n=>n>0));
+      if(victim){
+        const items=Object.entries(victim.resources).flatMap(([r,n])=>Array(n).fill(r));
+        const chosen=items[Math.floor(Math.random()*items.length)];
+        victim.resources[chosen]--; player.resources[chosen]++;
+      }
+      break;
+    }
+    case PROGRESS_CARDS.TRADE_FAIR:
+      for(const commodity of ['paper','coin','cloth'])player.commodities[commodity]++;
       break;
   }
   
