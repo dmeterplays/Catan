@@ -858,3 +858,16 @@
 .color-swatch-check{font-size:21px;font-weight:900;color:#fff;text-shadow:0 1px 3px #111,-1px -1px #111}
 .color-swatch-name{font-size:10px;text-align:center;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:100%}
 @media(max-width:350px){.color-selector-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+
+/* Navegantes: compact setup route selector and accessible gold claim dialog. */
+.seafarers-setup-choice{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:7px;background:#172d3be8;border:1px solid #f0d393;border-radius:8px;padding:8px;color:#fff;font-size:12px;white-space:nowrap;box-shadow:0 4px 15px #0008}
+.seafarers-setup-choice button{border:1px solid #a78853;color:#f9f1dc;background:#25495a;padding:7px 10px;border-radius:6px;cursor:pointer}
+.seafarers-setup-choice button.active{background:#bb8e3d;color:#1a1d1e;font-weight:800}
+.seafarers-gold-overlay{position:fixed;inset:0;z-index:2600;background:#000a;display:flex;align-items:center;justify-content:center;padding:16px}
+.seafarers-gold-box{width:min(440px,92vw);border:2px solid #e1bb63;background:#243a48;color:#fff2d5;border-radius:12px;padding:20px;text-align:center;box-shadow:0 15px 50px #000b}
+.seafarers-gold-box h3{color:#f6d575;font-size:24px;margin:0 0 10px}
+.seafarers-gold-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:13px}
+.seafarers-gold-options button{padding:11px;border:1px solid #c5a96d;background:#31556c;color:white;border-radius:8px;cursor:pointer;font-weight:700}
+.seafarers-gold-options button:disabled{opacity:.4;cursor:not-allowed}
+.seafarers-gold-options button:not(:disabled):hover{background:#557789}

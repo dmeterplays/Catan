@@ -73,7 +73,7 @@ function shipAt(game,eKey) {
   return null;
 }
 
-export function canPlaceShip(game, playerId, eKey, { setup = false, settlementKey = null } = {}) {
+export function canPlaceShip(game, playerId, eKey, { setup = false, settlementKey = null, moving = false } = {}) {
   if (!game.isSeafarers) return {valid:false,error:'Navegantes não está ativo'};
   const owner=game.players.findIndex(p=>p.id===playerId);
   if(owner<0) return {valid:false,error:'Jogador desconhecido'};
@@ -82,9 +82,10 @@ export function canPlaceShip(game, playerId, eKey, { setup = false, settlementKe
   if (!['sea','coast'].includes(getWaterEdgeType(game,eKey)))
     return {valid:false,error:'Barcos somente no mar ou na costa'};
   if (shipAt(game,eKey)) return {valid:false,error:'Este lado já está ocupado'};
-  if ((actor.ships ?? NAVIGATORS_SHIP_LIMIT) < 1) return {valid:false,error:'Sem barcos disponíveis'};
+  if (isPirateBlocking(game,eKey)) return {valid:false,error:'O pirata bloqueia este lado do mar'};
+  if (!moving && (actor.ships ?? NAVIGATORS_SHIP_LIMIT) < 1) return {valid:false,error:'Sem barcos disponíveis'};
   if (setup && !settlementKey) return {valid:false,error:'Barco inicial precisa de aldeia'};
-  if (!setup && ((actor.resources?.lumber||0)<1 || (actor.resources?.wool||0)<1))
+  if (!setup && !moving && !(game.freeRoads>0) && ((actor.resources?.lumber||0)<1 || (actor.resources?.wool||0)<1))
     return {valid:false,error:'Necessário 1 madeira e 1 lã'};
   const m=/^e_(-?\d+)_(-?\d+)_(\d+)$/.exec(eKey);
   const [q,r,d]=m.slice(1).map(Number);
@@ -105,4 +106,240 @@ export function canPlaceShip(game, playerId, eKey, { setup = false, settlementKe
   });
   if(!connected) return {valid:false,error:'Conecte ao seu barco ou a uma aldeia/cidade'};
   return {valid:true};
+}
+
+const SCENARIO_LAND = [
+  [0,-2],[1,-2],[2,-2],[-1,-1],[0,-1],[1,-1],[2,-1],
+  [-2,0],[-1,0],[0,0],[1,0],[2,0],
+  [-2,1],[-1,1],[0,1],[1,1],[-2,2],[-1,2],[0,2]
+];
+const SCENARIO_MAIN_SEA = [
+  [3,-3],[3,-2],[3,-1],[3,0],[2,1],[1,2],[0,3],[-1,3],[-2,3],[-3,3]
+];
+const SCENARIO_ISLANDS = [
+  [4,-4],[5,-4],[4,-3],
+  [5,-1],[6,-1],[6,0],
+  [4,2],[5,2],[4,3]
+];
+const SCENARIO_OTHER_SEA = [[3,-4],[4,-5],[3,1],[3,2]];
+const LAND_TERRAINS = {
+  fields:{resource:'grain',color:'#d4a942'},
+  hills:{resource:'brick',color:'#c45a2c'},
+  mountains:{resource:'ore',color:'#6b6b6b'},
+  pasture:{resource:'wool',color:'#90c26a'},
+  forest:{resource:'lumber',color:'#2d5a27'},
+  desert:{resource:null,color:'#e8d5a3'},
+  gold:{resource:null,color:'#ddb52e'},
+  sea:{resource:null,color:'#1482b4'}
+};
+const MAIN_LAND_TYPES=[
+  ...Array(4).fill('fields'),...Array(3).fill('hills'),
+  ...Array(3).fill('mountains'),...Array(4).fill('pasture'),
+  ...Array(4).fill('forest'),'desert'
+];
+const ISLAND_LAND_TYPES=[
+  'fields','hills','hills','mountains','mountains','pasture','forest','gold','gold'
+];
+const MAIN_TOKENS=[2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12];
+const ISLAND_TOKENS=[2,3,4,5,6,8,9,10,11];
+function shuffleList(items) {
+  const copy=[...items];
+  for(let i=copy.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [copy[i],copy[j]]=[copy[j],copy[i]];
+  }
+  return copy;
+}
+const makeKey=([q,r])=>`${q},${r}`;
+const makeEdge=(q,r,d)=>`e_${q}_${r}_${d}`;
+const makeVertex=(q,r,d)=>`v_${q}_${r}_${d}`;
+/**
+ * The distribution follows the 4-player component table on p.5.
+ * This is an original, repeatable axial layout, not a tracing of the
+ * printed copyrighted hex artwork. Terrain and number placements shuffle.
+ */
+export function buildSeafarersBoard({random=true}={}) {
+  const hexes={};
+  function put(coords,types,tokens,island) {
+    const t=random?shuffleList(types):[...types];
+    const nums=random?shuffleList(tokens):[...tokens];
+    let n=0;
+    coords.forEach(([q,r],i)=>{
+      const terrain=t[i],style=LAND_TERRAINS[terrain];
+      hexes[`${q},${r}`]={q,r,terrain,resource:style.resource,color:style.color,
+        number:terrain==='desert'||terrain==='sea'?null:nums[n++],island};
+    });
+  }
+  put(SCENARIO_LAND,MAIN_LAND_TYPES,MAIN_TOKENS,'main');
+  put(SCENARIO_ISLANDS,ISLAND_LAND_TYPES,ISLAND_TOKENS,'islet');
+  [...SCENARIO_MAIN_SEA,...SCENARIO_OTHER_SEA].forEach(([q,r])=>{
+    hexes[`${q},${r}`]={q,r,terrain:'sea',resource:null,color:LAND_TERRAINS.sea.color,number:null,island:null};
+  });
+  const vertices={},edges={};
+  Object.values(hexes).forEach(h=>{
+    for(let d=0;d<6;d++){
+      vertices[makeVertex(h.q,h.r,d)]={building:null,owner:null};
+      edges[makeEdge(h.q,h.r,d)]={road:false,ship:false,owner:null};
+    }
+  });
+  const types=['BRICK','LUMBER','WOOL','GRAIN','ORE','GENERIC','GENERIC','GENERIC','GENERIC'];
+  const coastal=[];
+  SCENARIO_LAND.forEach(([q,r])=>{
+    for(let d=0;d<6;d++){
+      const key=makeEdge(q,r,d);
+      const alternatives=getEquivalentEdges(q,r,d);
+      if(alternatives.some(v=>v.q!==q||v.r!==r ? hexes[`${v.q},${v.r}`]?.terrain==='sea':false))
+        coastal.push({key,q,r,d});
+    }
+  });
+  // Select spaced-out land/sea edges to distribute ports around mainland.
+  const picked=[];
+  for(let i=0;i<9;i++) {
+    const ix=Math.floor((i+.4)*coastal.length/9);
+    const candidate=coastal[Math.min(ix,coastal.length-1)];
+    if(candidate && !picked.some(p=>p.key===candidate.key)) picked.push(candidate);
+  }
+  const portTypes=random?shuffleList(types):types;
+  const portValues={
+    GENERIC:{ratio:3,resource:null},
+    BRICK:{ratio:2,resource:'brick'},LUMBER:{ratio:2,resource:'lumber'},
+    WOOL:{ratio:2,resource:'wool'},GRAIN:{ratio:2,resource:'grain'},ORE:{ratio:2,resource:'ore'}
+  };
+  const ports=picked.map((e,i)=>({id:i,vertices:[makeVertex(e.q,e.r,e.d),makeVertex(e.q,e.r,(e.d+1)%6)],
+    type:portTypes[i],...portValues[portTypes[i]]}));
+  const robber=Object.keys(hexes).find(k=>hexes[k].terrain==='desert');
+  return {hexes,edges,vertices,ports,robber,pirate:'3,-2'};
+}
+
+export function isMainIslandSetupVertex(game,vKey) {
+  const match=/^v_(-?\d+)_(-?\d+)_(\d+)$/.exec(vKey);
+  if(!match) return false;
+  return getEquivalentVertices(...match.slice(1).map(Number)).some(({q,r})=>
+    game.hexes[`${q},${r}`]?.island==='main');
+}
+export function isSmallIslandVertex(game,vKey) {
+  const match=/^v_(-?\d+)_(-?\d+)_(\d+)$/.exec(vKey);
+  if(!match) return false;
+  return getEquivalentVertices(...match.slice(1).map(Number)).some(({q,r})=>
+    game.hexes[`${q},${r}`]?.island==='islet');
+}
+export function isPirateBlocking(game,eKey) {
+  if (!game.pirate) return false;
+  const match=/^e_(-?\d+)_(-?\d+)_(\d+)$/.exec(eKey);
+  if(!match) return false;
+  return getEquivalentEdges(...match.slice(1).map(Number))
+    .some(({q,r})=>`${q},${r}`===game.pirate);
+}
+export function placeShip(game,playerId,eKey,{setup=false,settlementKey=null}={}) {
+  const isSetup=game.phase==='setup';
+  if(isSetup!==setup) return {success:false,error:'Fase de construção incorreta'};
+  if(isSetup && game.players[game.currentPlayerIndex]?.id!==playerId)
+    return {success:false,error:'Aguarde sua vez na preparação'};
+  if(!isSetup && !(game.phase==='playing' &&
+    (game.players[game.currentPlayerIndex]?.id===playerId && game.turnPhase==='main' ||
+    game.turnPhase==='specialBuild' && game.specialBuildingPhase &&
+    game.players[game.specialBuildIndex]?.id===playerId)))
+    return {success:false,error:'Não pode construir barcos agora'};
+  const validation=canPlaceShip(game,playerId,eKey,{setup,settlementKey});
+  if(!validation.valid)return {success:false,error:validation.error};
+  if(isPirateBlocking(game,eKey))return {success:false,error:'O pirata bloqueia este lado do mar'};
+  const owner=game.players.findIndex(p=>p.id===playerId);
+  const player=game.players[owner];
+  game.edges[eKey]={road:false,ship:true,owner,builtTurn:game.turnSequence||0};
+  if(!setup && !(game.freeRoads>0)) {
+    player.resources.lumber--;player.resources.wool--;
+  } else if(!setup && game.freeRoads>0) game.freeRoads--;
+  player.ships--;
+  return {success:true};
+}
+
+/** A ship can move only from the open end of its existing route,
+ * and only if it was built before the current turn. */
+export function canMoveShip(game,playerId,fromEdge,toEdge) {
+  if(!game.isSeafarers||game.phase!=='playing'||game.turnPhase!=='main' ||
+    game.players[game.currentPlayerIndex]?.id!==playerId)
+    return {valid:false,error:'Não é sua fase de movimentação'};
+  if(game.shipMovedThisTurn)return {valid:false,error:'Já moveu um barco neste turno'};
+  const owner=game.players.findIndex(p=>p.id===playerId);
+  const existing=shipAt(game,fromEdge);
+  if(!existing?.ship||existing.owner!==owner)
+    return {valid:false,error:'Barco de origem inválido'};
+  if((existing.builtTurn||0)===(game.turnSequence||0))
+    return {valid:false,error:'Não pode mover barco construído neste turno'};
+  if(isPirateBlocking(game,fromEdge)||isPirateBlocking(game,toEdge))
+    return {valid:false,error:'O pirata está bloqueando este trecho'};
+  const oldIndex=Object.entries(game.edges).find(([key,edge])=>edge===existing)?.[0];
+  const endpoints=oldIndex?.match(/^e_(-?\d+)_(-?\d+)_(\d+)$/)?.slice(1).map(Number);
+  if(!endpoints)return {valid:false,error:'Origem inválida'};
+  const ends=[makeVertex(endpoints[0],endpoints[1],endpoints[2]),
+    makeVertex(endpoints[0],endpoints[1],(endpoints[2]+1)%6)];
+  // A ship cannot be lifted from the middle of an open/closed chain,
+  // nor directly from a settlement/city anchoring that end.
+  let connectedEnds=0;
+  for(const v of ends){
+    const ownBuilding=buildingAt(game,v)?.owner===owner;
+    const otherShips=getVertexEdges(v).some(edgeKey=>{
+      const other=shipAt(game,edgeKey);
+      return other?.ship && other.owner===owner && other!==existing;
+    });
+    if(ownBuilding||otherShips)connectedEnds++;
+  }
+  if(connectedEnds>1)return {valid:false,error:'Só é possível mover um barco na ponta livre da rota'};
+  const old={...existing};
+  existing.ship=false;
+  const check=canPlaceShip(game,playerId,toEdge,{moving:true});
+  Object.assign(existing,old);
+  if(!check.valid)return check;
+  return {valid:true,storedEdge:oldIndex};
+}
+
+export function moveShip(game,playerId,fromEdge,toEdge){
+  const valid=canMoveShip(game,playerId,fromEdge,toEdge);
+  if(!valid.valid)return {success:false,error:valid.error};
+  const old=game.edges[valid.storedEdge];
+  old.ship=false;
+  old.owner=null;
+  game.edges[toEdge]={ship:true,road:false,owner:game.players.findIndex(p=>p.id===playerId),
+    builtTurn:game.turnSequence||0};
+  game.shipMovedThisTurn=true;
+  return {success:true};
+}
+
+export function getPirateVictims(game,hexKey,thiefPlayerId) {
+  if(game.hexes[hexKey]?.terrain!=='sea')return [];
+  const thief=game.players.findIndex(p=>p.id===thiefPlayerId);
+  const owners=new Set();
+  for(let dir=0;dir<6;dir++){
+    const route=shipAt(game,makeEdge(game.hexes[hexKey].q,game.hexes[hexKey].r,dir));
+    if(route?.ship && route.owner!==thief &&
+      Object.values(game.players[route.owner]?.resources||{}).some(n=>n>0))
+      owners.add(route.owner);
+  }
+  return [...owners].map(i=>game.players[i].id);
+}
+export function movePirate(game,playerId,hexKey,victimId=null) {
+  if(!game.isSeafarers||game.phase!=='playing'||game.turnPhase!=='robber'||
+    game.players[game.currentPlayerIndex]?.id!==playerId)
+    return {success:false,error:'Não é sua vez de mover o pirata'};
+  if(game.hexes[hexKey]?.terrain!=='sea'||hexKey===game.pirate)
+    return {success:false,error:'Escolha outro hexágono do mar'};
+  const victims=getPirateVictims(game,hexKey,playerId);
+  if(victimId && !victims.includes(victimId))
+    return {success:false,error:'Não há barco de jogador elegível nessa posição'};
+  game.pirate=hexKey;
+  let stolenInfo=null;
+  if(victimId){
+    const thief=game.players.find(p=>p.id===playerId);
+    const victim=game.players.find(p=>p.id===victimId);
+    const cards=Object.entries(victim.resources).flatMap(([r,n])=>Array(n).fill(r));
+    if(cards.length){
+      const resource=cards[Math.floor(Math.random()*cards.length)];
+      victim.resources[resource]--;
+      thief.resources[resource]++;
+      game.__skipResourceDelta=true;
+      stolenInfo={resource,thief:thief.id,thiefName:thief.name,victim:victim.id,victimName:victim.name};
+    }
+  }
+  game.turnPhase=game.hasRolledThisTurn?'main':'roll';
+  return {success:true,stolenInfo};
 }

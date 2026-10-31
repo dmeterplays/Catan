@@ -34,6 +34,8 @@
 // ============================================================================
 
 /** Available resource types in the game */
+import { buildSeafarersBoard, isMainIslandSetupVertex, isSmallIslandVertex, getWaterEdgeType, getWaterEdgeType as seaEdgeType } from './seafarers.js';
+
 export const RESOURCES = {
   BRICK: 'brick',
   LUMBER: 'lumber',
@@ -691,6 +693,20 @@ function hasRoadAtEdge(game, eKey) {
   return null;
 }
 
+function hasShipAtEdge(game,eKey) {
+  const match=/^e_(-?\d+)_(-?\d+)_(\d+)$/.exec(eKey);
+  if(!match)return null;
+  for(const {q,r,dir} of getEquivalentEdges(...match.slice(1).map(Number))){
+    const value=game.edges[`e_${q}_${r}_${dir}`];
+    if(value?.ship)return value;
+  }
+  return null;
+}
+function hasPlayerShipAtEdge(game,eKey,index) {
+  const edge=hasShipAtEdge(game,eKey);
+  return !!edge && edge.owner===index;
+}
+
 /** Check if a specific player has a road at an edge */
 function hasPlayerRoadAtEdge(game, eKey, playerIndex) {
   const roadInfo = hasRoadAtEdge(game, eKey);
@@ -846,7 +862,7 @@ export function getAdjacentVertices(vKey, hexes) {
  * @param enableSpecialBuild - Whether to enable special building phase (5-8 player rule)
  * @returns Complete game state object
  */
-export function createGame(gameId, hostPlayer, isExtended = false, enableSpecialBuild = true, mapType = 'random', autoSetup = false, isCitiesAndKnights = false) {
+export function createGame(gameId, hostPlayer, isExtended = false, enableSpecialBuild = true, mapType = 'random', autoSetup = false, isCitiesAndKnights = false, isSeafarers = false) {
   // Select board configuration based on game mode
   const HEX_POSITIONS = isExtended ? HEX_POSITIONS_LARGE : HEX_POSITIONS_STANDARD;
   const TERRAIN_DISTRIBUTION = isExtended ? TERRAIN_DISTRIBUTION_LARGE : TERRAIN_DISTRIBUTION_STANDARD;
@@ -919,8 +935,27 @@ export function createGame(gameId, hostPlayer, isExtended = false, enableSpecial
     ...PORT_TYPES[portTypes[idx]]
   }));
 
+  const seaBoard = isSeafarers ? buildSeafarersBoard({random:mapType !== 'standard'}) : null;
+  if(seaBoard) {
+    for (const key of Object.keys(hexes)) delete hexes[key];
+    for (const key of Object.keys(vertices)) delete vertices[key];
+    for (const key of Object.keys(edges)) delete edges[key];
+    Object.assign(hexes,seaBoard.hexes);
+    Object.assign(vertices,seaBoard.vertices);
+    Object.assign(edges,seaBoard.edges);
+    ports.splice(0,ports.length,...seaBoard.ports);
+    desertHex = seaBoard.robber;
+  }
+
   return {
     id: gameId,
+    isSeafarers,
+    pirate: seaBoard?.pirate || null,
+    victoryTarget: isSeafarers ? 14 : 10,
+    pendingGoldPicks: {},
+    goldResumePhase: 'main',
+    turnSequence: 0,
+    shipMovedThisTurn: false,
     phase: 'waiting', // waiting, setup, playing, finished
     setupPhase: 0, // 0: first settlements, 1: second settlements (reverse)
     currentPlayerIndex: 0,
@@ -960,6 +995,8 @@ export function createGame(gameId, hostPlayer, isExtended = false, enableSpecial
       settlements: 5,
       cities: 4,
       roads: 15,
+      ships: isSeafarers ? 15 : 0,
+      firstIslandClaimed: false,
       hasLongestRoad: false,
       hasLargestArmy: false,
       roadLength: 0
@@ -1025,6 +1062,8 @@ export function addPlayer(game, player) {
     settlements: 5,
     cities: 4,
     roads: 15,
+    ships: game.isSeafarers ? 15 : 0,
+    firstIslandClaimed: false,
     hasLongestRoad: false,
     hasLargestArmy: false,
     roadLength: 0
@@ -1038,6 +1077,8 @@ export function addPlayer(game, player) {
  * Requires at least 2 players
  */
 export function startGame(game) {
+  if (game.isSeafarers && game.players.length !== 4)
+    return {success:false,error:'Rumo a Novas Margens requer exatamente 4 jogadores'};
   if (game.players.length < 2) {
     return { success: false, error: 'Need at least 2 players' };
   }
@@ -1072,6 +1113,12 @@ export function startGame(game) {
 
 /** Shuffle the board layout - only allowed before game starts */
 export function shuffleBoard(game) {
+  if (game.isSeafarers) {
+    if (game.phase !== 'waiting') return {success:false,error:'Partida já começou'};
+    const board=buildSeafarersBoard({random:true});
+    Object.assign(game,{...board});
+    return {success:true};
+  }
   if (game.phase !== 'waiting') {
     return { success: false, error: 'Can only shuffle before game starts' };
   }
@@ -1235,8 +1282,10 @@ export function rollDice(game, playerId) {
     return { success: true, roll: game.diceRoll, resourceGains: null };
   } else {
     // Distribute resources
+    game.pendingGoldPicks={};
     const gains = distributeResources(game, total);
-    game.turnPhase = 'main';
+    game.turnPhase = game.isSeafarers && Object.values(game.pendingGoldPicks).some(n=>n>0)
+      ? 'goldPick' : 'main';
     // Dice income is public; record only the resources awarded by this roll.
     game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, playerName: player.name, gains: Object.fromEntries(Object.entries(gains).map(([index, playerGains]) => [index, Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [resource, playerGains?.[resource] || 0]))])) };
     appendDiceEvents(game, player.name, game.diceRoll, gains);
@@ -1277,7 +1326,7 @@ function distributeResources(game, roll) {
       for (let dir = 0; dir < 6; dir++) {
         const buildingInfo = findBuildingAtHexVertex(game, hex.q, hex.r, dir);
         
-        if (buildingInfo && buildingInfo.owner !== null && hex.resource) {
+        if (buildingInfo && buildingInfo.owner !== null && (hex.resource || (game.isSeafarers && hex.terrain==='gold'))) {
           // Create a unique key for this HEX-VERTEX combination
           // This prevents the same hex from giving resources to the same vertex twice
           // (which could happen if we find the same building under different vertex key formats)
@@ -1285,6 +1334,11 @@ function distributeResources(game, roll) {
           if (processedHexVertices.has(hexVertexKey)) continue;
           processedHexVertices.add(hexVertexKey);
           
+          if (game.isSeafarers && hex.terrain==='gold') {
+            game.pendingGoldPicks[buildingInfo.owner]=(game.pendingGoldPicks[buildingInfo.owner]||0)+
+              (buildingInfo.type==='city'?2:1);
+            continue;
+          }
           const player = game.players[buildingInfo.owner];
           
           if (game.isCitiesAndKnights && buildingInfo.type === 'city') {
@@ -1398,6 +1452,8 @@ export function moveRobber(game, playerId, hexKey, stealFromPlayerId) {
   if (!game.hexes[hexKey]) {
     return { success: false, error: 'Invalid hex' };
   }
+  if (game.isSeafarers && game.hexes[hexKey].terrain==='sea')
+    return {success:false,error:'Para o mar, escolha mover o pirata'};
   
   if (hexKey === game.robber) {
     return { success: false, error: 'Must move robber to a different hex' };
@@ -1466,6 +1522,14 @@ export function canPlaceSettlement(game, playerId, vKey, isSetup = false) {
   const vertex = game.vertices[vKey];
   
   if (!vertex) return { valid: false, error: 'Invalid vertex' };
+  if (game.isSeafarers) {
+    const match=/^v_(-?\d+)_(-?\d+)_(\d+)$/.exec(vKey);
+    const touchesLand=match && getEquivalentVertices(...match.slice(1).map(Number))
+      .some(({q,r})=>game.hexes[`${q},${r}`] && game.hexes[`${q},${r}`].terrain!=='sea');
+    if(!touchesLand)return {valid:false,error:'Não é possível construir aldeias no mar'};
+  }
+  if (game.isSeafarers && isSetup && !isMainIslandSetupVertex(game,vKey))
+    return {valid:false,error:'Na preparação, construa apenas na ilha principal'};
   // Check if this vertex (or any equivalent) already has a building
   if (hasBuildingAtVertex(game, vKey)) return { valid: false, error: 'Location occupied' };
   if (player.settlements <= 0) return { valid: false, error: 'No settlements left' };
@@ -1479,7 +1543,8 @@ export function canPlaceSettlement(game, playerId, vKey, isSetup = false) {
   if (!isSetup) {
     // Must be connected to own road (check all equivalent edge keys)
     const vertexEdges = getVertexEdges(vKey);
-    const hasRoad = vertexEdges.some(eKey => hasPlayerRoadAtEdge(game, eKey, playerIndex));
+    const hasRoad = vertexEdges.some(eKey => hasPlayerRoadAtEdge(game, eKey, playerIndex) ||
+      (game.isSeafarers && hasPlayerShipAtEdge(game,eKey,playerIndex)) );
     
     if (!hasRoad) {
       return { valid: false, error: 'Must be connected to your road' };
@@ -1519,7 +1584,14 @@ export function placeSettlement(game, playerId, vKey) {
   game.vertices[vKey] = { building: 'settlement', owner: playerIndex };
   player.settlements--;
   player.victoryPoints++;
-  
+  if (game.isSeafarers && !isSetup && !player.firstIslandClaimed && isSmallIslandVertex(game,vKey)) {
+    player.firstIslandClaimed=true;
+    player.victoryPoints+=2;
+    game.eventLog = game.eventLog || [];
+    game.eventLog.push({id:'island-'+Date.now()+'-'+playerId,at:Date.now(),
+      message:`🏝️ ${player.name} conquistou +2 PV pela primeira aldeia numa ilhota`});
+  }
+
   // During second setup phase, give initial resources
   if (isSetup && game.setupPhase === 1) {
     giveInitialResources(game, vKey, playerIndex);
@@ -1603,7 +1675,10 @@ export function canPlaceRoad(game, playerId, eKey, isSetup = false, lastSettleme
   
   // Check for existing road on this edge OR any equivalent edge
   // This prevents the same physical edge from having roads placed under different key formats
-  if (hasRoadAtEdge(game, eKey)) return { valid: false, error: 'Road already exists' };
+  if (hasRoadAtEdge(game, eKey) || (game.isSeafarers && hasShipAtEdge(game,eKey)))
+    return { valid: false, error: 'Edge already occupied' };
+  if(game.isSeafarers && getWaterEdgeType(game,eKey)==='sea')
+    return {valid:false,error:'Construa um barco para atravessar o mar'};
   if (player.roads <= 0) return { valid: false, error: 'No roads left' };
   
   // Parse edge key
@@ -2477,6 +2552,8 @@ export function endTurn(game, playerId) {
   
   // Next player
   game.currentPlayerIndex = (game.currentPlayerIndex + 1) % game.players.length;
+  game.turnSequence=(game.turnSequence||0)+1;
+  game.shipMovedThisTurn=false;
   game.turnPhase = 'roll';
   game.diceRoll = null;
   
@@ -2620,7 +2697,7 @@ function deductResources(player, costs) {
  */
 function calculateRoadLength(game, playerIndex) {
   const playerEdges = Object.entries(game.edges)
-    .filter(([_, edge]) => edge.road && edge.owner === playerIndex)
+    .filter(([_, edge]) => (edge.road || (game.isSeafarers && edge.ship)) && edge.owner === playerIndex)
     .map(([key, _]) => key);
   
   if (playerEdges.length === 0) return 0;
@@ -2656,9 +2733,22 @@ function calculateRoadLength(game, playerIndex) {
       
       // Get adjacent edges and check for player's roads (checking all equivalents)
       const adjEdges = getVertexEdges(vKey);
+      const physicalRoute = key => {
+        const match=key.match(/^e_(-?\d+)_(-?\d+)_(\d+)$/);
+        if(!match)return null;
+        return getEquivalentEdges(...match.slice(1).map(Number))
+          .map(({q,r,dir})=>game.edges[`e_${q}_${r}_${dir}`])
+          .find(e=>e?.road||e?.ship)||null;
+      };
+      const currentRoute = physicalRoute(edgeKey);
+      const ownSwitch = hasPlayerBuildingAtVertex(game,vKey,playerIndex);
       for (const adjEdge of adjEdges) {
         const adjCanonical = getCanonicalEdgeKey(adjEdge);
-        if (!visited.has(adjCanonical) && hasPlayerRoadAtEdge(game, adjEdge, playerIndex)) {
+        const nextRoute = physicalRoute(adjEdge);
+        const matched = nextRoute?.owner===playerIndex && (nextRoute.road || (game.isSeafarers && nextRoute.ship));
+        // Road and ship only join through a settlement or city owned by this player.
+        const compatible=!game.isSeafarers || !!currentRoute?.road===!!nextRoute?.road || ownSwitch;
+        if (!visited.has(adjCanonical) && matched && compatible) {
           dfs(adjEdge, length + 1);
         }
       }
@@ -2701,7 +2791,9 @@ function hasOpponentBuildingAtVertex(game, vKey, playerIndex) {
  * - If current holder loses longest and there's a tie, nobody gets it
  * - Worth 2 Victory Points
  */
-export function updateLongestRoad(game) {
+export function refreshLongestRoad(game) { return updateLongestRoad(game); }
+
+function updateLongestRoad(game) {
   // Calculate road lengths for all players
   const roadLengths = game.players.map((player, idx) => {
     const length = calculateRoadLength(game, idx);
@@ -2851,7 +2943,7 @@ function checkWinner(game) {
   for (const player of game.players) {
     // Total VP = visible VP + hidden VP from dev cards
     const totalVP = player.victoryPoints + (player.hiddenVictoryPoints || 0);
-    if (totalVP >= 10) {
+    if (totalVP >= (game.victoryTarget || 10)) {
       game.phase = 'finished';
       game.winner = player.id;
       
@@ -2864,6 +2956,24 @@ function checkWinner(game) {
       return;
     }
   }
+}
+
+
+/** Resolve one gold-field claim. Only the entitled player selects the resource. */
+export function pickGoldResource(game,playerId,resource) {
+  if(!game.isSeafarers || game.turnPhase!=='goldPick')
+    return {success:false,error:'Não há ouro pendente'};
+  const owner=game.players.findIndex(p=>p.id===playerId);
+  if(owner<0 || (game.pendingGoldPicks[owner]||0)<=0)
+    return {success:false,error:'Você não tem recursos de ouro para escolher'};
+  if(!BANK_RESOURCE_TYPES.includes(resource))
+    return {success:false,error:'Recurso desconhecido'};
+  if(getBankResourceCount(game,resource)<1)
+    return {success:false,error:'Recurso esgotado no banco'};
+  game.players[owner].resources[resource]++;
+  game.pendingGoldPicks[owner]--;
+  if(Object.values(game.pendingGoldPicks).every(n=>n<=0))game.turnPhase='main';
+  return {success:true};
 }
 
 // ============================================================================

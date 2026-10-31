@@ -1,4 +1,5 @@
 import * as Game from './gameLogic.js';
+import * as Sea from './seafarers.js';
 
 const RESOURCES = ['brick', 'lumber', 'wool', 'grain', 'ore'];
 const hasCost = (player, cost) => Object.entries(cost).every(([key, n]) => (player.resources?.[key] || 0) >= n);
@@ -12,9 +13,11 @@ export function getLegalActions(game, playerId) {
   const isSpecialBuilder = game.phase === 'playing' &&
     game.turnPhase === 'specialBuild' && game.specialBuildingPhase &&
     game.specialBuildIndex === index;
+  const isGoldPicker = game.isSeafarers && game.turnPhase === 'goldPick' &&
+    (game.pendingGoldPicks?.[index] || 0)>0;
   const isDiscarding = game.turnPhase === 'discard' &&
     game.discardingPlayers?.some(p => p.playerIndex === index);
-  if (!isCurrentTurn && !isSpecialBuilder && !isDiscarding && !pendingTrade) return [];
+  if (!isCurrentTurn && !isSpecialBuilder && !isDiscarding && !pendingTrade && !isGoldPicker) return [];
   // Only the designated special builder may act in this phase.
   if (game.turnPhase === 'specialBuild' && !isSpecialBuilder) return [];
   const actions = [];
@@ -30,6 +33,10 @@ export function getLegalActions(game, playerId) {
 
   if (game.phase === 'setup') {
     if (game.setupSettlementKey) {
+      if(game.isSeafarers) Object.keys(game.edges).forEach(edgeKey=>{
+        if(Sea.canPlaceShip(game,playerId,edgeKey,{setup:true,settlementKey:game.setupSettlementKey}).valid)
+          add('placeShip',{edgeKey,setup:true,lastSettlement:game.setupSettlementKey});
+      });
       Object.keys(game.edges).forEach(edgeKey => {
         if (Game.canPlaceRoad(game, playerId, edgeKey, true, game.setupSettlementKey).valid)
           add('placeRoad', { edgeKey, setup: true, lastSettlement: game.setupSettlementKey });
@@ -40,6 +47,12 @@ export function getLegalActions(game, playerId) {
           add('placeSettlement', { vertexKey, setup: true });
       });
     }
+    return actions;
+  }
+
+  if (game.turnPhase === 'goldPick') {
+    if (isGoldPicker) for (const resource of RESOURCES)
+      if(Game.getBankResourceCount(game,resource)>0)add('pickGoldResource',{resource});
     return actions;
   }
 
@@ -54,7 +67,11 @@ export function getLegalActions(game, playerId) {
 
   if (game.turnPhase === 'robber') {
     Object.entries(game.hexes).forEach(([hexKey, hex]) => {
-      if (hexKey === game.robber || !hex.resource) return;
+      if (game.isSeafarers && hex.terrain==='sea') {
+        if(hexKey!==game.pirate) add('movePirate',{hexKey,victimPlayerIds:Sea.getPirateVictims(game,hexKey,playerId)});
+        return;
+      }
+      if (hexKey === game.robber || (!hex.resource && hex.terrain!=='gold')) return;
       const victims = Game.getPlayersOnHex(game, hexKey, index)
         .filter(i => Object.values(game.players[i].resources || {}).some(n => n > 0))
         .map(i => game.players[i].id);
@@ -70,6 +87,11 @@ export function getLegalActions(game, playerId) {
   if (player.settlements > 0 && hasCost(player, { brick: 1, lumber: 1, wool: 1, grain: 1 }))
     Object.keys(game.vertices).forEach(vertexKey => {
       if (Game.canPlaceSettlement(game, playerId, vertexKey).valid) add('placeSettlement', { vertexKey });
+    });
+  if (game.isSeafarers && (player.ships||0)>0 &&
+    (hasCost(player,{lumber:1,wool:1}) || (game.freeRoads||0)>0))
+    Object.keys(game.edges).forEach(edgeKey=>{
+      if(Sea.canPlaceShip(game,playerId,edgeKey).valid)add('placeShip',{edgeKey});
     });
   if (player.roads > 0 && (hasCost(player, { brick: 1, lumber: 1 }) || (game.freeRoads || 0) > 0))
     Object.keys(game.edges).forEach(edgeKey => {
@@ -99,7 +121,7 @@ export function executeLegalAction(game, playerId, action) {
   if (!action || typeof action.type !== 'string') return { success: false, error: 'Ação inválida.' };
   const legal = getLegalActions(game, playerId);
   const option = legal.find(item => item.type === action.type &&
-    (action.type === 'discard' || action.type === 'moveRobber'
+    (action.type === 'discard' || action.type === 'moveRobber' || action.type === 'movePirate'
       ? item === legal.find(candidate => candidate.type === action.type && candidate.hexKey === action.hexKey)
       : Object.keys(action).every(key => key === 'type' || item[key] === action[key])));
   if (!option) return { success: false, error: 'Essa opção não está mais disponível.' };
@@ -110,6 +132,23 @@ export function executeLegalAction(game, playerId, action) {
       if (result.success && game.phase === 'setup') game.setupSettlementKey = action.vertexKey;
       return result;
     }
+    case 'placeShip': {
+      const result=Sea.placeShip(game,playerId,action.edgeKey,
+        {setup:!!action.setup,settlementKey:option.lastSettlement});
+      if(result.success && action.setup){
+        delete game.setupSettlementKey;
+        return Game.advanceSetup(game,playerId);
+      }
+      if(result.success)Game.refreshLongestRoad(game);
+      return result;
+    }
+    case 'movePirate': {
+      const victim=action.stealFromPlayerId||null;
+      if(victim && !option.victimPlayerIds.includes(victim))
+        return {success:false,error:'Não pode roubar esse jogador'};
+      return Sea.movePirate(game,playerId,action.hexKey,victim);
+    }
+    case 'pickGoldResource': return Game.pickGoldResource(game,playerId,action.resource);
     case 'placeRoad': {
       const result = Game.placeRoad(game, playerId, action.edgeKey, !!action.setup, option.lastSettlement);
       if (result.success && action.setup) {

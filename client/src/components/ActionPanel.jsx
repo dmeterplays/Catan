@@ -33,6 +33,8 @@ function ActionPanel({
   isSpecialBuildPhase = false,
   isMySpecialBuild = false,
   isCitiesAndKnights = false,
+  isSeafarers = false,
+  shipSelected = false,
   onBuyCityImprovement,
   onRecruitKnight,
   onActivateKnight,
@@ -120,6 +122,23 @@ function ActionPanel({
           <span className="btn-label">Estrada</span>
           <span className="cost">🧱1 🪵1</span>
         </button>
+
+        {isSeafarers && (
+          <>
+            <button type="button" className={`action-btn build-btn ${selectedAction === 'ship' ? 'active' : ''}`}
+              disabled={!canBuild || (player.ships||0)<1 || (!hasResources(player,{lumber:1,wool:1}) && freeRoads<=0)}
+              onClick={()=>setSelectedAction(selectedAction==='ship'?null:'ship')}
+              title="Construir barco: 1 madeira e 1 lã">
+              <span className="btn-icon">⛵</span><span className="btn-label">Barco</span><span className="cost">🪵1 🐑1</span>
+            </button>
+            <button type="button" className={`action-btn build-btn ${selectedAction === 'moveShip' ? 'active' : ''}`}
+              disabled={!canBuild || !isMyTurn || (player.ships??15)>=15}
+              onClick={()=>setSelectedAction(selectedAction==='moveShip'?null:'moveShip')}
+              title="Selecione um barco da ponta livre e clique no novo local">
+              <span className="btn-icon">↔️</span><span className="btn-label">Mover barco</span><span className="cost">{shipSelected?'Destino':'Origem'}</span>
+            </button>
+          </>
+        )}
 
         <button
           className={`action-btn build-btn settlement-action ${selectedAction === 'settlement' ? 'active' : ''}`}

@@ -241,3 +241,17 @@
   }
 }
 
+
+
+/* The rules modal uses parchment backgrounds: never inherit white text from
+   the dark game UI. Ensure all reading copy has solid ink-level contrast. */
+.rules-modal .rules-content,
+.rules-modal .rules-text,
+.rules-modal .rules-text p,
+.rules-modal .rules-text li,
+.rules-modal .rules-text strong,
+.rules-modal .rules-text h4 { color: #211a13; }
+.rules-modal .rules-content h3 { color: #5c3214; }
+.rules-modal .rules-nav-btn { color: #211a13; }
+.rules-modal .rules-nav-btn.active { color: #783413; }
+.rules-modal .rules-text strong { font-weight: 800; }
