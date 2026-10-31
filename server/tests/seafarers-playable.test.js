@@ -67,3 +67,22 @@ test('pirata só se move para mar e não pode permanecer no mesmo hexágono',()=
   assert.equal(executeLegalAction(game,'p0',action).success,true);
   assert.equal(game.pirate,action.hexKey);
 });
+
+test('os quatro jogadores concluem a preparação em ordem serpentina',()=>{
+  const game=create();
+  assert.equal(Game.startGame(game).success,true);
+  let count=0;
+  while(game.phase==='setup'&&count++<20){
+    const p=game.players[game.currentPlayerIndex];
+    const options=getLegalActions(game,p.id);
+    const type=game.setupSettlementKey?'placeRoad':'placeSettlement';
+    const action=options.find(a=>a.type===type) ||
+      (game.setupSettlementKey ? options.find(a=>a.type==='placeShip') : null);
+    assert.ok(action,`deve haver ação legal para ${p.name}: ${type}`);
+    assert.equal(executeLegalAction(game,p.id,action).success,true);
+  }
+  assert.equal(game.phase,'playing');
+  assert.equal(game.turnPhase,'roll');
+  assert.equal(game.players.reduce((total,p)=>total+(5-p.settlements),0),8);
+  assert.equal(game.players.reduce((total,p)=>total+(15-p.roads)+(15-p.ships),0),8);
+});
