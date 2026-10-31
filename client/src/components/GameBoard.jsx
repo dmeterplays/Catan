@@ -995,6 +995,32 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         </div>
       )}
       
+      {/* Cidades e Cavaleiros: cartas de progresso e metrópoles */}
+      {gameState.isCitiesAndKnights && gameState.phase === 'playing' && (
+        <div className="ck-progress-dock" style={{padding:'12px',margin:'8px 0',border:'1px solid #b58a47',borderRadius:8,background:'#251b14',color:'#fff4df'}}>
+          <strong>🏰 Progresso e Metrópoles</strong>
+          <div style={{fontSize:12,margin:'6px 0'}}>Suas melhorias: Ciência {myPlayer?.cityImprovements?.science || 0} · Política {myPlayer?.cityImprovements?.politics || 0} · Comércio {myPlayer?.cityImprovements?.trade || 0}</div>
+          <div style={{fontSize:12,marginBottom:8}}>Metrópoles conquistadas: {(myPlayer?.metropolisTracks || []).join(', ') || 'nenhuma'}</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            {Object.entries(myPlayer?.progressCards || {}).flatMap(([track,cards]) =>
+              (Array.isArray(cards)?cards:[]).map((cardType,i)=>(
+                <button key={track+'-'+i} type="button"
+                  disabled={!isMyTurn || gameState.turnPhase!=='main'}
+                  style={{background:'#e3bd72',border:'1px solid #74501f',borderRadius:5,padding:'7px',color:'#21170d'}}
+                  onClick={()=>{
+                    const resource = cardType==='commercialMonopoly' ? window.prompt('Recurso a monopolizar (brick, lumber, wool, grain, ore):','ore') : null;
+                    if(cardType==='commercialMonopoly' && !['brick','lumber','wool','grain','ore'].includes(resource)) return;
+                    socket.emit('playProgressCard',{track,cardType,params:resource?{resource}:{}},response=>{
+                      addNotification(response?.success?'Carta utilizada!':response?.error||'Não foi possível jogar a carta.');
+                    });
+                  }}>
+                  {track==='science'?'📗':track==='politics'?'📘':'📒'} {cardType==='constitution'?'Constituição':cardType==='engineer'?'Engenheiro':cardType==='inventor'?'Inventor':'Monopólio'}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
       {/* Barbarian Tracker Banner */}
       {gameState.isCitiesAndKnights && (
         <div className="barbarian-tracker-banner">
