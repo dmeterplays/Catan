@@ -138,30 +138,39 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
             
             {mode === 'create' && (
               <>
-                <div className="form-group game-mode-group">
-                  <label>Modo de Jogo</label>
-                  <div className="game-mode-options">
-                    <button
-                      type="button"
-                      className={`mode-option ${!isExtended ? 'active' : ''}`}
-                      onClick={() => setIsExtended(false)}
-                    >
-                      <span className="mode-icon">🎲</span>
-                      <span className="mode-label">Padrão</span>
-                      <span className="mode-desc">2-4 Jogadores</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`mode-option ${isExtended ? 'active' : ''}`}
-                      onClick={() => setIsExtended(true)}
-                    >
-                      <span className="mode-icon">👥</span>
-                      <span className="mode-label">Estendido</span>
-                      <span className="mode-desc">5-8 Jogadores</span>
-                    </button>
+                <details className="create-mode-accordion">
+                  <summary className="create-mode-summary">
+                    <span>🎮 Modo de jogo</span>
+                    <span className="create-mode-current">
+                      {isCitiesAndKnights ? '🏰 Cidades e Cavaleiros · 2–4 jogadores' :
+                        isExtended ? '👥 Estendido · 5–8 jogadores' : '🎲 Clássico · 2–4 jogadores'}
+                    </span>
+                  </summary>
+                  <div className="create-mode-content">
+                    <p className="create-mode-help">Escolha uma modalidade. A quantidade máxima de participantes é ajustada automaticamente.</p>
+                    <div className="create-mode-grid">
+                      <button type="button" className={`create-mode-card ${!isExtended && !isCitiesAndKnights ? 'active' : ''}`}
+                        aria-pressed={!isExtended && !isCitiesAndKnights}
+                        onClick={() => {setIsExtended(false);setIsCitiesAndKnights(false);}}>
+                        <strong>🎲 Clássico</strong><small>2–4 jogadores</small>
+                      </button>
+                      <button type="button" className={`create-mode-card ${isExtended ? 'active' : ''}`}
+                        aria-pressed={isExtended}
+                        onClick={() => {setIsExtended(true);setIsCitiesAndKnights(false);}}>
+                        <strong>👥 Estendido</strong><small>5–8 jogadores</small>
+                      </button>
+                      <button type="button" className={`create-mode-card ${isCitiesAndKnights ? 'active' : ''}`}
+                        aria-pressed={isCitiesAndKnights}
+                        onClick={() => {setIsExtended(false);setIsCitiesAndKnights(true);}}>
+                        <strong>🏰 Cidades e Cavaleiros</strong><small>2–4 jogadores</small>
+                      </button>
+                      <div className="create-mode-card upcoming" aria-disabled="true" title="Em produção, ainda não jogável">
+                        <strong>⛵ Navegantes</strong><small>4 jogadores · Em produção</small>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                
+                </details>
+
                 {/* Special Building Phase option - only for extended mode */}
                 {isExtended && (
                   <div className="form-group special-build-option">
@@ -230,20 +239,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                   </label>
                 </div>
 
-                {/* Cities & Knights Game Mode */}
-                <div className="form-group special-build-option" style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={isCitiesAndKnights}
-                      onChange={(e) => setIsCitiesAndKnights(e.target.checked)}
-                    />
-                    <span className="checkbox-text">
-                      <span className="checkbox-title">🏰 Expansão Cidades e Cavaleiros</span>
-                      <span className="checkbox-desc">Jogue com Mercadorias, Cavaleiros e Bárbaros</span>
-                    </span>
-                  </label>
-                </div>
+
               </>
             )}
             
