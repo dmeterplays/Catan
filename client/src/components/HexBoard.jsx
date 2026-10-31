@@ -248,6 +248,11 @@ function HexBoard({
 
   const handlePointerDown = (event) => {
     if (event.pointerType === 'touch') {
+      if (touchPointers.current.size === 0) {
+        // A previous pinch may produce no click; never suppress the next tap.
+        ignoreTouchClick.current = false;
+        dragMoved.current = false;
+      }
       touchPointers.current.set(event.pointerId,{x:event.clientX,y:event.clientY});
       if(touchPointers.current.size===2){
         const [a,b]=[...touchPointers.current.values()];
