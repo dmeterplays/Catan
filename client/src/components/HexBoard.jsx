@@ -241,7 +241,8 @@ function HexBoard({
   const handlePointerDown = (event) => {
     if (zoom <= 1 || event.button !== 0) return;
     dragMoved.current = false;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    // Do not capture a normal click: pointer capture retargets the click to
+    // the SVG itself, preventing edge and vertex onClick handlers from firing.
     setDragState({
       pointerId: event.pointerId,
       clientX: event.clientX,
@@ -256,7 +257,14 @@ function HexBoard({
     const rect = event.currentTarget.getBoundingClientRect();
     const deltaX = event.clientX - dragState.clientX;
     const deltaY = event.clientY - dragState.clientY;
-    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) dragMoved.current = true;
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      if (!dragMoved.current) {
+        dragMoved.current = true;
+        // Only real panning gestures own the pointer, never a build click.
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+    }
+    if (!dragMoved.current) return;
 
     const nextX = dragState.panX - deltaX * (zoomedWidth / rect.width);
     const nextY = dragState.panY - deltaY * (zoomedHeight / rect.height);
