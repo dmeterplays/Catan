@@ -91,9 +91,11 @@ export function canPlaceShip(game, playerId, eKey, { setup = false, settlementKe
   const ends=[`v_${q}_${r}_${d}`,`v_${q}_${r}_${(d+1)%6}`];
   const connected=ends.some(endpoint=>{
     const vertex=buildingAt(game,endpoint);
+    // Na preparação, o barco deve sair da aldeia colocada nesta etapa,
+    // não de qualquer aldeia própria construída anteriormente.
+    if (setup) return !!settlementKey && vertexKeysEquivalent(endpoint,settlementKey);
     if (vertex?.owner===owner) return true;
     if (vertex && vertex.owner!==owner) return false;
-    if(setup) return settlementKey && vertexKeysEquivalent(endpoint,settlementKey);
     return getVertexEdges(endpoint).some(edgeKey=>{
       const match=/^e_(-?\d+)_(-?\d+)_(\d+)$/.exec(edgeKey);
       if(!match) return false;
