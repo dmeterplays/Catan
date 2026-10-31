@@ -16,6 +16,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
   const [turnTimeLimit, setTurnTimeLimit] = useState(120);
   const [isCitiesAndKnights, setIsCitiesAndKnights] = useState(false);
   const [isSeafarers, setIsSeafarers] = useState(false);
+  const [extendedSeafarers, setExtendedSeafarers] = useState(false);
 
   const handleSaveSettings = () => {
     localStorage.setItem('catanServerUrl', tempUrl);
@@ -32,7 +33,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
     }
     
     if (mode === 'create') {
-      onCreateGame(playerName.trim(), isExtended, enableSpecialBuild, mapType, autoSetup && !isSeafarers, isCitiesAndKnights, turnTimeLimit, isSeafarers);
+      onCreateGame(playerName.trim(), isSeafarers ? extendedSeafarers : isExtended, enableSpecialBuild, mapType, autoSetup && !isSeafarers, isCitiesAndKnights, turnTimeLimit, isSeafarers);
     } else if (mode === 'join') {
       if (!gameCode.trim()) {
         setError('Digite o código da partida');
@@ -143,7 +144,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                   <summary className="create-mode-summary">
                     <span>🎮 Modo de jogo</span>
                     <span className="create-mode-current">
-                      {isSeafarers ? '⛵ Navegantes · 4 jogadores' :
+                      {isSeafarers ? `⛵ Navegantes · até ${extendedSeafarers ? 8 : 4} jogadores` :
                         isCitiesAndKnights ? '🏰 Cidades e Cavaleiros · 2–4 jogadores' :
                         isExtended ? '👥 Estendido · 5–8 jogadores' : '🎲 Clássico · 2–4 jogadores'}
                     </span>
@@ -169,14 +170,23 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                       <button type="button" className={`create-mode-card ${isSeafarers ? 'active' : ''}`}
                         aria-pressed={isSeafarers}
                         onClick={() => {setIsExtended(false);setIsCitiesAndKnights(false);setIsSeafarers(true);}}>
-                        <strong>⛵ Navegantes</strong><small>4 jogadores · Rumo a Novas Margens</small>
+                        <strong>⛵ Navegantes</strong><small>4 ou até 8 jogadores</small>
                       </button>
                     </div>
                   </div>
                 </details>
 
+                {isSeafarers && (
+                  <div className="form-group game-mode-group">
+                    <label>👥 Navegantes: quantidade de jogadores</label>
+                    <div className="game-mode-options">
+                      <button type="button" className={`mode-option ${!extendedSeafarers?'active':''}`} onClick={()=>setExtendedSeafarers(false)}>Até 4 jogadores</button>
+                      <button type="button" className={`mode-option ${extendedSeafarers?'active':''}`} onClick={()=>setExtendedSeafarers(true)}>Até 8 jogadores</button>
+                    </div>
+                  </div>
+                )}
                 {/* Special Building Phase option - only for extended mode */}
-                {isExtended && !isSeafarers && (
+                {(isExtended || (isSeafarers && extendedSeafarers)) && (
                   <div className="form-group special-build-option">
                     <label className="checkbox-label">
                       <input
