@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './HexBoard.css';
+import { Illustration as ResourceIllustration } from './CardArt';
 
 // Hex geometry constants - POINTY-TOP orientation
 const HEX_SIZE = 58;
@@ -122,7 +123,7 @@ const PORT_LABELS = {
 // Shared board-game piece silhouettes: settlement and upgraded city remain
 // distinguishable even when shrunk or rendered in dark player colors.
 function housePath(x, y) {
-  return `M ${x} ${y - 13} L ${x + 10} ${y - 4} L ${x + 10} ${y + 9} L ${x - 10} ${y + 9} L ${x - 10} ${y - 4} Z`;
+  return `M ${x - 11} ${y - 1} L ${x - 11} ${y + 7} L ${x + 11} ${y + 7} L ${x + 11} ${y - 1} L ${x + 14} ${y - 1} L ${x} ${y - 13} L ${x - 14} ${y - 1} Z`;
 }
 function cityPath(x, y) {
   return `M ${x - 13} ${y + 10} L ${x - 13} ${y - 1} L ${x - 6} ${y - 1} L ${x - 6} ${y - 11} L ${x + 4} ${y - 11} L ${x + 4} ${y - 7} L ${x + 12} ${y - 7} L ${x + 12} ${y + 10} Z`;
@@ -689,9 +690,10 @@ function HexBoard({
               {/* Board-game settlement: clear roof, dark rim and highlight. */}
               {vertex.building === 'settlement' && (
                 <g className={`settlement ${canUpgrade ? 'upgradeable' : ''}`} onClick={() => canUpgrade && onUpgradeToCity(key)}>
-                  <path d={housePath(pos.x, pos.y + 2)} fill="#0007" />
-                  <path d={housePath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#20180f" strokeWidth="2" strokeLinejoin="round" filter="url(#building-shadow)" />
-                  <path d={`M ${pos.x} ${pos.y - 11} L ${pos.x + 8} ${pos.y - 3}`} fill="none" stroke="#ffffff77" strokeWidth="1.7" strokeLinecap="round" />
+                  <path d={housePath(pos.x, pos.y + 2.5)} fill="#0008" />
+                  <path d={housePath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#202124" strokeWidth="2.7" strokeLinejoin="round" filter="url(#building-shadow)" />
+                  <path d={`M ${pos.x - 11} ${pos.y - 1} L ${pos.x} ${pos.y - 11} L ${pos.x + 11} ${pos.y - 1}`} fill="none" stroke="#1b1c20" strokeWidth="1.2" strokeLinejoin="round" />
+                  <path d={`M ${pos.x - 8} ${pos.y - 2} L ${pos.x} ${pos.y - 9}`} fill="none" stroke="#ffffff88" strokeWidth="1.6" strokeLinecap="round" />
                 </g>
               )}
 
@@ -841,13 +843,18 @@ function HexBoard({
               </g>
               <g transform={`translate(${labelX}, ${labelY})`} className="port-label" style={{ pointerEvents: 'none' }}>
                 <title>{badge ? `Porto de ${badge.name.toLowerCase()} — 2 para 1` : 'Porto genérico — 3 para 1'}</title>
-                <rect x="-23" y="-22" width="46" height="44" rx="8" fill="#fdf7e5" stroke="#624421" strokeWidth="2.2" />
-                <rect x="-19" y="-18" width="38" height="19" rx="5" fill="#214c80" />
-                <text x="0" y="-3.7" textAnchor="middle" fontSize="15" fontWeight="900" fontFamily="Arial, sans-serif" fill="#fff">{port.ratio}:1</text>
-                <rect x="-19" y="3" width="38" height="16" rx="4" fill={badge?.fill || '#f0dbaa'} stroke="#9a7a41" strokeWidth="0.7" />
-                <text x="0" y="14.3" textAnchor="middle" fontSize={badge ? "8" : "8.2"} fontWeight="900" fontFamily="Arial, sans-serif" fill={badge?.ink || '#413416'}>
-                  {badge?.name || 'QUALQUER'}
-                </text>
+                <rect x="-23" y="-26" width="46" height="54" rx="8" fill="#fff9e9" stroke="#624421" strokeWidth="2.2" />
+                <rect x="-20" y="-23" width="40" height="19" rx="5" fill="#214c80" />
+                <text x="0" y="-8.4" textAnchor="middle" fontSize="15" fontWeight="900" fontFamily="Arial, sans-serif" fill="#fff">{port.ratio}:1</text>
+                <rect x="-20" y="-1" width="40" height="25" rx="4" fill={badge?.fill || '#efdfb2'} stroke="#9a7a41" strokeWidth="0.7" />
+                {port.resource ? (
+                  // Same original SVG illustration used inside the resource cards.
+                  <g transform="translate(-10.2,-3) scale(0.25)">
+                    <ResourceIllustration type={port.resource} />
+                  </g>
+                ) : (
+                  <text x="0" y="15.5" textAnchor="middle" fontSize="9" fontWeight="900" fontFamily="Arial, sans-serif" fill="#46381e">QUALQUER</text>
+                 )}
               </g>
             </g>
           );
