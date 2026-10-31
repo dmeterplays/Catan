@@ -1014,3 +1014,11 @@
 @media (orientation:landscape) and (max-height:650px){
   .mobile-resource-hud{padding:1px 4px;}
 }
+
+/* Keep tab navigation above the dimmer so players can switch panels directly. */
+@media (max-width:900px), (pointer:coarse) and (max-width:1200px) {
+  .game-board .mobile-game-nav {position:relative;z-index:75;}
+  .game-board .mobile-panel-backdrop {z-index:50;}
+  .game-board .command-dock, .game-board .game-main > .right-sidebar {z-index:62;}
+  .game-board.mobile-panel-actions .ck-progress-dock {display:block;z-index:65;bottom:auto;top:calc(92px + env(safe-area-inset-top));max-height:70px;left:6px;right:6px;}
+}
