@@ -1,0 +1,29 @@
+name: Catan checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+      - name: Install server
+        run: npm ci
+        working-directory: server
+      - name: Run game regression tests
+        run: node --test tests/*.test.js
+        working-directory: server
+      - name: Install client
+        run: npm ci
+        working-directory: client
+      - name: Build game UI
+        run: npm run build
+        working-directory: client
