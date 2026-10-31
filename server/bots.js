@@ -61,6 +61,7 @@ function chooseAction(game, player, options) {
       }
       case 'rollDice': return 100;
       case 'endTurn': return 0;
+      case 'endSpecialBuild': return -1;
       default: return 1;
     }
   };
@@ -89,17 +90,41 @@ function chooseAction(game, player, options) {
   return selected;
 }
 
+
+// In a 5–8-player Special Building Phase, the acting player differs from
+// currentPlayerIndex. During setup/main phases these indices are identical.
+export function getBotActor(game) {
+  if (game.phase === 'waiting' || game.phase === 'finished') return null;
+  const index = game.phase === 'playing' && game.turnPhase === 'specialBuild' && game.specialBuildingPhase
+    ? game.specialBuildIndex : game.currentPlayerIndex;
+  const player = game.players[index];
+  return player?.isBot ? player : null;
+}
+
 export async function runBotTurn(game, broadcast, { delayMs = 500, maxActions = 40, autoContinue = true } = {}) {
   if (game.__botBusy || game.phase === 'waiting' || game.phase === 'finished') return;
   game.__botBusy = true;
   try {
     let safety = 0;
+    let lastSpecialKey = null;
+    let specialActions = 0;
     while (game.phase !== 'finished' && safety++ < maxActions) {
-      const player = game.players[game.currentPlayerIndex];
-      if (!player?.isBot) break;
-      if (delayMs > 0) await sleep(delayMs);
+      const player = getBotActor(game);
+      if (!player) break;
+      const special = game.turnPhase === 'specialBuild' && game.specialBuildingPhase;
+      // Each bot may make up to two strategic construction choices during
+      // its special window; this prevents repeated purchases until the deck
+      // empties and keeps an eight-player match moving quickly.
+      const specialKey = special ? `${game.specialBuildIndex}:${game.currentPlayerIndex}` : null;
+      if (specialKey !== lastSpecialKey) {
+        lastSpecialKey = specialKey;
+        specialActions = 0;
+      }
+      if (delayMs > 0) await sleep(special ? Math.min(delayMs, 220) : delayMs);
       const options = getLegalActions(game, player.id);
-      const action = chooseAction(game, player, options);
+      const action = special && specialActions >= 2
+        ? options.find(option => option.type === 'endSpecialBuild')
+        : chooseAction(game, player, options);
       if (!action) break;
       if (action.type === 'bankTrade' && (game.__botBankTrades || 0) >= 1) { game.__botBankTrades = 0; continue; }
       const result = executeLegalAction(game, player.id, action);
@@ -118,10 +143,13 @@ export async function runBotTurn(game, broadcast, { delayMs = 500, maxActions = 
       if (action.type === 'rollDice' && game.turnPhase === 'discard') {
         runBotDiscards(game, broadcast);
       }
+      if (special && action.type !== 'endSpecialBuild') specialActions++;
       if (action.type === 'bankTrade') game.__botBankTrades = (game.__botBankTrades || 0) + 1;
       if (action.type === 'endTurn') game.__botBankTrades = 0;
       broadcast();
       if (action.type === 'endTurn') break;
+      // A special-build pass may hand the opportunity directly to another
+      // bot; the next loop iteration picks that bot rather than the turn owner.
     }
   } catch (error) {
     console.error('[Catan bot] Unexpected error while resolving turn:', error);
@@ -146,10 +174,10 @@ export async function runBotTurn(game, broadcast, { delayMs = 500, maxActions = 
   } finally {
     game.__botBusy = false;
     broadcast();
-    if (autoContinue && game.phase !== 'finished' && game.players[game.currentPlayerIndex]?.isBot) {
+    if (autoContinue && game.phase !== 'finished' && getBotActor(game)) {
       try {
         if (game.turnPhase === 'discard') runBotDiscards(game, broadcast);
-        const id = game.players[game.currentPlayerIndex].id;
+        const id = getBotActor(game)?.id;
         if (getLegalActions(game, id).length) {
           setTimeout(() => { void runBotTurn(game, broadcast).catch(error => console.error('[Catan bot] Restart failed:', error)); }, 250);
         }
