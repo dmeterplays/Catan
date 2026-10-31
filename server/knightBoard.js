@@ -3,7 +3,7 @@
  * Recruited units automatically occupy a free intersection on their road network.
  * Active units may move once per turn along an owned road (one edge).
  */
-import {getEquivalentEdges,getEquivalentVertices,getVertexEdges} from './gameLogic.js';
+import {getEquivalentEdges,getEquivalentVertices,getVertexEdges,refreshLongestRoad} from './gameLogic.js';
 
 const parse = (key,prefix) => new RegExp('^'+prefix+'_(-?\\d+)_(-?\\d+)_(\\d+)$').exec(key);
 const vertexAliases = k => {const m=parse(k,'v');return m?getEquivalentVertices(...m.slice(1).map(Number)).map(v=>`v_${v.q}_${v.r}_${v.dir}`):[];};
@@ -63,5 +63,6 @@ export function relocateKnight(game,playerId,unitId,targetKey) {
  const actor=game.players[owner];
  actor.cKKnights.active[piece.level]--;
  actor.cKKnights.inactive[piece.level]++;
+ refreshLongestRoad(game);
  return {success:true};
 }
