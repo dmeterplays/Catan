@@ -124,18 +124,28 @@ const SCENARIO_ISLANDS = [
   [-4,-2],[-3,-3],[-4,-1],[-3,-2]      // noroeste: 4 terrenos
 ];
 const OCEAN_RADIUS = 6;
-function buildOceanCoordinates() {
-  const land = new Set([...SCENARIO_LAND, ...SCENARIO_ISLANDS].map(([q,r]) => `${q},${r}`));
+function buildOceanCoordinates(mainland = SCENARIO_LAND, islands = SCENARIO_ISLANDS, radius = OCEAN_RADIUS) {
+  const land = new Set([...mainland, ...islands].map(([q,r]) => `${q},${r}`));
   const sea = [];
-  for (let q = -OCEAN_RADIUS; q <= OCEAN_RADIUS; q++) {
-    for (let r = -OCEAN_RADIUS; r <= OCEAN_RADIUS; r++) {
-      if (Math.max(Math.abs(q), Math.abs(r), Math.abs(q+r)) > OCEAN_RADIUS) continue;
+  for (let q = -radius; q <= radius; q++) {
+    for (let r = -radius; r <= radius; r++) {
+      if (Math.max(Math.abs(q), Math.abs(r), Math.abs(q+r)) > radius) continue;
       if (!land.has(`${q},${r}`)) sea.push([q,r]);
     }
   }
   return sea;
 }
 const SCENARIO_SEA = buildOceanCoordinates();
+// Bigger eight-player archipelago: 37-hex central island and eight distinct
+// islands distributed around it. One or two open-water hexes separate them.
+const EIGHT_MAINLAND = [];
+for(let q=-3;q<=3;q++) for(let r=-3;r<=3;r++)
+  if(Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r))<=3) EIGHT_MAINLAND.push([q,r]);
+const EIGHT_ISLAND_CENTERS = [[0,-7],[4,-7],[7,-4],[7,1],[2,5],[-3,7],[-7,3],[-7,-2]];
+const EIGHT_ISLANDS = EIGHT_ISLAND_CENTERS.flatMap(([q,r])=>
+  [[q,r],[q+1,r],[q,r+1],[q-1,r+1],[q-1,r]].filter(([a,b])=>
+    Math.max(Math.abs(a),Math.abs(b),Math.abs(a+b))<=8));
+const EIGHT_SEA = buildOceanCoordinates(EIGHT_MAINLAND,EIGHT_ISLANDS,8);
 const LAND_TERRAINS = {
   fields:{resource:'grain',color:'#d4a942'},
   hills:{resource:'brick',color:'#c45a2c'},
@@ -173,7 +183,7 @@ const makeVertex=(q,r,d)=>`v_${q}_${r}_${d}`;
  * Fan-made balance-focused map: 19 mainland tiles, 18 outer-island tiles and
  * 90 sea tiles. Terrain and number placements shuffle.
  */
-export function buildSeafarersBoard({random=true}={}) {
+export function buildSeafarersBoard({random=true,extended=false}={}) {
   const hexes={};
   function put(coords,types,tokens,island) {
     const t=random?shuffleList(types):[...types];
@@ -185,9 +195,20 @@ export function buildSeafarersBoard({random=true}={}) {
         number:terrain==='desert'||terrain==='sea'?null:nums[n++],island};
     });
   }
-  put(SCENARIO_LAND,MAIN_LAND_TYPES,MAIN_TOKENS,'main');
-  put(SCENARIO_ISLANDS,ISLAND_LAND_TYPES,ISLAND_TOKENS,'islet');
-  SCENARIO_SEA.forEach(([q,r])=>{
+  const mainland = extended ? EIGHT_MAINLAND : SCENARIO_LAND;
+  const islands = extended ? EIGHT_ISLANDS : SCENARIO_ISLANDS;
+  const largeMain = [...Array(7).fill('fields'),...Array(7).fill('hills'),
+    ...Array(7).fill('mountains'),...Array(8).fill('pasture'),
+    ...Array(7).fill('forest'),'desert'];
+  const largeIslands = islands.map((_,i)=>i%11===0 ? 'gold' :
+    ['fields','forest','hills','pasture','mountains'][i%5]);
+  const makeTokens = count=>Array.from({length:count},(_,i)=>
+    [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12][i%18]);
+  put(mainland,extended?largeMain:MAIN_LAND_TYPES,
+    extended?makeTokens(mainland.length-1):MAIN_TOKENS,'main');
+  put(islands,extended?largeIslands:ISLAND_LAND_TYPES,
+    extended?makeTokens(islands.length):ISLAND_TOKENS,'islet');
+  (extended?EIGHT_SEA:SCENARIO_SEA).forEach(([q,r])=>{
     hexes[`${q},${r}`]={q,r,terrain:'sea',resource:null,color:LAND_TERRAINS.sea.color,number:null,island:null};
   });
   const vertices={},edges={};
@@ -199,7 +220,7 @@ export function buildSeafarersBoard({random=true}={}) {
   });
   const types=['BRICK','LUMBER','WOOL','GRAIN','ORE','GENERIC','GENERIC','GENERIC','GENERIC'];
   const coastal=[];
-  SCENARIO_LAND.forEach(([q,r])=>{
+  mainland.forEach(([q,r])=>{
     for(let d=0;d<6;d++){
       const key=makeEdge(q,r,d);
       const alternatives=getEquivalentEdges(q,r,d);
@@ -220,7 +241,8 @@ export function buildSeafarersBoard({random=true}={}) {
   const candidates=coastal.map(p=>({...p,point:center(p)}));
   const first=candidates.reduce((best,p)=>!best || p.point.x<best.point.x ? p : best,null);
   if(first)picked.push(first);
-  while(picked.length<9 && picked.length<candidates.length){
+  const portCount = extended ? 15 : 9;
+  while(picked.length<portCount && picked.length<candidates.length){
     let winner=null,bestScore=-Infinity;
     for(const candidate of candidates){
       if(picked.some(p=>p.key===candidate.key))continue;
@@ -232,7 +254,7 @@ export function buildSeafarersBoard({random=true}={}) {
     if(!winner)break;
     picked.push(winner);
   }
-  const portTypes=random?shuffleList(types):types;
+  const portTypes=random?shuffleList(extended?[...types,'GENERIC','GENERIC','BRICK','LUMBER','WOOL','GRAIN']:types):extended?[...types,'GENERIC','GENERIC','BRICK','LUMBER','WOOL','GRAIN']:types;
   const portValues={
     GENERIC:{ratio:3,resource:null},
     BRICK:{ratio:2,resource:'brick'},LUMBER:{ratio:2,resource:'lumber'},
