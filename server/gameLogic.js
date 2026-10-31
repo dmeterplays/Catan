@@ -128,8 +128,23 @@ const PROGRESS_CARD_DISTRIBUTION = {
   ]
 };
 
-/** Player colors: Red, Blue, Orange, Teal, Green, Purple, Coral, Steel Blue (supports up to 8 players) */
-export const PLAYER_COLORS = ['#e63946', '#457b9d', '#f4a261', '#2a9d8f', '#6a994e', '#9d4edd', '#e07b53', '#4a90d9'];
+/** Eight distinctly colored defaults plus four optional lobby colors. */
+export const PLAYER_COLORS = [
+  '#e63946', // vermelho
+  '#457b9d', // azul
+  '#f4a261', // laranja
+  '#2a9d8f', // verde-água
+  '#6a994e', // verde
+  '#9d4edd', // roxo
+  '#f25ca2', // rosa
+  '#f2cf3a', // amarelo
+  '#25292f', // preto
+  '#f5f4ed', // branco
+  '#8d572e', // marrom
+  '#13c7ee', // ciano
+  '#e07b53', // coral (legado)
+  '#4a90d9' // azul-aço (legado)
+];
 
 // ============================================================================
 // BOARD LAYOUT CONFIGURATION
