@@ -111,7 +111,12 @@ function ActionPanel({
           onClick={() => setSelectedAction(selectedAction === 'road' ? null : 'road')}
           disabled={!canBuild || (!canAffordRoad && freeRoads === 0)}
         >
-          <span className="btn-icon">━</span>
+          <span className="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 28 28" width="24" height="24" style={{verticalAlign: 'middle', overflow: 'visible'}}>
+              <line x1="5" y1="23" x2="23" y2="5" stroke="#171717" strokeWidth="10" strokeLinecap="round" />
+              <line x1="5" y1="23" x2="23" y2="5" stroke={player.color || '#e63946'} strokeWidth="7" strokeLinecap="round" />
+            </svg>
+          </span>
           <span className="btn-label">Estrada</span>
           <span className="cost">🧱1 🪵1</span>
         </button>
