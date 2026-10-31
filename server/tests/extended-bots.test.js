@@ -74,7 +74,7 @@ test('bot pode construir estrategicamente e depois passar a fase especial',async
   game.phase='playing';
   game.turnPhase='main';
   game.currentPlayerIndex=0;
-  game.players[1].resources={brick:0,lumber:0,wool:0,grain:3,ore:3};
+  game.players[1].resources={brick:0,lumber:0,wool:3,grain:3,ore:3};
   assert.equal(Game.endTurn(game,'human').success,true);
   const initialDeck=game.devCardDeck.length;
   await runBotTurn(game,()=>{}, {delayMs:0,maxActions:3,autoContinue:false});
