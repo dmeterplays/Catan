@@ -42,6 +42,15 @@ export const RESOURCES = {
   ORE: 'ore'
 };
 
+/** Standard supply: 19 cards per type. Extended 5–8 player supply: 38. */
+const BANK_RESOURCE_TYPES = ['brick','lumber','wool','grain','ore'];
+export function getBankResourceCount(game, resource) {
+  if (!BANK_RESOURCE_TYPES.includes(resource)) return 0;
+  const startingSupply = game.isExtended ? 38 : 19;
+  return Math.max(0, startingSupply -
+    game.players.reduce((sum, player) => sum + (player.resources?.[resource] || 0), 0));
+}
+
 /** Commodities for Cities & Knights */
 export const COMMODITIES = {
   PAPER: 'paper', // from Forest
@@ -1265,7 +1274,6 @@ function distributeResources(game, roll) {
           
           if (game.isCitiesAndKnights && buildingInfo.type === 'city') {
             // Cities & Knights: Cities produce 1 Resource + 1 Commodity (if applicable)
-            player.resources[hex.resource] += 1;
             gains[buildingInfo.owner][hex.resource] += 1;
             
             if (hex.resource === RESOURCES.LUMBER) {
@@ -1279,13 +1287,11 @@ function distributeResources(game, roll) {
               gains[buildingInfo.owner].commodities.coin += 1;
             } else {
               // Brick and Grain still produce 2 resources
-              player.resources[hex.resource] += 1;
-              gains[buildingInfo.owner][hex.resource] += 1;
+                gains[buildingInfo.owner][hex.resource] += 1;
             }
           } else {
             // Standard game or standard settlement
             const amount = buildingInfo.type === 'city' ? 2 : 1;
-            player.resources[hex.resource] += amount;
             gains[buildingInfo.owner][hex.resource] += amount;
           }
         }
@@ -1293,6 +1299,19 @@ function distributeResources(game, roll) {
     }
   });
   
+  // Resolve demand for every resource BEFORE awarding any cards. If the
+  // bank cannot supply all claims for a type, nobody receives that type.
+  // This prevents the earlier unbounded bank in large games.
+  for (const resource of BANK_RESOURCE_TYPES) {
+    const requested = Object.values(gains).reduce((total, earned) => total + (earned[resource] || 0), 0);
+    if (requested > getBankResourceCount(game, resource)) {
+      for (const earned of Object.values(gains)) earned[resource] = 0;
+      continue;
+    }
+    game.players.forEach((player, index) => {
+      player.resources[resource] += gains[index][resource];
+    });
+  }
   return gains;
 }
 
@@ -1514,7 +1533,7 @@ function giveInitialResources(game, vKey, playerIndex) {
   adjacentHexes.forEach(({ hq, hr }) => {
     const hex = game.hexes[hexKey(hq, hr)];
     if (hex && hex.resource) {
-      player.resources[hex.resource]++;
+      if (getBankResourceCount(game, hex.resource) > 0) player.resources[hex.resource]++;
     }
   });
 }
@@ -2127,6 +2146,8 @@ export function yearOfPlentyPick(game, playerId, resource) {
     return { success: false, error: 'No year of plenty picks remaining' };
   }
   
+  if (!BANK_RESOURCE_TYPES.includes(resource)) return { success: false, error: 'Invalid resource' };
+  if (getBankResourceCount(game, resource) < 1) return { success: false, error: 'Bank has no more cards of that resource' };
   const player = game.players[playerIndex];
   player.resources[resource]++;
   game.yearOfPlentyPicks--;
@@ -2214,6 +2235,10 @@ export function bankTrade(game, playerId, giveResource, giveAmount, getResource)
     return { success: false, error: 'Not enough resources' };
   }
   
+  if (!BANK_RESOURCE_TYPES.includes(giveResource) || !BANK_RESOURCE_TYPES.includes(getResource))
+    return { success: false, error: 'Invalid trade resource' };
+  if (getBankResourceCount(game, getResource) < 1)
+    return { success: false, error: 'Bank has no more cards of that resource' };
   player.resources[giveResource] -= giveAmount;
   player.resources[getResource] += 1;
   
@@ -2885,10 +2910,9 @@ export function getPlayerView(game, playerId) {
     myIndex: playerIndex,
     myPorts: getPlayerPorts(game, playerIndex),
     tradeRatios,
-    // Public bank supply. The standard deck starts with 19 of each resource.
-    bankResources: Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [
-      resource,
-      Math.max(0, 19 - game.players.reduce((total, p) => total + (p.resources?.[resource] || 0), 0))
+    // Public and authoritative bank counts: 19 per type (standard), 38 (extended).
+    bankResources: Object.fromEntries(BANK_RESOURCE_TYPES.map(resource => [
+      resource, getBankResourceCount(game, resource)
     ])),
     hasRolledThisTurn: game.hasRolledThisTurn
   };
@@ -3034,7 +3058,7 @@ export function autoPlaceInitialBuildings(game) {
               hexesClaimed.add(hKey);
               const hex = game.hexes[hKey];
               if (hex && hex.resource) {
-                player.resources[hex.resource]++;
+                if (getBankResourceCount(game, hex.resource) > 0) player.resources[hex.resource]++;
               }
             }
           });
