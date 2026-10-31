@@ -62,6 +62,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const [selectedAction, setSelectedAction] = useState(null); // settlement, road, city, ship
   const [selectedShipEdge,setSelectedShipEdge] = useState(null);
   const [selectedKnight,setSelectedKnight] = useState(null);
+  const [mobilePanel, setMobilePanel] = useState(null);
   const [dismissedBarbarianResult, setDismissedBarbarianResult] = useState(false);
   const [lastPlacedSettlement, setLastPlacedSettlement] = useState(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
@@ -632,7 +633,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
 
   return (
     <>
-    <div className="game-board">
+    <div className={`game-board ${mobilePanel ? `mobile-panel-${mobilePanel}` : ""}`}>
       {/* Header */}
       <div className="game-header">
         <div className="game-code-display">
@@ -685,6 +686,13 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         </button>
       </div>
 
+      <nav className="mobile-game-nav" aria-label="Painéis do jogo no celular">
+        <button type="button" className={mobilePanel === null ? 'active' : ''} onClick={() => setMobilePanel(null)}>🗺️ Mapa</button>
+        <button type="button" className={mobilePanel === 'actions' ? 'active' : ''} aria-expanded={mobilePanel === 'actions'} onClick={() => setMobilePanel(v=>v==='actions'?null:'actions')}>⚒️ Ações</button>
+        <button type="button" className={mobilePanel === 'players' ? 'active' : ''} aria-expanded={mobilePanel === 'players'} onClick={() => setMobilePanel(v=>v==='players'?null:'players')}>👥 Jogadores</button>
+        <button type="button" className={mobilePanel === 'chat' ? 'active' : ''} aria-expanded={mobilePanel === 'chat'} onClick={() => {setShowChat(true);setMobilePanel(v=>v==='chat'?null:'chat');}}>💬 Chat{unreadMessages>0?' ('+unreadMessages+')':''}</button>
+      </nav>
+      {mobilePanel && <button type="button" className="mobile-panel-backdrop" aria-label="Fechar painel" onClick={()=>setMobilePanel(null)} />}
       {/* Main game area */}
       <div className="game-main">
         {/* Center - Board */}
@@ -749,7 +757,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         </div>
 
         {/* Right sidebar - Actions */}
-        <div className="sidebar right-sidebar">
+        <div className="sidebar right-sidebar" id="mobile-information-panel">
           <section className="activity-feed" aria-label="Acontecimentos da partida">
             <div className="activity-feed-title">📜 Acontecimentos</div>
             <div className="activity-feed-items">
@@ -777,7 +785,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             )}
           </button>
                   {/* Left sidebar - Players */}
-        <div className="roster-panel">
+        <div className="roster-panel" id="mobile-players-panel">
           <div className="bank-summary">
             <div className="bank-title">🏛️ Banco <small>Cartas disponíveis</small></div>
             <div className="bank-resources">
@@ -895,7 +903,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
           <CardArt type={flight.type} count={flight.amount} />
         </div>
       ))}
-      <div className="command-dock">
+      <div className="command-dock" id="mobile-action-panel">
         <div className="construction-costs-container">
           <button type="button" className="costs-toggle" onClick={() => setShowBuildCosts(open => !open)} aria-expanded={showBuildCosts}>
             📖 Custos {showBuildCosts ? '▴' : '▾'}
