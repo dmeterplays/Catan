@@ -854,7 +854,7 @@ function HexBoard({
                   </g>
                 ) : (
                   <text x="0" y="15.5" textAnchor="middle" fontSize="9" fontWeight="900" fontFamily="Arial, sans-serif" fill="#46381e">QUALQUER</text>
-                )>
+                 )}
               </g>
             </g>
           );
