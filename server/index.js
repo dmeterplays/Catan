@@ -896,6 +896,15 @@ io.on('connection', (socket) => {
     callback(result);
   });
   
+  socket.on('buildCityWall', (callback = () => {}) => {
+    const info=playerSockets.get(socket.id);
+    const game=info && games.get(info.gameId);
+    if(!game)return callback({success:false,error:'Partida não encontrada'});
+    const result=GameLogic.buildCityWall(game,info.playerId);
+    if(result.success)broadcastGameState(info.gameId);
+    callback(result);
+  });
+
   socket.on('recruitKnight', (callback) => {
     const playerInfo = playerSockets.get(socket.id);
     if (!playerInfo) return callback({ success: false, error: 'Not in a game' });
