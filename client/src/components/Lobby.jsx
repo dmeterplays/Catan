@@ -15,6 +15,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
   const [autoSetup, setAutoSetup] = useState(false);
   const [turnTimeLimit, setTurnTimeLimit] = useState(120);
   const [isCitiesAndKnights, setIsCitiesAndKnights] = useState(false);
+  const [extendedCities, setExtendedCities] = useState(false);
   const [isSeafarers, setIsSeafarers] = useState(false);
   const [extendedSeafarers, setExtendedSeafarers] = useState(false);
 
@@ -33,7 +34,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
     }
     
     if (mode === 'create') {
-      onCreateGame(playerName.trim(), isSeafarers ? extendedSeafarers : isExtended, enableSpecialBuild, mapType, autoSetup && !isSeafarers, isCitiesAndKnights, turnTimeLimit, isSeafarers);
+      onCreateGame(playerName.trim(), isSeafarers ? extendedSeafarers : isCitiesAndKnights ? extendedCities : isExtended, enableSpecialBuild, mapType, autoSetup && !isSeafarers, isCitiesAndKnights, turnTimeLimit, isSeafarers);
     } else if (mode === 'join') {
       if (!gameCode.trim()) {
         setError('Digite o código da partida');
@@ -145,7 +146,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                     <span>🎮 Modo de jogo</span>
                     <span className="create-mode-current">
                       {isSeafarers ? `⛵ Navegantes · até ${extendedSeafarers ? 8 : 4} jogadores` :
-                        isCitiesAndKnights ? '🏰 Cidades e Cavaleiros · 2–4 jogadores' :
+                        isCitiesAndKnights ? `🏰 Cidades e Cavaleiros · até ${extendedCities ? 8 : 4} jogadores` :
                         isExtended ? '👥 Estendido · 5–8 jogadores' : '🎲 Clássico · 2–4 jogadores'}
                     </span>
                   </summary>
@@ -165,7 +166,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                       <button type="button" className={`create-mode-card ${isCitiesAndKnights ? 'active' : ''}`}
                         aria-pressed={isCitiesAndKnights}
                         onClick={() => {setIsExtended(false);setIsCitiesAndKnights(true);setIsSeafarers(false);}}>
-                        <strong>🏰 Cidades e Cavaleiros</strong><small>2–4 jogadores</small>
+                        <strong>🏰 Cidades e Cavaleiros</strong><small>2–8 jogadores</small>
                       </button>
                       <button type="button" className={`create-mode-card ${isSeafarers ? 'active' : ''}`}
                         aria-pressed={isSeafarers}
@@ -176,6 +177,15 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                   </div>
                 </details>
 
+                {isCitiesAndKnights && (
+                  <div className="form-group game-mode-group">
+                    <label>🏰 Cidades e Cavaleiros: quantidade de jogadores</label>
+                    <div className="game-mode-options">
+                      <button type="button" className={`mode-option ${!extendedCities?'active':''}`} onClick={()=>setExtendedCities(false)}>Até 4 jogadores</button>
+                      <button type="button" className={`mode-option ${extendedCities?'active':''}`} onClick={()=>setExtendedCities(true)}>Até 8 jogadores</button>
+                    </div>
+                  </div>
+                )}
                 {isSeafarers && (
                   <div className="form-group game-mode-group">
                     <label>👥 Navegantes: quantidade de jogadores</label>
@@ -186,7 +196,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                   </div>
                 )}
                 {/* Special Building Phase option - only for extended mode */}
-                {(isExtended || (isSeafarers && extendedSeafarers)) && (
+                {(isExtended || (isSeafarers && extendedSeafarers) || (isCitiesAndKnights && extendedCities)) && (
                   <div className="form-group special-build-option">
                     <label className="checkbox-label">
                       <input
