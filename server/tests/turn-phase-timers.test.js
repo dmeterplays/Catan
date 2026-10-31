@@ -27,7 +27,7 @@ test('picks de Ano de Abundância e estradas gratuitas são privados',()=>{
   const game=create();
   game.phase='playing';
   game.turnPhase='main';
-  game.currentPlayerIndex=0;
+  game.currentPlayerIndex=game.players.findIndex(p=>p.id==='a');
   game.freeRoads=2;
   game.yearOfPlentyPicks=2;
   const owner=Game.getPlayerView(game,'a');
@@ -38,10 +38,10 @@ test('picks de Ano de Abundância e estradas gratuitas são privados',()=>{
   assert.equal(stranger.yearOfPlentyPicks,0);
 });
 test('novo ID de rolagem aparece na visão sem revelar mãos de terceiros',()=>{
-  const game=create();game.phase='playing';game.turnPhase='roll';game.currentPlayerIndex=0;
+  const game=create();game.phase='playing';game.turnPhase='roll';game.currentPlayerIndex=game.players.findIndex(p=>p.id==='a');
   const result=Game.rollDice(game,'a');
   assert.equal(result.success,true);
   const view=Game.getPlayerView(game,'b');
   assert.equal(view.rollSerial,game.__publicRollEvent.id);
-  assert.equal(typeof view.players[0].resources,'number');
+  assert.equal(typeof view.players[game.currentPlayerIndex].resources,'number');
 });
