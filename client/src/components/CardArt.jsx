@@ -10,7 +10,7 @@ const THEMES = {
   hidden: ['#50647e','#bfd1df','Carta']
 };
 
-function Illustration({ type }) {
+export function Illustration({ type }) {
   if (type === 'lumber') return <g><path d="M14 73 L42 19 70 73Z" fill="#174d39"/><path d="M42 19 29 49h12l-15 20h32L43 49h12Z" fill="#74ba74"/><rect x="37" y="72" width="10" height="17" rx="2" fill="#805333"/></g>;
   if (type === 'brick') return <g fill="#c25c40" stroke="#7e352a" strokeWidth="2"><rect x="10" y="43" width="30" height="17" rx="2"/><rect x="43" y="43" width="30" height="17" rx="2"/><rect x="25" y="62" width="37" height="17" rx="2"/><rect x="24" y="24" width="37" height="17" rx="2"/></g>;
   if (type === 'wool') return <g><ellipse cx="42" cy="56" rx="25" ry="18" fill="#f4f7ee"/><circle cx="27" cy="45" r="12" fill="#fff"/><circle cx="42" cy="40" r="13" fill="#fff"/><circle cx="55" cy="45" r="12" fill="#fff"/><ellipse cx="62" cy="57" rx="10" ry="12" fill="#d7d6bc"/><circle cx="67" cy="54" r="2" fill="#303d37"/><path d="M29 72v12M52 72v12" stroke="#34483b" strokeWidth="5"/></g>;
