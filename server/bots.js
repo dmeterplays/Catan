@@ -50,7 +50,16 @@ function chooseAction(game, player, options) {
       case 'bankTrade': return (game.__botBankTrades || 0) < 1 && (player.resources[action.getResource] || 0) === 0 && (player.resources[action.giveResource] || 0) >= action.giveAmount + 1 ? 65 : -10;
       case 'respondToTrade': return action.accept ? 90 : 5;
       case 'placeRoad': return game.isSeafarers ? 35 : 40;
-      case 'placeShip': return game.phase === 'setup' ? 58 : 48;
+      case 'placeShip': {
+        // Prefer ship routes that approach the nearest small island.
+        const coords = /^e_(-?\d+)_(-?\d+)_\d+$/.exec(action.edgeKey);
+        if (!coords) return 45;
+        const q = Number(coords[1]), r = Number(coords[2]);
+        const distance = (h) => Math.max(Math.abs(q-h.q), Math.abs(r-h.r), Math.abs(q+r-h.q-h.r));
+        const islands = Object.values(game.hexes).filter(h => h.island === 'islet');
+        const nearest = islands.length ? Math.min(...islands.map(distance)) : 9;
+        return game.phase === 'setup' ? 58 : 52 - Math.min(12, nearest * 2);
+      }
       case 'pickGoldResource': return 80 + (player.resources[action.resource] < 2 ? 4 : 0);
       case 'movePirate': return 48 + (action.victimPlayerIds?.length || 0) * 5;
       case 'moveRobber': {
