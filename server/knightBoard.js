@@ -25,7 +25,7 @@ export function deployKnight(game,owner,level='basic') {
    && adjacentOwnRoad(game,k,owner));
  const location=destinations[0];
  if(!location)return null;
- const id=`knight-${++game.__knightSequence || 1}`;
+ const id=`knight-${game.__knightSequence=(game.__knightSequence||0)+1}`;
  const piece={id,owner,vertexKey:location,level,active:false,lastMovedTurn:-1};
  game.knightPieces[id]=piece;
  return piece;
