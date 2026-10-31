@@ -919,6 +919,9 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                 onOpenTrade={() => setShowTradeModal(true)}
                 onOpenDevCards={() => setShowDevCardModal(true)}
                 onBuyCityImprovement={handleBuyCityImprovement}
+                onBuildCityWall={() => socket.emit('buildCityWall',response => {
+                  addNotification(response?.success?'Muralha construída!':response?.error||'Não foi possível construir muralha');
+                })}
                 onRecruitKnight={handleRecruitKnight}
                 onActivateKnight={handleActivateKnight}
                 onUpgradeKnight={handleUpgradeKnight}
