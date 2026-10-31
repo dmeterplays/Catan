@@ -686,6 +686,18 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         </button>
       </div>
 
+      <div className="mobile-resource-hud" aria-label="Seus recursos">
+        {[
+          ['lumber','🪵'],['brick','🧱'],['wool','🐑'],['grain','🌾'],['ore','⛏️']
+        ].map(([key,icon])=>(
+          <span key={key} title={nomeRecurso(key)}>{icon}<strong>{myPlayer?.resources?.[key] ?? 0}</strong></span>
+        ))}
+        {gameState.isCitiesAndKnights && [
+          ['paper','📖'],['coin','🪙'],['cloth','🧵']
+        ].map(([key,icon])=>(
+          <span key={key}>{icon}<strong>{myPlayer?.commodities?.[key] ?? 0}</strong></span>
+        ))}
+      </div>
       <nav className="mobile-game-nav" aria-label="Painéis do jogo no celular">
         <button type="button" className={mobilePanel === null ? 'active' : ''} onClick={() => setMobilePanel(null)}>🗺️ Mapa</button>
         <button type="button" className={mobilePanel === 'actions' ? 'active' : ''} aria-expanded={mobilePanel === 'actions'} onClick={() => setMobilePanel(v=>v==='actions'?null:'actions')}>⚒️ Ações</button>
