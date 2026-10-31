@@ -793,7 +793,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                 </div>
               </details>
 
-              {isHost && !gameState.isExtended && !gameState.isCitiesAndKnights && (
+              {isHost && !gameState.isCitiesAndKnights && (
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <button type="button" className="shuffle-btn" onClick={handleAddBot} disabled={gameState.players.length >= (gameState.maxPlayers || 4)}>🤖 Adicionar bot</button>
                   <button type="button" className="shuffle-btn" onClick={handleRemoveBot} disabled={!gameState.players.some(p => p.isBot)}>Remover bot</button>
