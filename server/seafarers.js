@@ -207,12 +207,30 @@ export function buildSeafarersBoard({random=true}={}) {
         coastal.push({key,q,r,d});
     }
   });
-  // Select spaced-out land/sea edges to distribute ports around mainland.
+  // Spread nine ports over the full coastline using farthest-point selection.
+  // Avoid adjacent or equivalent physical edges before placing another port.
   const picked=[];
-  for(let i=0;i<9;i++) {
-    const ix=Math.floor((i+.4)*coastal.length/9);
-    const candidate=coastal[Math.min(ix,coastal.length-1)];
-    if(candidate && !picked.some(p=>p.key===candidate.key)) picked.push(candidate);
+  const center=(p)=>{
+    const x=Math.sqrt(3)*(p.q+p.r/2);
+    const y=1.5*p.r;
+    const angle=(Math.PI/3)*p.d-Math.PI/6;
+    return {x:x+Math.cos(angle)*Math.sqrt(3)/2,
+            y:y+Math.sin(angle)*Math.sqrt(3)/2};
+  };
+  const candidates=coastal.map(p=>({...p,point:center(p)}));
+  const first=candidates.reduce((best,p)=>!best || p.point.x<best.point.x ? p : best,null);
+  if(first)picked.push(first);
+  while(picked.length<9 && picked.length<candidates.length){
+    let winner=null,bestScore=-Infinity;
+    for(const candidate of candidates){
+      if(picked.some(p=>p.key===candidate.key))continue;
+      const distances=picked.map(p=>Math.hypot(
+        candidate.point.x-p.point.x,candidate.point.y-p.point.y));
+      const minimum=Math.min(...distances);
+      if(minimum>bestScore){bestScore=minimum;winner=candidate;}
+    }
+    if(!winner)break;
+    picked.push(winner);
   }
   const portTypes=random?shuffleList(types):types;
   const portValues={
