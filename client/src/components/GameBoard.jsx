@@ -61,6 +61,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   const previewSound = (name) => playGameAudio(name, soundVolume);
   const [selectedAction, setSelectedAction] = useState(null); // settlement, road, city, ship
   const [selectedShipEdge,setSelectedShipEdge] = useState(null);
+  const [selectedKnight,setSelectedKnight] = useState(null);
   const [dismissedBarbarianResult, setDismissedBarbarianResult] = useState(false);
   const [lastPlacedSettlement, setLastPlacedSettlement] = useState(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
@@ -722,6 +723,20 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             lastPlacedSettlement={lastPlacedSettlement}
             freeRoads={gameState.freeRoads}
             legalActions={gameState.legalActions || []}
+            knightPieces={gameState.knightPieces || {}}
+            selectedKnight={selectedKnight}
+            onKnightSelect={unitId=>{
+              const piece=gameState.knightPieces?.[unitId];
+              if(piece?.owner===gameState.myIndex && piece.active && isMyTurn)
+                setSelectedKnight(current=>current===unitId?null:unitId);
+            }}
+            onKnightDestination={targetKey=>{
+              if(!selectedKnight)return;
+              socket.emit('relocateKnight',{unitId:selectedKnight,targetKey},response=>{
+                addNotification(response?.success?'Cavaleiro movimentado':response?.error||'Movimento inválido');
+                if(response?.success)setSelectedKnight(null);
+              });
+            }}
           />
           
           {/* Dice display - auto-hides after 5 seconds */}
@@ -1020,6 +1035,11 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             )}
           </div>
         </div>
+      )}
+      {gameState.isCitiesAndKnights && selectedKnight && (
+        <button type="button" onClick={()=>setSelectedKnight(null)} style={{background:'#fff3d4',color:'#312319',padding:9,borderRadius:6}}>
+          Cancelar movimento de cavaleiro
+        </button>
       )}
       {/* Barbarian Tracker Banner */}
       {gameState.isCitiesAndKnights && (
