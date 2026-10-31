@@ -59,7 +59,8 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
     return () => socket.off('gameSound', onSound);
   }, [socket]);
   const previewSound = (name) => playGameAudio(name, soundVolume);
-  const [selectedAction, setSelectedAction] = useState(null); // 'settlement', 'road', 'city'
+  const [selectedAction, setSelectedAction] = useState(null); // settlement, road, city, ship
+  const [selectedShipEdge,setSelectedShipEdge] = useState(null);
   const [dismissedBarbarianResult, setDismissedBarbarianResult] = useState(false);
   const [lastPlacedSettlement, setLastPlacedSettlement] = useState(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
@@ -314,7 +315,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       const mySettlements = Object.values(gameState.vertices)
         .filter(v => v.owner === gameState.myIndex && v.building === 'settlement').length;
       const myRoads = Object.values(gameState.edges)
-        .filter(e => e.owner === gameState.myIndex && e.road).length;
+        .filter(e => e.owner === gameState.myIndex && (e.road || e.ship)).length;
       
       const expectedSettlements = gameState.setupPhase === 0 ? 1 : 2;
       const expectedRoads = gameState.setupPhase === 0 ? 1 : 2;
@@ -322,7 +323,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       if (mySettlements < expectedSettlements) {
         setSelectedAction('settlement');
       } else if (myRoads < expectedRoads) {
-        setSelectedAction('road');
+        setSelectedAction(a => a === 'ship' && gameState.isSeafarers ? a : 'road');
       } else {
         setSelectedAction(null);
       }
@@ -402,6 +403,32 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
     });
   }, [socket, isSetup, lastPlacedSettlement, gameState.freeRoads, addNotification]);
 
+  const handlePlaceShip = useCallback((edgeKey) => {
+    socket.emit('performAction',{action:{type:'placeShip',edgeKey,...(isSetup?{setup:true}:{})}},response=>{
+      if(response.success){
+        if(isSetup)setLastPlacedSettlement(null);
+        setSelectedAction(null);
+      } else addNotification(response.error);
+    });
+  },[socket,isSetup,addNotification]);
+  const handleShipSelect = useCallback((edgeKey)=>{
+    if (!selectedShipEdge) {
+      const edge=gameState.edges[edgeKey];
+      if(!edge?.ship || edge.owner!==gameState.myIndex) {
+        addNotification('Selecione primeiro um dos seus barcos');
+        return;
+      }
+      setSelectedShipEdge(edgeKey);
+      addNotification('Agora clique em um trecho marítimo vazio para mover o barco');
+      return;
+    }
+    if(selectedShipEdge===edgeKey){setSelectedShipEdge(null);return;}
+    socket.emit('moveShip',{fromEdge:selectedShipEdge,toEdge:edgeKey},res=>{
+      if(res.success){setSelectedShipEdge(null);setSelectedAction(null);}
+      else addNotification(res.error);
+    });
+  },[socket,selectedShipEdge,gameState.edges,gameState.myIndex,addNotification]);
+
   const handleUpgradeToCity = useCallback((vertexKey) => {
     socket.emit('performAction', { action: { type: 'upgradeToCity', vertexKey } }, (response) => {
       if (response.success) {
@@ -414,7 +441,8 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
 
   const handleHexClick = useCallback((hexKey) => {
     if (gameState.turnPhase === 'robber' && isMyTurn) {
-      if (hexKey === gameState.robber) {
+      const movingPirate=gameState.isSeafarers && gameState.hexes[hexKey]?.terrain==='sea';
+      if (hexKey === (movingPirate ? gameState.pirate : gameState.robber)) {
         addNotification('É preciso mover o ladrão para outro hexágono');
         return;
       }
@@ -426,7 +454,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
           setPlayersOnHex(response.players);
         } else {
           // No players to steal from, just move
-          socket.emit('performAction', { action: { type: 'moveRobber', hexKey, stealFromPlayerId: null } }, (res) => {
+          socket.emit('performAction', { action: { type: movingPirate ? 'movePirate' : 'moveRobber', hexKey, stealFromPlayerId: null } }, (res) => {
             if (!res.success) {
               addNotification(res.error);
             }
@@ -437,7 +465,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   }, [gameState.turnPhase, gameState.robber, isMyTurn, socket, addNotification]);
 
   const handleStealFromPlayer = useCallback((stealPlayerId) => {
-    socket.emit('performAction', { action: { type: 'moveRobber', hexKey: pendingRobberHex, stealFromPlayerId: stealPlayerId } }, (response) => {
+    socket.emit('performAction', { action: { type: gameState.isSeafarers && gameState.hexes[pendingRobberHex]?.terrain==='sea' ? 'movePirate' : 'moveRobber', hexKey: pendingRobberHex, stealFromPlayerId: stealPlayerId } }, (response) => {
       if (response.success) {
         setPendingRobberHex(null);
         setPlayersOnHex([]);
@@ -660,11 +688,22 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
       <div className="game-main">
         {/* Center - Board */}
         <div className="board-container">
+          {gameState.isSeafarers && isSetup && isMyTurn && gameState.setupSettlementKey && (
+            <div className="seafarers-setup-choice" role="group" aria-label="Escolha rota inicial">
+              <span>Rota inicial:</span>
+              <button type="button" className={selectedAction==='road'?'active':''}
+                onClick={()=>setSelectedAction('road')}>🛤️ Estrada</button>
+              <button type="button" className={selectedAction==='ship'?'active':''}
+                onClick={()=>setSelectedAction('ship')}>⛵ Barco</button>
+            </div>
+          )}
           <HexBoard 
             hexes={gameState.hexes}
             vertices={gameState.vertices}
             edges={gameState.edges}
             robber={gameState.robber}
+            pirate={gameState.pirate}
+            isSeafarers={gameState.isSeafarers}
             players={gameState.players}
             ports={gameState.ports || []}
             selectedAction={selectedAction}
@@ -675,6 +714,8 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
             turnPhase={gameState.turnPhase}
             onPlaceSettlement={handlePlaceSettlement}
             onPlaceRoad={handlePlaceRoad}
+            onPlaceShip={handlePlaceShip}
+            onShipSelect={handleShipSelect}
             onUpgradeToCity={handleUpgradeToCity}
             onHexClick={handleHexClick}
             onHexRightClick={showHexInfo}
@@ -864,6 +905,8 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                 onActivateKnight={handleActivateKnight}
                 onUpgradeKnight={handleUpgradeKnight}
                 isCitiesAndKnights={gameState.isCitiesAndKnights}
+                isSeafarers={gameState.isSeafarers}
+                shipSelected={!!selectedShipEdge}
                 player={myPlayer}
                 freeRoads={gameState.freeRoads}
                 yearOfPlentyPicks={gameState.yearOfPlentyPicks}
@@ -894,12 +937,34 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
 
       </div>
 
+      {gameState.isSeafarers && gameState.turnPhase==='goldPick' &&
+        (gameState.pendingGoldPicks?.[gameState.myIndex]||0)>0 && (
+        <div className="seafarers-gold-overlay" role="dialog" aria-label="Escolher recursos do ouro">
+          <div className="seafarers-gold-box">
+            <h3>✨ Filão de ouro!</h3>
+            <p>Escolha {(gameState.pendingGoldPicks?.[gameState.myIndex]||0)} recurso(s) do banco.</p>
+            <div className="seafarers-gold-options">
+              {[
+                ['lumber','🪵 Madeira'],['brick','🧱 Tijolo'],['wool','🐑 Lã'],
+                ['grain','🌾 Trigo'],['ore','⛏️ Minério']
+              ].map(([resource,label])=>(
+                <button type="button" key={resource}
+                  disabled={(gameState.bankResources?.[resource]||0)<1}
+                  onClick={()=>socket.emit('performAction',{action:{type:'pickGoldResource',resource}},res=>{
+                    if(!res.success)addNotification(res.error);
+                  })}>{label}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Robber Phase Banner - shows when player needs to move the robber */}
       {gameState.turnPhase === 'robber' && isMyTurn && (
         <div className="robber-notification-banner">
           <span className="robber-icon">🥷</span>
           <span className="robber-text">
-            <strong>Mova o Ladrão!</strong> Clique em um hexágono para colocar o ladrão nele.
+            <strong>{gameState.isSeafarers ? 'Mova o ladrão ou o pirata!' : 'Mova o Ladrão!'}</strong> {gameState.isSeafarers ? 'Clique na terra para mover o ladrão ou no mar para mover o pirata.' : 'Clique em um hexágono para colocar o ladrão nele.'}
           </span>
         </div>
       )}
