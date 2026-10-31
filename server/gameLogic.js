@@ -440,7 +440,7 @@ export function normalizeVertex(hexQ, hexR, dir, hexes) {
  * @param dir - Vertex direction (0-5)
  * @returns Array of equivalent vertex representations {q, r, dir}
  */
-function getEquivalentVertices(q, r, dir) {
+export function getEquivalentVertices(q, r, dir) {
   const equivalents = [
     { q, r, dir }
   ];
