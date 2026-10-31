@@ -22,6 +22,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import * as GameLogic from './gameLogic.js';
+import { relocateKnight } from './knightBoard.js';
 import * as Seafarers from './seafarers.js';
 import { runBotTurn, runBotDiscards, runBotTradeResponses, getBotActor } from './bots.js';
 import { soundEventsForTransition } from './soundEvents.js';
@@ -906,6 +907,15 @@ io.on('connection', (socket) => {
     callback(result);
   });
   
+  socket.on('relocateKnight', ({unitId,targetKey} = {}, callback = () => {}) => {
+    const info=playerSockets.get(socket.id);
+    const game=info && games.get(info.gameId);
+    if(!game)return callback({success:false,error:'Partida não encontrada'});
+    const result=relocateKnight(game,info.playerId,unitId,targetKey);
+    if(result.success)broadcastGameState(info.gameId);
+    callback(result);
+  });
+
   socket.on('activateKnight', ({ level }, callback) => {
     const playerInfo = playerSockets.get(socket.id);
     if (!playerInfo) return callback({ success: false, error: 'Not in a game' });
