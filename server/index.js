@@ -705,7 +705,7 @@ io.on('connection', (socket) => {
       // once all human/bot discards are resolved.
       runBotDiscards(game, () => broadcastGameState(playerInfo.gameId));
       broadcastGameState(playerInfo.gameId);
-      if (game.players[game.currentPlayerIndex]?.isBot && game.turnPhase !== 'discard') {
+      if (getBotActor(game) && game.turnPhase !== 'discard') {
         void runBotTurn(game, () => broadcastGameState(playerInfo.gameId));
       }
     }
