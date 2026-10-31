@@ -694,7 +694,7 @@ function hasRoadAtEdge(game, eKey) {
 }
 
 function hasShipAtEdge(game,eKey) {
-  const match=/^e_(-?\\d+)_(-?\\d+)_(\\d+)$/.exec(eKey);
+  const match=/^e_(-?\d+)_(-?\d+)_(\d+)$/.exec(eKey);
   if(!match)return null;
   for(const {q,r,dir} of getEquivalentEdges(...match.slice(1).map(Number))){
     const value=game.edges[`e_${q}_${r}_${dir}`];
@@ -1523,7 +1523,7 @@ export function canPlaceSettlement(game, playerId, vKey, isSetup = false) {
   
   if (!vertex) return { valid: false, error: 'Invalid vertex' };
   if (game.isSeafarers) {
-    const match=/^v_(-?\\d+)_(-?\\d+)_(\\d+)$/.exec(vKey);
+    const match=/^v_(-?\d+)_(-?\d+)_(\d+)$/.exec(vKey);
     const touchesLand=match && getEquivalentVertices(...match.slice(1).map(Number))
       .some(({q,r})=>game.hexes[`${q},${r}`] && game.hexes[`${q},${r}`].terrain!=='sea');
     if(!touchesLand)return {valid:false,error:'Não é possível construir aldeias no mar'};
@@ -2734,7 +2734,7 @@ function calculateRoadLength(game, playerIndex) {
       // Get adjacent edges and check for player's roads (checking all equivalents)
       const adjEdges = getVertexEdges(vKey);
       const physicalRoute = key => {
-        const match=key.match(/^e_(-?\\d+)_(-?\\d+)_(\\d+)$/);
+        const match=key.match(/^e_(-?\d+)_(-?\d+)_(\d+)$/);
         if(!match)return null;
         return getEquivalentEdges(...match.slice(1).map(Number))
           .map(({q,r,dir})=>game.edges[`e_${q}_${r}_${dir}`])
