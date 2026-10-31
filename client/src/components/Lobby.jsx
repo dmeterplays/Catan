@@ -15,6 +15,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
   const [autoSetup, setAutoSetup] = useState(false);
   const [turnTimeLimit, setTurnTimeLimit] = useState(120);
   const [isCitiesAndKnights, setIsCitiesAndKnights] = useState(false);
+  const [isSeafarers, setIsSeafarers] = useState(false);
 
   const handleSaveSettings = () => {
     localStorage.setItem('catanServerUrl', tempUrl);
@@ -31,7 +32,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
     }
     
     if (mode === 'create') {
-      onCreateGame(playerName.trim(), isExtended, enableSpecialBuild, mapType, autoSetup, isCitiesAndKnights, turnTimeLimit);
+      onCreateGame(playerName.trim(), isExtended, enableSpecialBuild, mapType, autoSetup && !isSeafarers, isCitiesAndKnights, turnTimeLimit, isSeafarers);
     } else if (mode === 'join') {
       if (!gameCode.trim()) {
         setError('Digite o código da partida');
@@ -142,7 +143,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                   <summary className="create-mode-summary">
                     <span>🎮 Modo de jogo</span>
                     <span className="create-mode-current">
-                      {isCitiesAndKnights ? '🏰 Cidades e Cavaleiros · 2–4 jogadores' :
+                      {isSeafarers ? '⛵ Navegantes · 4 jogadores' :
+                        isCitiesAndKnights ? '🏰 Cidades e Cavaleiros · 2–4 jogadores' :
                         isExtended ? '👥 Estendido · 5–8 jogadores' : '🎲 Clássico · 2–4 jogadores'}
                     </span>
                   </summary>
@@ -151,28 +153,30 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                     <div className="create-mode-grid">
                       <button type="button" className={`create-mode-card ${!isExtended && !isCitiesAndKnights ? 'active' : ''}`}
                         aria-pressed={!isExtended && !isCitiesAndKnights}
-                        onClick={() => {setIsExtended(false);setIsCitiesAndKnights(false);}}>
+                        onClick={() => {setIsExtended(false);setIsCitiesAndKnights(false);setIsSeafarers(false);}}>
                         <strong>🎲 Clássico</strong><small>2–4 jogadores</small>
                       </button>
                       <button type="button" className={`create-mode-card ${isExtended ? 'active' : ''}`}
                         aria-pressed={isExtended}
-                        onClick={() => {setIsExtended(true);setIsCitiesAndKnights(false);}}>
+                        onClick={() => {setIsExtended(true);setIsCitiesAndKnights(false);setIsSeafarers(false);}}>
                         <strong>👥 Estendido</strong><small>5–8 jogadores</small>
                       </button>
                       <button type="button" className={`create-mode-card ${isCitiesAndKnights ? 'active' : ''}`}
                         aria-pressed={isCitiesAndKnights}
-                        onClick={() => {setIsExtended(false);setIsCitiesAndKnights(true);}}>
+                        onClick={() => {setIsExtended(false);setIsCitiesAndKnights(true);setIsSeafarers(false);}}>
                         <strong>🏰 Cidades e Cavaleiros</strong><small>2–4 jogadores</small>
                       </button>
-                      <div className="create-mode-card upcoming" aria-disabled="true" title="Em produção, ainda não jogável">
-                        <strong>⛵ Navegantes</strong><small>4 jogadores · Em produção</small>
-                      </div>
+                      <button type="button" className={`create-mode-card ${isSeafarers ? 'active' : ''}`}
+                        aria-pressed={isSeafarers}
+                        onClick={() => {setIsExtended(false);setIsCitiesAndKnights(false);setIsSeafarers(true);}}>
+                        <strong>⛵ Navegantes</strong><small>4 jogadores · Rumo a Novas Margens</small>
+                      </button>
                     </div>
                   </div>
                 </details>
 
                 {/* Special Building Phase option - only for extended mode */}
-                {isExtended && (
+                {isExtended && !isSeafarers && (
                   <div className="form-group special-build-option">
                     <label className="checkbox-label">
                       <input
@@ -230,6 +234,7 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
                     <input
                       type="checkbox"
                       checked={autoSetup}
+                      disabled={isSeafarers}
                       onChange={(e) => setAutoSetup(e.target.checked)}
                     />
                     <span className="checkbox-text">
