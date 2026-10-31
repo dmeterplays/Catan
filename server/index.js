@@ -495,6 +495,11 @@ io.on('connection', (socket) => {
     const game = games.get(playerInfo.gameId);
     if (!game || game.phase !== 'waiting') return callback({ success: false, error: 'Cannot change color now' });
     
+    // Only allow server-defined colors; never trust arbitrary client CSS values.
+    if (typeof color !== 'string' || !GameLogic.PLAYER_COLORS.includes(color)) {
+      return callback({ success: false, error: 'Cor inválida' });
+    }
+
     // Check if color is already taken
     const isTaken = game.players.some(p => p.color === color && p.id !== playerInfo.playerId);
     if (isTaken) return callback({ success: false, error: 'Color already taken' });
