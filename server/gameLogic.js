@@ -1522,6 +1522,12 @@ export function canPlaceSettlement(game, playerId, vKey, isSetup = false) {
   const vertex = game.vertices[vKey];
   
   if (!vertex) return { valid: false, error: 'Invalid vertex' };
+  if (game.isSeafarers) {
+    const match=/^v_(-?\\d+)_(-?\\d+)_(\\d+)$/.exec(vKey);
+    const touchesLand=match && getEquivalentVertices(...match.slice(1).map(Number))
+      .some(({q,r})=>game.hexes[`${q},${r}`] && game.hexes[`${q},${r}`].terrain!=='sea');
+    if(!touchesLand)return {valid:false,error:'Não é possível construir aldeias no mar'};
+  }
   if (game.isSeafarers && isSetup && !isMainIslandSetupVertex(game,vKey))
     return {valid:false,error:'Na preparação, construa apenas na ilha principal'};
   // Check if this vertex (or any equivalent) already has a building
