@@ -49,7 +49,10 @@ function chooseAction(game, player, options) {
       case 'buyDevCard': return 70;
       case 'bankTrade': return (game.__botBankTrades || 0) < 1 && (player.resources[action.getResource] || 0) === 0 && (player.resources[action.giveResource] || 0) >= action.giveAmount + 1 ? 65 : -10;
       case 'respondToTrade': return action.accept ? 90 : 5;
-      case 'placeRoad': return 40;
+      case 'placeRoad': return game.isSeafarers ? 35 : 40;
+      case 'placeShip': return game.phase === 'setup' ? 58 : 48;
+      case 'pickGoldResource': return 80 + (player.resources[action.resource] < 2 ? 4 : 0);
+      case 'movePirate': return 48 + (action.victimPlayerIds?.length || 0) * 5;
       case 'moveRobber': {
         const hex = game.hexes[action.hexKey];
         const victims = action.victimPlayerIds || [];
@@ -82,10 +85,10 @@ function chooseAction(game, player, options) {
   }
   const sorted = [...options].sort((a, b) => rank(b) - rank(a));
   const selected = sorted[0];
-  if (selected?.type === 'moveRobber' && selected.victimPlayerIds?.length) {
+  if ((selected?.type === 'moveRobber' || selected?.type === 'movePirate') && selected.victimPlayerIds?.length) {
     const target = game.players.filter(p => selected.victimPlayerIds.includes(p.id))
       .sort((a, b) => b.victoryPoints - a.victoryPoints)[0];
-    return { type: 'moveRobber', hexKey: selected.hexKey, stealFromPlayerId: target?.id };
+    return { type: selected.type, hexKey: selected.hexKey, stealFromPlayerId: target?.id };
   }
   return selected;
 }
@@ -95,6 +98,10 @@ function chooseAction(game, player, options) {
 // currentPlayerIndex. During setup/main phases these indices are identical.
 export function getBotActor(game) {
   if (game.phase === 'waiting' || game.phase === 'finished') return null;
+  if (game.isSeafarers && game.turnPhase === 'goldPick') {
+    const pending = game.players.find((p,i) => p.isBot && (game.pendingGoldPicks?.[i] || 0)>0);
+    return pending || null;
+  }
   const index = game.phase === 'playing' && game.turnPhase === 'specialBuild' && game.specialBuildingPhase
     ? game.specialBuildIndex : game.currentPlayerIndex;
   const player = game.players[index];
@@ -148,6 +155,7 @@ export async function runBotTurn(game, broadcast, { delayMs = 500, maxActions = 
       if (action.type === 'endTurn') game.__botBankTrades = 0;
       broadcast();
       if (action.type === 'endTurn') break;
+      if (game.isSeafarers && game.turnPhase === 'goldPick' && !getBotActor(game)) break;
       // A special-build pass may hand the opportunity directly to another
       // bot; the next loop iteration picks that bot rather than the turn owner.
     }
