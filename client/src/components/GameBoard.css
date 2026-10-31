@@ -990,3 +990,27 @@
   .game-main > .right-sidebar {width:min(430px,65vw);top:0;}
   .command-dock {left:auto;width:min(430px,75vw);max-height:100dvh;height:100dvh;border-radius:12px 0 0 12px;}
 }
+
+/* Mobile resource strip remains visible while the board is in focus. */
+.mobile-resource-hud{display:none;}
+@media (max-width:900px), (pointer:coarse) and (max-width:1200px){
+  .mobile-resource-hud {
+    display:flex;flex:0 0 auto;align-items:center;justify-content:center;
+    gap:clamp(4px,1.5vw,12px);padding:3px 5px;
+    background:#19374b;color:#fff0cd;
+    border-bottom:1px solid #866743;overflow-x:auto;
+    scrollbar-width:thin;z-index:34;
+  }
+  .mobile-resource-hud span{
+    display:flex;align-items:center;gap:2px;
+    flex:0 0 auto;font-size:clamp(10px,2.7vw,13px);
+    white-space:nowrap;
+  }
+  .mobile-resource-hud strong{font-variant-numeric:tabular-nums;}
+  .board-zoom-controls{top:5px;left:5px;}
+  .board-zoom-controls button{min-width:42px;min-height:42px;}
+  .game-board button:focus-visible{outline:3px solid #ffd26b;outline-offset:2px;}
+}
+@media (orientation:landscape) and (max-height:650px){
+  .mobile-resource-hud{padding:1px 4px;}
+}
