@@ -2,9 +2,8 @@
  * Navegantes / Seafarers — scenario 1, 4-player foundation.
  * Sources: user's Portuguese manual, pp. 2–5.
  *
- * This module deliberately does not enable the mode yet. A fully playable
- * scenario still needs ocean-map integration, ship controls, pirate, gold
- * selection, longest trade route and scenario victory handling.
+ * Integrated scenario mechanics: ocean map, ships, pirate, gold production,
+ * route scoring and the scenario victory condition.
  */
 import { getEquivalentEdges, getEquivalentVertices, getVertexEdges } from './gameLogic.js';
 
