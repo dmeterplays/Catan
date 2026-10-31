@@ -840,8 +840,8 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                   <button type="button" className="shuffle-btn" onClick={handleRemoveBot} disabled={!gameState.players.some(p => p.isBot)}>Remover bot</button>
                 </div>
               )}
-              {isHost && gameState.isSeafarers && gameState.players.length<4 && (
-                <p className="waiting-text">⛵ Rumo a Novas Margens precisa de 4 participantes (humanos ou bots) para iniciar.</p>
+              {isHost && gameState.isSeafarers && gameState.players.length<2 && (
+                <p className="waiting-text">⛵ Navegantes precisa de ao menos 2 participantes (humanos ou bots).</p>
               )}
               {isHost && (
                 <>
@@ -855,7 +855,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                   <button 
                     className="start-game-btn"
                     onClick={handleStartGame}
-                    disabled={gameState.isSeafarers ? gameState.players.length !== 4 : gameState.players.length < 2}
+                    disabled={gameState.players.length < 2}
                   >
                     ▶️ Iniciar Partida ({gameState.players.length}/{gameState.maxPlayers || 4})
                   </button>
