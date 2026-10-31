@@ -1032,7 +1032,12 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                       addNotification(response?.success?'Carta utilizada!':response?.error||'Não foi possível jogar a carta.');
                     });
                   }}>
-                  {track==='science'?'📗':track==='politics'?'📘':'📒'} {cardType==='constitution'?'Constituição':cardType==='engineer'?'Engenheiro':cardType==='inventor'?'Inventor':'Monopólio'}
+                  {track==='science'?'📗':track==='politics'?'📘':'📒'} {({
+                    constitution:'Constituição',engineer:'Engenheiro',inventor:'Inventor',
+                    commercialMonopoly:'Monopólio',irrigation:'Irrigação',mining:'Mineração',
+                    diplomat:'Diplomata',saboteur:'Sabotagem',
+                    masterMerchant:'Mestre Mercador',tradeFair:'Feira Comercial'
+                  })[cardType] || cardType}
                 </button>
               ))
             )}
