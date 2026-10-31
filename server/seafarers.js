@@ -73,7 +73,7 @@ function shipAt(game,eKey) {
   return null;
 }
 
-export function canPlaceShip(game, playerId, eKey, { setup = false, settlementKey = null } = {}) {
+export function canPlaceShip(game, playerId, eKey, { setup = false, settlementKey = null, moving = false } = {}) {
   if (!game.isSeafarers) return {valid:false,error:'Navegantes não está ativo'};
   const owner=game.players.findIndex(p=>p.id===playerId);
   if(owner<0) return {valid:false,error:'Jogador desconhecido'};
@@ -83,9 +83,9 @@ export function canPlaceShip(game, playerId, eKey, { setup = false, settlementKe
     return {valid:false,error:'Barcos somente no mar ou na costa'};
   if (shipAt(game,eKey)) return {valid:false,error:'Este lado já está ocupado'};
   if (isPirateBlocking(game,eKey)) return {valid:false,error:'O pirata bloqueia este lado do mar'};
-  if ((actor.ships ?? NAVIGATORS_SHIP_LIMIT) < 1) return {valid:false,error:'Sem barcos disponíveis'};
+  if (!moving && (actor.ships ?? NAVIGATORS_SHIP_LIMIT) < 1) return {valid:false,error:'Sem barcos disponíveis'};
   if (setup && !settlementKey) return {valid:false,error:'Barco inicial precisa de aldeia'};
-  if (!setup && !(game.freeRoads>0) && ((actor.resources?.lumber||0)<1 || (actor.resources?.wool||0)<1))
+  if (!setup && !moving && !(game.freeRoads>0) && ((actor.resources?.lumber||0)<1 || (actor.resources?.wool||0)<1))
     return {valid:false,error:'Necessário 1 madeira e 1 lã'};
   const m=/^e_(-?\d+)_(-?\d+)_(\d+)$/.exec(eKey);
   const [q,r,d]=m.slice(1).map(Number);
@@ -287,7 +287,7 @@ export function canMoveShip(game,playerId,fromEdge,toEdge) {
   if(connectedEnds>1)return {valid:false,error:'Só é possível mover um barco na ponta livre da rota'};
   const old={...existing};
   existing.ship=false;
-  const check=canPlaceShip(game,playerId,toEdge);
+  const check=canPlaceShip(game,playerId,toEdge,{moving:true});
   Object.assign(existing,old);
   if(!check.valid)return check;
   return {valid:true,storedEdge:oldIndex};
