@@ -122,11 +122,24 @@ const PORT_LABELS = {
 
 // Shared board-game piece silhouettes: settlement and upgraded city remain
 // distinguishable even when shrunk or rendered in dark player colors.
-function housePath(x, y) {
-  return `M ${x - 11} ${y - 1} L ${x - 11} ${y + 7} L ${x + 11} ${y + 7} L ${x + 11} ${y - 1} L ${x + 14} ${y - 1} L ${x} ${y - 13} L ${x - 14} ${y - 1} Z`;
+// Separate roofs and walls make the miniature pieces readable on all terrains.
+function settlementRoofPath(x, y) {
+  return `M ${x - 13} ${y - 1} L ${x} ${y - 13} L ${x + 13} ${y - 1} Z`;
 }
-function cityPath(x, y) {
-  return `M ${x - 13} ${y + 10} L ${x - 13} ${y - 1} L ${x - 6} ${y - 1} L ${x - 6} ${y - 11} L ${x + 4} ${y - 11} L ${x + 4} ${y - 7} L ${x + 12} ${y - 7} L ${x + 12} ${y + 10} Z`;
+function settlementBodyPath(x, y) {
+  return `M ${x - 10} ${y - 1} H ${x + 10} V ${y + 9} H ${x - 10} Z`;
+}
+function cityMainRoofPath(x, y) {
+  return `M ${x - 14} ${y - 2} L ${x - 2} ${y - 14} L ${x + 10} ${y - 2} Z`;
+}
+function cityMainBodyPath(x, y) {
+  return `M ${x - 12} ${y - 2} H ${x + 8} V ${y + 10} H ${x - 12} Z`;
+}
+function cityAnnexRoofPath(x, y) {
+  return `M ${x + 4} ${y - 1} L ${x + 13} ${y - 10} L ${x + 22} ${y - 1} Z`;
+}
+function cityAnnexBodyPath(x, y) {
+  return `M ${x + 6} ${y - 1} H ${x + 20} V ${y + 8} H ${x + 6} Z`;
 }
 
 // Create a position key for deduplication (rounded to avoid float issues)
@@ -687,23 +700,37 @@ function HexBoard({
           
           return (
             <g key={key} className={`vertex-group ${newPieces.buildings.includes(key + ":" + vertex.building) ? "piece-building-appear" : ""}`}>
-              {/* Board-game settlement: clear roof, dark rim and highlight. */}
+              {/* Compact settlement with distinct 45° roof, wall and door. */}
               {vertex.building === 'settlement' && (
                 <g className={`settlement ${canUpgrade ? 'upgradeable' : ''}`} onClick={() => canUpgrade && onUpgradeToCity(key)}>
-                  <path d={housePath(pos.x, pos.y + 2.5)} fill="#0008" />
-                  <path d={housePath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#202124" strokeWidth="2.7" strokeLinejoin="round" filter="url(#building-shadow)" />
-                  <path d={`M ${pos.x - 11} ${pos.y - 1} L ${pos.x} ${pos.y - 11} L ${pos.x + 11} ${pos.y - 1}`} fill="none" stroke="#1b1c20" strokeWidth="1.2" strokeLinejoin="round" />
-                  <path d={`M ${pos.x - 8} ${pos.y - 2} L ${pos.x} ${pos.y - 9}`} fill="none" stroke="#ffffff88" strokeWidth="1.6" strokeLinecap="round" />
+                  <path d={settlementBodyPath(pos.x, pos.y + 2)} fill="#0005" />
+                  <path d={settlementRoofPath(pos.x, pos.y + 2)} fill="#0005" />
+                  <path d={settlementBodyPath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#252321" strokeWidth="1.7" strokeLinejoin="round" />
+                  <path d={settlementRoofPath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#252321" strokeWidth="1.8" strokeLinejoin="round" filter="url(#building-shadow)" />
+                  <path d={`M ${pos.x - 9} ${pos.y - 2} L ${pos.x} ${pos.y - 11} L ${pos.x + 9} ${pos.y - 2}`} fill="none" stroke="#ffffff99" strokeWidth="1.25" strokeLinejoin="round" />
+                  <rect x={pos.x - 2.6} y={pos.y + 2} width="5.2" height="7" rx="0.9" fill="#583923" stroke="#24170e" strokeWidth="0.65" />
+                  <circle cx={pos.x + 1.2} cy={pos.y + 5.6} r="0.6" fill="#dfc88a" />
                 </g>
               )}
 
-              {/* City uses a larger stepped castle-like silhouette, never a house. */}
+              {/* Upgraded city with recognizable house, windows and side annex. */}
               {vertex.building === 'city' && (
                 <g className="city">
-                  <path d={cityPath(pos.x, pos.y + 2)} fill="#0007" />
-                  <path d={cityPath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#20180f" strokeWidth="2" strokeLinejoin="round" filter="url(#building-shadow)" />
-                  <path d={`M ${pos.x - 4} ${pos.y - 9} L ${pos.x + 3} ${pos.y - 9}`} stroke="#ffffff77" strokeWidth="1.7" strokeLinecap="round" />
-                  <rect x={pos.x + 2} y={pos.y - 1} width="4" height="6" rx="1" fill="#18202f99" />
+                  <path d={cityMainBodyPath(pos.x, pos.y + 2)} fill="#0005" />
+                  <path d={cityMainRoofPath(pos.x, pos.y + 2)} fill="#0005" />
+                  <path d={cityAnnexBodyPath(pos.x, pos.y + 2)} fill="#0005" />
+                  <path d={cityAnnexRoofPath(pos.x, pos.y + 2)} fill="#0005" />
+                  <path d={cityMainBodyPath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#252321" strokeWidth="1.7" strokeLinejoin="round" />
+                  <path d={cityMainRoofPath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#252321" strokeWidth="1.8" strokeLinejoin="round" filter="url(#building-shadow)" />
+                  <path d={cityAnnexBodyPath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#252321" strokeWidth="1.7" strokeLinejoin="round" />
+                  <path d={cityAnnexRoofPath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#252321" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d={`M ${pos.x - 10} ${pos.y - 3} L ${pos.x - 2} ${pos.y - 11} L ${pos.x + 6} ${pos.y - 3}`} fill="none" stroke="#ffffff99" strokeWidth="1.25" strokeLinejoin="round" />
+                  <path d={`M ${pos.x + 8} ${pos.y - 2} L ${pos.x + 13} ${pos.y - 7} L ${pos.x + 18} ${pos.y - 2}`} fill="none" stroke="#ffffff99" strokeWidth="1.1" strokeLinejoin="round" />
+                  <rect x={pos.x - 6.2} y={pos.y + 2.5} width="5.2" height="7.5" rx="0.9" fill="#583923" stroke="#24170e" strokeWidth="0.65" />
+                  <circle cx={pos.x - 2.5} cy={pos.y + 6.2} r="0.6" fill="#dfc88a" />
+                  <rect x={pos.x + 1.4} y={pos.y + 0.9} width="4.5" height="4.5" rx="0.5" fill="#c9e5f6" stroke="#344653" strokeWidth="0.75" />
+                  <path d={`M ${pos.x + 3.65} ${pos.y + 1} V ${pos.y + 5.4} M ${pos.x + 1.5} ${pos.y + 3.15} H ${pos.x + 5.8}`} stroke="#567085" strokeWidth="0.55" />
+                  <rect x={pos.x + 12.3} y={pos.y + 2} width="3.5" height="3.5" rx="0.5" fill="#c9e5f6" stroke="#344653" strokeWidth="0.7" />
                 </g>
               )}
 
