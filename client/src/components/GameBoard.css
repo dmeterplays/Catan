@@ -1022,3 +1022,35 @@
   .game-board .command-dock, .game-board .game-main > .right-sidebar {z-index:62;}
   .game-board.mobile-panel-actions .ck-progress-dock {display:block;z-index:65;bottom:auto;top:calc(92px + env(safe-area-inset-top));max-height:70px;left:6px;right:6px;}
 }
+
+/* Mobile hotfix: five navigation tabs, no clipping of the construction-cost table. */
+@media (max-width:900px), (pointer:coarse) and (max-width:1200px) {
+  .game-board .mobile-game-nav {
+    grid-template-columns: repeat(5,minmax(0,1fr));
+  }
+  .game-board .mobile-game-nav button {
+    min-width:0; padding:5px 1px;
+    font-size:clamp(9px,2.2vw,12px);
+    overflow:hidden;text-overflow:ellipsis;
+  }
+  .game-board .construction-costs-container{
+    width:100%;align-self:stretch;position:static;z-index:auto;
+  }
+  .game-board .construction-costs-container .costs-toggle{
+    display:block;width:100%;min-height:44px;
+  }
+  .game-board .construction-costs-sheet {
+    position:relative;left:auto;right:auto;top:auto;bottom:auto;
+    width:100%;max-width:100%;max-height:42dvh;overflow-y:auto;
+    box-sizing:border-box;margin:7px 0;
+    z-index:auto;
+    border-radius:9px;
+  }
+  .game-board .construction-cost-row{
+    align-items:start;gap:8px;
+  }
+  .game-board .cost-row-text{
+    min-width:0;white-space:normal;overflow-wrap:anywhere;
+  }
+  .game-board .cost-row-text small{font-size:12px;line-height:1.4;}
+}
