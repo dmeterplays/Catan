@@ -3,6 +3,8 @@ import './HexBoard.css';
 
 // Hex geometry constants - POINTY-TOP orientation
 const HEX_SIZE = 58;
+// Inset textures visually separates tiles without moving roads, ports or vertices.
+const HEX_TEXTURE_INSET = 5.1;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 2.2;
 const ZOOM_STEP = 0.2;
@@ -106,6 +108,24 @@ function renderPortResourceIcon(resource, x, y) {
   return (
     <text x={x} y={y + 5} textAnchor="middle" fontSize="15" fontWeight="900" fill="#75452c">?</text>
   );
+}
+
+
+const PORT_LABELS = {
+  brick: { name: 'TIJOLO', fill: '#b95637', ink: '#ffffff' },
+  lumber: { name: 'MADEIRA', fill: '#307b40', ink: '#ffffff' },
+  wool: { name: 'LÃ', fill: '#8dbd51', ink: '#162b0d' },
+  grain: { name: 'TRIGO', fill: '#e8bf4e', ink: '#392605' },
+  ore: { name: 'MINÉRIO', fill: '#82949c', ink: '#ffffff' }
+};
+
+// Shared board-game piece silhouettes: settlement and upgraded city remain
+// distinguishable even when shrunk or rendered in dark player colors.
+function housePath(x, y) {
+  return `M ${x} ${y - 13} L ${x + 10} ${y - 4} L ${x + 10} ${y + 9} L ${x - 10} ${y + 9} L ${x - 10} ${y - 4} Z`;
+}
+function cityPath(x, y) {
+  return `M ${x - 13} ${y + 10} L ${x - 13} ${y - 1} L ${x - 6} ${y - 1} L ${x - 6} ${y - 11} L ${x + 4} ${y - 11} L ${x + 4} ${y - 7} L ${x + 12} ${y - 7} L ${x + 12} ${y + 10} Z`;
 }
 
 // Create a position key for deduplication (rounded to avoid float issues)
@@ -461,7 +481,7 @@ function HexBoard({
           const pos = axialToPixel(hex.q, hex.r);
           return (
             <clipPath id={`hex-clip-${hex.q}-${hex.r}`} key={`clip-${hex.q}-${hex.r}`}>
-              <path d={hexPath(pos.x, pos.y, HEX_SIZE - 2)} />
+              <path d={hexPath(pos.x, pos.y, HEX_SIZE - HEX_TEXTURE_INSET)} />
             </clipPath>
           );
         })}
@@ -534,12 +554,12 @@ function HexBoard({
             >
               {/* Soft raised base and golden board-game rim. */}
               <path
-                d={hexPath(pos.x, pos.y + 3, HEX_SIZE)}
+                d={hexPath(pos.x, pos.y + 3, HEX_SIZE - 1.1)}
                 fill="#8a6a18"
                 filter="url(#hex-shadow)"
               />
               <path
-                d={hexPath(pos.x, pos.y, HEX_SIZE)}
+                d={hexPath(pos.x, pos.y, HEX_SIZE - 1.1)}
                 fill="#dcb534"
                 stroke="#9f7c13"
                 strokeWidth="3"
@@ -554,7 +574,7 @@ function HexBoard({
                 clipPath={`url(#hex-clip-${hex.q}-${hex.r})`}
               />
               <path
-                d={hexPath(pos.x, pos.y, HEX_SIZE - 2)}
+                d={hexPath(pos.x, pos.y, HEX_SIZE - HEX_TEXTURE_INSET)}
                 fill="none"
                 stroke="#b68c15"
                 strokeWidth="2"
@@ -666,47 +686,25 @@ function HexBoard({
           
           return (
             <g key={key} className={`vertex-group ${newPieces.buildings.includes(key + ":" + vertex.building) ? "piece-building-appear" : ""}`}>
-              {/* Settlement */}
+              {/* Board-game settlement: clear roof, dark rim and highlight. */}
               {vertex.building === 'settlement' && (
-                <g 
-                  className={`settlement ${canUpgrade ? 'upgradeable' : ''}`}
-                  onClick={() => canUpgrade && onUpgradeToCity(key)}
-                >
-                  <path
-                    d={`M${pos.x} ${pos.y - 10} L${pos.x + 8} ${pos.y - 2} L${pos.x + 8} ${pos.y + 6} L${pos.x - 8} ${pos.y + 6} L${pos.x - 8} ${pos.y - 2} Z`}
-                    fill={players[vertex.owner].color}
-                    stroke="#2a2a2a"
-                    strokeWidth="1.5"
-                    filter="url(#building-shadow)"
-                  />
+                <g className={`settlement ${canUpgrade ? 'upgradeable' : ''}`} onClick={() => canUpgrade && onUpgradeToCity(key)}>
+                  <path d={housePath(pos.x, pos.y + 2)} fill="#0007" />
+                  <path d={housePath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#20180f" strokeWidth="2" strokeLinejoin="round" filter="url(#building-shadow)" />
+                  <path d={`M ${pos.x} ${pos.y - 11} L ${pos.x + 8} ${pos.y - 3}`} fill="none" stroke="#ffffff77" strokeWidth="1.7" strokeLinecap="round" />
                 </g>
               )}
-              
-              {/* City */}
+
+              {/* City uses a larger stepped castle-like silhouette, never a house. */}
               {vertex.building === 'city' && (
                 <g className="city">
-                  <rect
-                    x={pos.x - 10}
-                    y={pos.y - 4}
-                    width="20"
-                    height="12"
-                    fill={players[vertex.owner].color}
-                    stroke="#2a2a2a"
-                    strokeWidth="1.5"
-                    filter="url(#building-shadow)"
-                  />
-                  <rect
-                    x={pos.x - 5}
-                    y={pos.y - 12}
-                    width="10"
-                    height="10"
-                    fill={players[vertex.owner].color}
-                    stroke="#2a2a2a"
-                    strokeWidth="1.5"
-                  />
+                  <path d={cityPath(pos.x, pos.y + 2)} fill="#0007" />
+                  <path d={cityPath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#20180f" strokeWidth="2" strokeLinejoin="round" filter="url(#building-shadow)" />
+                  <path d={`M ${pos.x - 4} ${pos.y - 9} L ${pos.x + 3} ${pos.y - 9}`} stroke="#ffffff77" strokeWidth="1.7" strokeLinecap="round" />
+                  <rect x={pos.x + 2} y={pos.y - 1} width="4" height="6" rx="1" fill="#18202f99" />
                 </g>
               )}
-              
+
               {/* Clickable placeholder for placing settlements */}
               {canPlace && (
                 <circle
@@ -786,6 +784,9 @@ function HexBoard({
           
           const cx = midX + perpX * 33;
           const cy = midY + perpY * 33;
+          const badge = PORT_LABELS[port.resource];
+          const labelX = midX + perpX * 66;
+          const labelY = midY + perpY * 66;
           
           return (
             <g key={port.id} className="port">
@@ -836,17 +837,16 @@ function HexBoard({
                 />
                 <path d={`M${cx+1},${cy-37} L${cx+15},${cy-36} L${cx+3},${cy-31} Z`} fill="#fffef7" stroke="#d7d1c4" strokeWidth="0.8" />
 
-                {renderPortResourceIcon(port.resource, cx + 10, cy - 23)}
-                <text
-                  x={cx + 10}
-                  y={cy - 10}
-                  textAnchor="middle"
-                  fontSize="8.5"
-                  fill="#65402c"
-                  fontWeight="900"
-                  fontFamily="Trebuchet MS, Arial, sans-serif"
-                >
-                  {port.ratio}:1
+                {/* Large, separate plaque: type and trade ratio remain readable. */}
+              </g>
+              <g transform={`translate(${labelX}, ${labelY})`} className="port-label" style={{ pointerEvents: 'none' }}>
+                <title>{badge ? `Porto de ${badge.name.toLowerCase()} — 2 para 1` : 'Porto genérico — 3 para 1'}</title>
+                <rect x="-23" y="-22" width="46" height="44" rx="8" fill="#fdf7e5" stroke="#624421" strokeWidth="2.2" />
+                <rect x="-19" y="-18" width="38" height="19" rx="5" fill="#214c80" />
+                <text x="0" y="-3.7" textAnchor="middle" fontSize="15" fontWeight="900" fontFamily="Arial, sans-serif" fill="#fff">{port.ratio}:1</text>
+                <rect x="-19" y="3" width="38" height="16" rx="4" fill={badge?.fill || '#f0dbaa'} stroke="#9a7a41" strokeWidth="0.7" />
+                <text x="0" y="14.3" textAnchor="middle" fontSize={badge ? "8" : "8.2"} fontWeight="900" fontFamily="Arial, sans-serif" fill={badge?.ink || '#413416'}>
+                  {badge?.name || 'QUALQUER'}
                 </text>
               </g>
             </g>
