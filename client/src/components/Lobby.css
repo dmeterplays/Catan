@@ -690,3 +690,22 @@
   overflow-y: auto;
   padding-right: 5px;
 }
+
+
+/* Collapsible game-mode picker (4-player Navegantes is deliberately locked
+   until the server's navigation mechanics and scenario are fully validated). */
+.create-mode-accordion{border:1px solid rgba(216,178,105,.55);border-radius:10px;background:rgba(10,31,41,.72);margin:10px 0 18px;overflow:hidden}
+.create-mode-summary{display:flex;gap:10px;justify-content:space-between;align-items:center;cursor:pointer;list-style:none;padding:13px 14px;color:#f7e5bb;font-size:13px;font-weight:700}
+.create-mode-summary::-webkit-details-marker{display:none}
+.create-mode-summary:after{content:'▾';font-size:15px;color:#e5c28c}
+.create-mode-accordion[open] .create-mode-summary:after{content:'▴'}
+.create-mode-current{font-size:12px;color:#fff;font-weight:500;margin-left:auto;text-align:right}
+.create-mode-content{border-top:1px solid #ffffff22;padding:10px}
+.create-mode-help{margin:0 0 9px;font-size:11px;color:#ccd8da;line-height:1.4}
+.create-mode-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.create-mode-card{background:#203e4b;border:1px solid #57717d;color:#fff;border-radius:8px;display:flex;flex-direction:column;gap:5px;align-items:flex-start;justify-content:center;padding:11px;min-height:64px;text-align:left;cursor:pointer}
+.create-mode-card strong{font-size:12px}.create-mode-card small{font-size:11px;color:#c9d6dd}
+.create-mode-card:hover:not(.upcoming){background:#305262;border-color:#e7bc6a}
+.create-mode-card.active{border:2px solid #f0cb7e;background:#31505d}
+.create-mode-card.upcoming{cursor:not-allowed;opacity:.63;border-style:dashed}
+@media(max-width:440px){.create-mode-summary{flex-wrap:wrap}.create-mode-current{margin-left:0}.create-mode-grid{grid-template-columns:1fr}}
