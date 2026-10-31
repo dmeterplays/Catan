@@ -38,7 +38,8 @@ function ActionPanel({
   onBuyCityImprovement,
   onRecruitKnight,
   onActivateKnight,
-  onUpgradeKnight
+  onUpgradeKnight,
+  onBuildCityWall
 }) {
   const canRoll = isMyTurn && turnPhase === 'roll';
   
@@ -202,6 +203,14 @@ function ActionPanel({
               <span className="cost">🧵{player.cityImprovements?.trade >= 5 ? '-' : player.cityImprovements?.trade + 1}</span>
             </button>
             
+            <button className="action-btn build-btn"
+              onClick={onBuildCityWall}
+              disabled={!canBuild || (player?.resources?.brick||0)<2 || (player?.cityWalls||0)>=Math.min(3,4-(player?.cities||4))}>
+              <span className="btn-icon">🧱</span>
+              <span className="btn-label">Muralha ({player?.cityWalls||0}/3)</span>
+              <span className="cost">🧱2 · +2 cartas no 7</span>
+            </button>
+
             <div className="knights-section" style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
               <h4 style={{ margin: '0 0 5px 0', fontSize: '0.9rem', color: '#b0b0b0' }}>Cavaleiros</h4>
               
