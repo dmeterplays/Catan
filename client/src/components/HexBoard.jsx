@@ -169,6 +169,7 @@ function HexBoard({
   isSeafarers = false,
   onHexClick,
   onHexRightClick,
+  mobileInfoMode = false,
   lastPlacedSettlement,
   freeRoads,
   legalActions = [],
@@ -181,6 +182,7 @@ function HexBoard({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragState, setDragState] = useState(null);
   const dragMoved = useRef(false);
+  const ignoreTouchClick = useRef(false);
   const touchPointers = useRef(new Map());
   const pinchStart = useRef(null);
   const previousPieces = useRef(null);
@@ -251,6 +253,7 @@ function HexBoard({
         const [a,b]=[...touchPointers.current.values()];
         pinchStart.current={distance:Math.hypot(a.x-b.x,a.y-b.y),zoom};
         dragMoved.current=true;
+        ignoreTouchClick.current=true;
         setDragState(null);
         for(const id of touchPointers.current.keys()){
           try{event.currentTarget.setPointerCapture(id)}catch{}
@@ -258,7 +261,10 @@ function HexBoard({
         return;
       }
     }
-    if (zoom <= 1 || (event.pointerType !== 'touch' && event.button !== 0)) return;
+    if (zoom <= 1 || (event.pointerType !== 'touch' && event.button !== 0)) {
+      if (event.pointerType === 'touch') dragMoved.current = false;
+      return;
+    }
     dragMoved.current = false;
     // Do not capture a normal click: pointer capture retargets the click to
     // the SVG itself, preventing edge and vertex onClick handlers from firing.
@@ -320,10 +326,11 @@ function HexBoard({
   };
 
   const preventClickAfterDrag = (event) => {
-    if (!dragMoved.current) return;
+    if (!dragMoved.current && !ignoreTouchClick.current) return;
     event.preventDefault();
     event.stopPropagation();
     dragMoved.current = false;
+    ignoreTouchClick.current = false;
   };
 
   // Check if vertex can be placed
@@ -622,7 +629,10 @@ function HexBoard({
             <g 
               key={key} 
               className={`hex ${canClickHex ? 'clickable' : ''} ${isRobberHere ? 'has-robber' : ''}`}
-              onClick={() => canClickHex && legalActions.some(a => (a.type === 'moveRobber' || a.type === 'movePirate') && a.hexKey === key) && onHexClick(key)}
+              onClick={(event) => {
+                if (mobileInfoMode) { onHexRightClick?.(event, hex); return; }
+                if (canClickHex && legalActions.some(a => (a.type === 'moveRobber' || a.type === 'movePirate') && a.hexKey === key)) onHexClick(key);
+              }}
               onContextMenu={(e) => onHexRightClick && onHexRightClick(e, hex)}
               style={{ cursor: 'context-menu' }}
             >
@@ -742,7 +752,7 @@ function HexBoard({
             x2={v2.x}
             y2={v2.y}
             stroke="rgba(255, 255, 255, 0.3)"
-            strokeWidth="10"
+            strokeWidth="22"
             strokeLinecap="round"
             className="edge-placeholder"
             onClick={() => selectedAction === 'moveShip' ? onShipSelect(key) : selectedAction === 'ship' ? onPlaceShip(key) : onPlaceRoad(key)}
@@ -824,7 +834,7 @@ function HexBoard({
                 <circle
                   cx={pos.x}
                   cy={pos.y}
-                  r="10"
+                  r="16"
                   className="vertex-placeholder"
                   onClick={() => onPlaceSettlement(key)}
                 />
