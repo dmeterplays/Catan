@@ -24,8 +24,8 @@ export const NAVIGATORS_SCENARIO_1 = Object.freeze({
   }),
   smallIslands: Object.freeze({
     desert: 0, gold: 2,
-    fields: 1, hills: 2, mountains: 2, pasture: 1, forest: 1,
-    numberTokens: 9
+    fields: 3, hills: 4, mountains: 3, pasture: 3, forest: 3,
+    numberTokens: 18
   }),
   ports: Object.freeze({ specific: 5, generic: 4 }),
   oceanHexes: 90, // raio 6: 127 hexágonos, 37 de terra
