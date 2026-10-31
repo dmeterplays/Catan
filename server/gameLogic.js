@@ -1282,8 +1282,10 @@ export function rollDice(game, playerId) {
     return { success: true, roll: game.diceRoll, resourceGains: null };
   } else {
     // Distribute resources
+    game.pendingGoldPicks={};
     const gains = distributeResources(game, total);
-    game.turnPhase = 'main';
+    game.turnPhase = game.isSeafarers && Object.values(game.pendingGoldPicks).some(n=>n>0)
+      ? 'goldPick' : 'main';
     // Dice income is public; record only the resources awarded by this roll.
     game.__publicRollEvent = { id: (game.__rollSerial = (game.__rollSerial || 0) + 1), roll: { ...game.diceRoll }, playerName: player.name, gains: Object.fromEntries(Object.entries(gains).map(([index, playerGains]) => [index, Object.fromEntries(['brick','lumber','wool','grain','ore'].map(resource => [resource, playerGains?.[resource] || 0]))])) };
     appendDiceEvents(game, player.name, game.diceRoll, gains);
@@ -1324,7 +1326,7 @@ function distributeResources(game, roll) {
       for (let dir = 0; dir < 6; dir++) {
         const buildingInfo = findBuildingAtHexVertex(game, hex.q, hex.r, dir);
         
-        if (buildingInfo && buildingInfo.owner !== null && hex.resource) {
+        if (buildingInfo && buildingInfo.owner !== null && (hex.resource || (game.isSeafarers && hex.terrain==='gold'))) {
           // Create a unique key for this HEX-VERTEX combination
           // This prevents the same hex from giving resources to the same vertex twice
           // (which could happen if we find the same building under different vertex key formats)
@@ -1332,6 +1334,11 @@ function distributeResources(game, roll) {
           if (processedHexVertices.has(hexVertexKey)) continue;
           processedHexVertices.add(hexVertexKey);
           
+          if (game.isSeafarers && hex.terrain==='gold') {
+            game.pendingGoldPicks[buildingInfo.owner]=(game.pendingGoldPicks[buildingInfo.owner]||0)+
+              (buildingInfo.type==='city'?2:1);
+            continue;
+          }
           const player = game.players[buildingInfo.owner];
           
           if (game.isCitiesAndKnights && buildingInfo.type === 'city') {
@@ -1445,6 +1452,8 @@ export function moveRobber(game, playerId, hexKey, stealFromPlayerId) {
   if (!game.hexes[hexKey]) {
     return { success: false, error: 'Invalid hex' };
   }
+  if (game.isSeafarers && game.hexes[hexKey].terrain==='sea')
+    return {success:false,error:'Para o mar, escolha mover o pirata'};
   
   if (hexKey === game.robber) {
     return { success: false, error: 'Must move robber to a different hex' };
@@ -2537,6 +2546,8 @@ export function endTurn(game, playerId) {
   
   // Next player
   game.currentPlayerIndex = (game.currentPlayerIndex + 1) % game.players.length;
+  game.turnSequence=(game.turnSequence||0)+1;
+  game.shipMovedThisTurn=false;
   game.turnPhase = 'roll';
   game.diceRoll = null;
   
@@ -2931,6 +2942,24 @@ function checkWinner(game) {
       return;
     }
   }
+}
+
+
+/** Resolve one gold-field claim. Only the entitled player selects the resource. */
+export function pickGoldResource(game,playerId,resource) {
+  if(!game.isSeafarers || game.turnPhase!=='goldPick')
+    return {success:false,error:'Não há ouro pendente'};
+  const owner=game.players.findIndex(p=>p.id===playerId);
+  if(owner<0 || (game.pendingGoldPicks[owner]||0)<=0)
+    return {success:false,error:'Você não tem recursos de ouro para escolher'};
+  if(!BANK_RESOURCE_TYPES.includes(resource))
+    return {success:false,error:'Recurso desconhecido'};
+  if(getBankResourceCount(game,resource)<1)
+    return {success:false,error:'Recurso esgotado no banco'};
+  game.players[owner].resources[resource]++;
+  game.pendingGoldPicks[owner]--;
+  if(Object.values(game.pendingGoldPicks).every(n=>n<=0))game.turnPhase='main';
+  return {success:true};
 }
 
 // ============================================================================
