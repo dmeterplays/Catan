@@ -85,7 +85,7 @@ export function canPlaceShip(game, playerId, eKey, { setup = false, settlementKe
   if (isPirateBlocking(game,eKey)) return {valid:false,error:'O pirata bloqueia este lado do mar'};
   if ((actor.ships ?? NAVIGATORS_SHIP_LIMIT) < 1) return {valid:false,error:'Sem barcos disponíveis'};
   if (setup && !settlementKey) return {valid:false,error:'Barco inicial precisa de aldeia'};
-  if (!setup && ((actor.resources?.lumber||0)<1 || (actor.resources?.wool||0)<1))
+  if (!setup && !(game.freeRoads>0) && ((actor.resources?.lumber||0)<1 || (actor.resources?.wool||0)<1))
     return {valid:false,error:'Necessário 1 madeira e 1 lã'};
   const m=/^e_(-?\d+)_(-?\d+)_(\d+)$/.exec(eKey);
   const [q,r,d]=m.slice(1).map(Number);
@@ -275,16 +275,16 @@ export function canMoveShip(game,playerId,fromEdge,toEdge) {
     makeVertex(endpoints[0],endpoints[1],(endpoints[2]+1)%6)];
   // A ship cannot be lifted from the middle of an open/closed chain,
   // nor directly from a settlement/city anchoring that end.
-  let attached=0;
+  let connectedEnds=0;
   for(const v of ends){
-    if(buildingAt(game,v)?.owner===owner)attached++;
-    const adjacent=getVertexEdges(v).filter(edgeKey=>{
+    const ownBuilding=buildingAt(game,v)?.owner===owner;
+    const otherShips=getVertexEdges(v).some(edgeKey=>{
       const other=shipAt(game,edgeKey);
       return other?.ship && other.owner===owner && other!==existing;
     });
-    if(adjacent.length) attached++;
+    if(ownBuilding||otherShips)connectedEnds++;
   }
-  if(attached>1)return {valid:false,error:'Só é possível mover um barco na ponta livre da rota'};
+  if(connectedEnds>1)return {valid:false,error:'Só é possível mover um barco na ponta livre da rota'};
   const old={...existing};
   existing.ship=false;
   const check=canPlaceShip(game,playerId,toEdge);
