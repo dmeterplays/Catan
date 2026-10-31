@@ -834,14 +834,14 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
                 </div>
               </details>
 
-              {isHost && !gameState.isCitiesAndKnights && !gameState.isSeafarers && (
+              {isHost && !gameState.isCitiesAndKnights && (
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <button type="button" className="shuffle-btn" onClick={handleAddBot} disabled={gameState.players.length >= (gameState.maxPlayers || 4)}>🤖 Adicionar bot</button>
                   <button type="button" className="shuffle-btn" onClick={handleRemoveBot} disabled={!gameState.players.some(p => p.isBot)}>Remover bot</button>
                 </div>
               )}
               {isHost && gameState.isSeafarers && gameState.players.length<4 && (
-                <p className="waiting-text">⛵ Rumo a Novas Margens precisa de 4 jogadores humanos para iniciar.</p>
+                <p className="waiting-text">⛵ Rumo a Novas Margens precisa de 4 participantes (humanos ou bots) para iniciar.</p>
               )}
               {isHost && (
                 <>
