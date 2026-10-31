@@ -123,7 +123,8 @@ const PROGRESS_CARD_DISTRIBUTION = {
     ...Array(9).fill(PROGRESS_CARDS.ENGINEER)
   ],
   politics: [
-    ...Array(18).fill(PROGRESS_CARDS.CONSTITUTION)
+    ...Array(9).fill(PROGRESS_CARDS.CONSTITUTION),
+    ...Array(9).fill(PROGRESS_CARDS.ENGINEER)
   ],
   trade: [
     ...Array(18).fill(PROGRESS_CARDS.COMMERCIAL_MONOPOLY)
@@ -985,6 +986,8 @@ export function createGame(gameId, hostPlayer, isExtended = false, enableSpecial
           hasMovedThisTurn: { basic: 0, strong: 0, mighty: 0 }
         },
         progressCards: { science: [], politics: [], trade: [] },
+      metropolisTracks: [],
+        metropolisTracks: [],
         newProgressCards: { science: [], politics: [], trade: [] }
       } : {}),
       developmentCards: [],
@@ -1850,7 +1853,24 @@ export function buyCityImprovement(game, playerId, track) {
   
   player.commodities[commodity] -= cost;
   player.cityImprovements[track] += 1;
-  
+  // Adapted metropolis: first city owner reaching level 4 claims +2 VP.
+  // An opponent overtakes at a strictly higher improvement level.
+  game.metropolises ||= {};
+  if (player.cityImprovements[track] >= 4) {
+    const current = game.metropolises[track];
+    const incumbent = current && game.players.find(p => p.id === current.playerId);
+    if (!current || player.cityImprovements[track] > current.level) {
+      if (incumbent) {
+        incumbent.victoryPoints -= 2;
+        incumbent.metropolisTracks = (incumbent.metropolisTracks || []).filter(t=>t!==track);
+      }
+      game.metropolises[track] = {playerId,level:player.cityImprovements[track]};
+      player.metropolisTracks ||= [];
+      if(!player.metropolisTracks.includes(track)) player.metropolisTracks.push(track);
+      player.victoryPoints += 2;
+      checkWinner(game);
+    }
+  }
   return { success: true };
 }
 
@@ -2182,6 +2202,8 @@ export function playProgressCard(game, playerId, track, cardType, params = {}) {
   
   const player = game.players[playerIndex];
   
+  if (!['science','politics','trade'].includes(track)) return {success:false,error:'Trilha inválida'};
+  if (!Object.values(PROGRESS_CARDS).includes(cardType)) return {success:false,error:'Carta desconhecida'};
   // Verify player has the card
   const cardIndex = player.progressCards[track].indexOf(cardType);
   if (cardIndex === -1) {
@@ -2214,7 +2236,9 @@ export function playProgressCard(game, playerId, track, cardType, params = {}) {
       break;
       
     case PROGRESS_CARDS.CONSTITUTION:
-      return { success: false, error: 'Constitution cards cannot be played' };
+      player.victoryPoints += 1;
+      checkWinner(game);
+      break;
   }
   
   // Remove the card from hand
