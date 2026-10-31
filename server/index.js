@@ -447,8 +447,8 @@ io.on('connection', (socket) => {
   
   /** Create a new game room as the host */
   socket.on('createGame', ({ playerName, isExtended = false, enableSpecialBuild = true, mapType = 'random', autoSetup = false, isCitiesAndKnights = false, turnTimeLimit = 120, isSeafarers = false }, callback) => {
-    if (isSeafarers && (isExtended || isCitiesAndKnights))
-      return callback({success:false,error:'Navegantes é um modo independente para 4 jogadores'});
+    if (isSeafarers && isCitiesAndKnights)
+      return callback({success:false,error:'Navegantes e Cidades e Cavaleiros são modos separados'});
     // Check game limit
     if (games.size >= MAX_CONCURRENT_GAMES) {
       callback({ 
