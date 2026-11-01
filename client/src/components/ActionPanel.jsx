@@ -112,7 +112,7 @@ function ActionPanel({
         <button
           className={`action-btn build-btn road-action ${selectedAction === 'road' ? 'active' : ''}`}
           onClick={() => setSelectedAction(selectedAction === 'road' ? null : 'road')}
-          disabled={!canBuild || (!canAffordRoad && freeRoads === 0)}
+          disabled={!canBuild || (player.roads ?? 0) <= 0 || (!canAffordRoad && freeRoads === 0)}
         >
           <span className="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 28 28" width="24" height="24" style={{verticalAlign: 'middle', overflow: 'visible'}}>
@@ -121,6 +121,7 @@ function ActionPanel({
             </svg>
           </span>
           <span className="btn-label">Estrada</span>
+          <span className="piece-remaining" title="Estradas disponíveis para você">{player.roads ?? 0}</span>
           <span className="cost">🧱1 🪵1</span>
         </button>
 
@@ -130,7 +131,7 @@ function ActionPanel({
               disabled={!canBuild || (player.ships||0)<1 || (!hasResources(player,{lumber:1,wool:1}) && freeRoads<=0)}
               onClick={()=>setSelectedAction(selectedAction==='ship'?null:'ship')}
               title="Construir barco: 1 madeira e 1 lã">
-              <span className="btn-icon">⛵</span><span className="btn-label">Barco</span><span className="cost">🪵1 🐑1</span>
+              <span className="btn-icon">⛵</span><span className="btn-label">Barco</span><span className="piece-remaining" title="Barcos disponíveis para você">{player.ships ?? 0}</span><span className="cost">🪵1 🐑1</span>
             </button>
             <button type="button" className={`action-btn build-btn ${selectedAction === 'moveShip' ? 'active' : ''}`}
               disabled={!canBuild || !isMyTurn || (player.ships??15)>=15}
@@ -148,6 +149,7 @@ function ActionPanel({
         >
           <span className="btn-icon">🏠</span>
           <span className="btn-label">Aldeia</span>
+          <span className="piece-remaining" title="Aldeias disponíveis para você">{player.settlements ?? 0}</span>
           <span className="cost">🧱1 🪵1 🐑1 🌾1</span>
         </button>
 
@@ -158,6 +160,7 @@ function ActionPanel({
         >
           <span className="btn-icon">🏰</span>
           <span className="btn-label">Cidade</span>
+          <span className="piece-remaining" title="Cidades disponíveis para você">{player.cities ?? 0}</span>
           <span className="cost">⛏️3 🌾2</span>
         </button>
 
