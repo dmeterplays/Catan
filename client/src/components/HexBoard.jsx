@@ -7,7 +7,7 @@ const HEX_SIZE = 58;
 // Inset textures visually separates tiles without moving roads, ports or vertices.
 const HEX_TEXTURE_INSET = 5.1;
 const MIN_ZOOM = 1;
-const MAX_ZOOM = 2.2;
+const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.2;
 
 const TERRAIN_ASSETS = {
