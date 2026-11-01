@@ -182,6 +182,7 @@ function PlayerPanel({ player, isCurrentTurn, isMe, longestRoad, largestArmy, ga
         </div>
       )}
       
+      <div className="player-route-stats" title="Comprimento da maior rota contínua e cavaleiros jogados">🛤️ {player.roadLength || 0} &nbsp; ⚔️ {player.knightsPlayed || 0}</div>
       <div className="player-achievements">
         {longestRoad && (
           <div 
