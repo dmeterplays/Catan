@@ -2422,16 +2422,12 @@ export function bankTrade(game, playerId, giveResource, giveAmount, getResource)
     return { success: false, error: 'Player not found' };
   }
   
-  if (game.currentPlayerIndex !== playerIndex) {
-    return { success: false, error: 'Not your turn' };
-  }
-  
-  if (game.turnPhase !== 'main') {
-    return { success: false, error: 'Cannot trade now' };
-  }
-  
+  const canTrade = (game.turnPhase === 'main' && game.currentPlayerIndex === playerIndex) ||
+    (game.turnPhase === 'specialBuild' && game.specialBuildingPhase && game.specialBuildIndex === playerIndex);
+  if (!canTrade) return { success: false, error: 'Não é sua vez de trocar com o banco' };
+
   const player = game.players[playerIndex];
-  
+
   // Get the best available trade ratio for this resource
   const requiredRatio = getTradeRatio(game, playerIndex, giveResource);
   
@@ -2657,7 +2653,7 @@ export function endTurn(game, playerId) {
   // In 5-8 player games, start Special Building Phase (if enabled)
   if (game.isExtended && game.players.length > 4 && game.enableSpecialBuild) {
     game.specialBuildingPhase = true;
-    // Start with the player after the current player
+    // The third player counting the roller is two seats ahead.
     game.specialBuildIndex = (playerIndex + 2) % game.players.length;
     // Start at the third seat (roller + 2). The next roller is excluded.
     game.turnPhase = 'specialBuild';
@@ -2689,24 +2685,17 @@ export function endSpecialBuild(game, playerId) {
     return { success: false, error: 'Not your turn to special build' };
   }
   
-  // Move to next player in special building phase
+  // Only one special builder acts between two normal turns.
   const currentTurnPlayer = game.currentPlayerIndex;
-  let nextIndex = (playerIndex + 1) % game.players.length;
-  
-  // Check if we've gone around to the original player
-  if (nextIndex === (currentTurnPlayer + 1) % game.players.length) {
-    // Special building phase is over, move to next turn
-    game.specialBuildingPhase = false;
-    game.specialBuildIndex = 0;
-    game.currentPlayerIndex = (currentTurnPlayer + 1) % game.players.length;
-    game.turnPhase = 'roll';
-    game.diceRoll = null;
-    game.hasRolledThisTurn = false;
-    return { success: true, specialBuildingPhaseEnded: true };
-  }
-  
-  game.specialBuildIndex = nextIndex;
-  return { success: true };
+  game.specialBuildingPhase = false;
+  game.specialBuildIndex = 0;
+  game.currentPlayerIndex = (currentTurnPlayer + 1) % game.players.length;
+  game.turnSequence=(game.turnSequence||0)+1;
+  game.shipMovedThisTurn=false;
+  game.turnPhase = 'roll';
+  game.diceRoll = null;
+  game.hasRolledThisTurn = false;
+  return { success: true, specialBuildingPhaseEnded: true };
 }
 
 /** Check if a player can currently act in the special building phase */
