@@ -20,6 +20,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
   const [bankGet, setBankGet] = useState(null);
 
   const pendingTrade = gameState.tradeOffer;
+  const [selectedPartner, setSelectedPartner] = useState(null);
   const isTradeFromMe = pendingTrade?.from === gameState.myIndex;
 
   // Close modal when pending trade is completed/cancelled (for the proposer)
@@ -97,7 +98,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
       if (!response.success) {
         addNotification(response.error);
       } else {
-        addNotification('Troca aceita!');
+        addNotification('Aceite enviado! Aguarde o proponente escolher.');
         onClose(); // Close modal after accepting
       }
     });
@@ -226,7 +227,9 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
             {/* Pending trade status */}
             {pendingTrade && isTradeFromMe && (
               <div className="pending-trade">
-                <p>Aguardando respostas...</p>
+                <p>Respostas dos jogadores (selecione quem aceitou):</p>
+                <div className="trade-partner-list">{gameState.players.map((p,i)=>i!==pendingTrade.from && <button type="button" key={p.id} disabled={pendingTrade.responses?.[p.id]!=='accept'} className={selectedPartner===p.id?'selected':''} onClick={()=>setSelectedPartner(p.id)}>{p.name} — {pendingTrade.responses?.[p.id]==='accept'?'✅ Aceitou':pendingTrade.responses?.[p.id]==='decline'?'❌ Recusou':'⏳ Pendente'}</button>)}</div>
+                <button type="button" disabled={!selectedPartner || pendingTrade.responses?.[selectedPartner]!=='accept'} onClick={()=>socket.emit('finalizeTrade',{partnerId:selectedPartner},res=>{addNotification(res.success?'Troca concluída!':res.error)})}>🤝 Trocar com selecionado</button>
                 <button onClick={handleCancelTrade}>Cancelar Troca</button>
               </div>
             )}
@@ -362,7 +365,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
                 <div className="port-list">
                   {gameState.myPorts.map((port, idx) => (
                     <span key={idx} className="port-badge">
-                      {port.icon} {port.ratio}:1 {port.resource ? nomeRecurso(port.resource) : 'qualquer'}
+                      {port.icon} {port.ratio}:1 {port.resource ? RESOURCE_ICONS[port.resource] : '?'}
                     </span>
                   ))}
                 </div>
