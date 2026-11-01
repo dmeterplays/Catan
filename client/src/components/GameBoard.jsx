@@ -706,6 +706,11 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         <button type="button" className={mobilePanel === 'chat' ? 'active' : ''} aria-expanded={mobilePanel === 'chat'} onClick={() => {setShowChat(true);setMobilePanel(v=>v==='chat'?null:'chat');}}>💬 Chat{unreadMessages>0?' ('+unreadMessages+')':''}</button>
         <button type="button" className={mobileInfoMode ? 'active' : ''} aria-pressed={mobileInfoMode} onClick={() => {setMobilePanel(null);setMobileInfoMode(v=>!v);}}>ℹ️ Info</button>
       </nav>
+      <div className="mobile-action-status">
+        <span>{selectedAction ? `🎯 ${({road:'Estrada',settlement:'Aldeia',city:'Cidade',ship:'Barco',moveShip:'Mover barco'})[selectedAction] || selectedAction}: toque no tabuleiro` : (isMyTurn ? 'Sua vez — selecione uma ação' : 'Acompanhe a partida no mapa')}</span>
+        <span>📜 {myPlayer?.developmentCards?.length || 0}</span>
+        <button type="button" onClick={()=>{setMobilePanel('actions');setMobileInfoMode(false);}}>⚒️ Construir</button>
+      </div>
       {mobilePanel && <button type="button" className="mobile-panel-backdrop" aria-label="Fechar painel" onClick={()=>setMobilePanel(null)} />}
       {/* Main game area */}
       <div className="game-main">
