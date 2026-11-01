@@ -314,21 +314,13 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
   // Auto-select action during setup
   useEffect(() => {
     if (isSetup && isMyTurn) {
-      // Check if we need to place settlement or road
-      const mySettlements = Object.values(gameState.vertices)
-        .filter(v => v.owner === gameState.myIndex && v.building === 'settlement').length;
-      const myRoads = Object.values(gameState.edges)
-        .filter(e => e.owner === gameState.myIndex && (e.road || e.ship)).length;
-      
-      const expectedSettlements = gameState.setupPhase === 0 ? 1 : 2;
-      const expectedRoads = gameState.setupPhase === 0 ? 1 : 2;
-      
-      if (mySettlements < expectedSettlements) {
-        setSelectedAction('settlement');
-      } else if (myRoads < expectedRoads) {
-        setSelectedAction(a => a === 'ship' && gameState.isSeafarers ? a : 'road');
+      // Use the authoritative setup marker: Cities & Knights begins with a city,
+      // so counting settlements incorrectly hides the road placement step.
+      const needsRoute = Boolean(gameState.setupSettlementKey);
+      if (needsRoute) {
+        setSelectedAction(current => current === 'ship' && gameState.isSeafarers ? current : 'road');
       } else {
-        setSelectedAction(null);
+        setSelectedAction('settlement');
       }
     }
   }, [isSetup, isMyTurn, gameState]);
@@ -928,7 +920,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
           <button type="button" className="costs-toggle" onClick={() => setShowBuildCosts(open => !open)} aria-expanded={showBuildCosts}>
             📖 Custos {showBuildCosts ? '▴' : '▾'}
           </button>
-          {showBuildCosts && <ConstructionCosts onClose={() => setShowBuildCosts(false)} />}
+          {showBuildCosts && <ConstructionCosts onClose={() => setShowBuildCosts(false)} isSeafarers={gameState.isSeafarers} isCitiesAndKnights={gameState.isCitiesAndKnights} />}
         </div>
         <div className="turn-clock-dock">
           <span className="turn-clock-player" style={{borderColor:currentPlayer?.color || '#b99448'}}>{currentPlayer ? currentPlayer.name : 'Sala de espera'}</span>
