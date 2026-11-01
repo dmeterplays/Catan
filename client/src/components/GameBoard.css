@@ -1086,3 +1086,19 @@
   .game-board.mobile-panel-players .right-sidebar .player-route-stats{font-size:11px;}
   .game-board .mobile-panel-actions .command-dock .my-resources-bar{width:100%;}
 }
+
+.mobile-action-status{display:none;}
+@media(max-width:900px),(pointer:coarse) and (max-width:1200px){
+  .game-board .mobile-action-status{
+    display:flex;align-items:center;gap:7px;padding:4px 8px;
+    color:#fff0cd;background:#15354a;font-size:11px;z-index:34;
+    border-bottom:1px solid #866743;
+  }
+  .mobile-action-status span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mobile-action-status span:nth-child(2){flex:0 0 auto;}
+  .mobile-action-status button{
+    flex:0 0 auto;border:1px solid #d9ad68;border-radius:6px;
+    background:#e6c17d;color:#271c11;font-weight:700;padding:7px;
+    min-height:35px;touch-action:manipulation;
+  }
+}
