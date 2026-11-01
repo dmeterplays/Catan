@@ -34,7 +34,8 @@ function App() {
   
   const [socket, setSocket] = useState(null);           // Socket.io connection
   const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
-  const [connected, setConnected] = useState(false);     // Connection status
+  const [connected, setConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState('');     // Connection status
   const [gameState, setGameState] = useState(null);      // Current game state from server
   const [playerId, setPlayerId] = useState(null);        // This player's unique ID
   const [gameCode, setGameCode] = useState(null);        // Current game room code
@@ -48,11 +49,20 @@ function App() {
   // ============================================================================
   
   useEffect(() => {
-    const newSocket = io(serverUrl);
+    setConnected(false);
+    setConnectionError('');
+    const newSocket = io(serverUrl, {
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionDelay: 1500,
+      reconnectionDelayMax: 6000,
+      timeout: 12000
+    });
     
     newSocket.on('connect', () => {
       console.log('Connected to server');
       setConnected(true);
+      setConnectionError('');
       setServerFull(false);
       
       // Try to reconnect to existing game
@@ -71,7 +81,14 @@ function App() {
       }
     });
     
-    newSocket.on('disconnect', () => {
+    newSocket.on('connect_error', (err) => {
+      console.error('Socket.IO connection failed:', err);
+      setConnected(false);
+      setConnectionError(`Falha ao conectar (${err.message || 'erro desconhecido'}). Verifique o endereço e o Socket.IO.`);
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      setConnectionError(`Conexão interrompida: ${reason}`);
       console.log('Disconnected from server');
       setConnected(false);
     });
@@ -254,6 +271,7 @@ function App() {
         serverUrl={serverUrl}
         setServerUrl={setServerUrl}
         connected={connected}
+        connectionError={connectionError}
       />
     );
   }
