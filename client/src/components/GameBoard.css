@@ -1054,3 +1054,35 @@
   }
   .game-board .cost-row-text small{font-size:12px;line-height:1.4;}
 }
+
+/* Scoreboard fits 8 participants without internal scrolling. */
+.right-sidebar .roster-panel {overflow-y:visible;flex:0 0 auto;max-height:none;}
+.right-sidebar .roster-panel .player-roster-target {min-width:0;}
+.right-sidebar .roster-panel .player-route-stats {
+  display:block;color:#f3d59c;font-size:11px;font-weight:700;
+  padding:1px 5px;white-space:nowrap;
+}
+.right-sidebar .roster-panel .player-road-length{display:none;}
+.right-sidebar .roster-panel .bank-summary{display:none;}
+.right-sidebar .roster-panel {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;align-content:start;}
+.right-sidebar .roster-panel > h3 {grid-column:1/-1;}
+.right-sidebar .roster-panel .player-panel{padding:2px 3px;margin:0;}
+.right-sidebar .roster-panel .player-header{min-height:18px;}
+.right-sidebar .roster-panel .player-stats{padding:1px 2px;}
+.right-sidebar .roster-panel .player-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;}
+.command-dock .my-resources-bar {
+  margin-inline:auto;justify-content:center;align-items:center;
+  width:max-content;max-width:100%;
+}
+.command-dock .my-resources-bar .dev-cards-summary{
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+@media (max-width:900px), (pointer:coarse) and (max-width:1200px) {
+  .game-board.mobile-panel-players .right-sidebar .roster-panel{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:4px;align-content:start;overflow-y:auto;
+  }
+  .game-board.mobile-panel-players .right-sidebar .player-panel{min-width:0;}
+  .game-board.mobile-panel-players .right-sidebar .player-route-stats{font-size:11px;}
+  .game-board .mobile-panel-actions .command-dock .my-resources-bar{width:100%;}
+}
