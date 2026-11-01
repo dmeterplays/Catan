@@ -1006,7 +1006,6 @@ function HexBoard({
           );
           });
         })()}
-        </g>
 
         {/* Tap a dotted target once to preview, then tap its costed action to confirm. */}
         {((gamePhase==='setup' && isMyTurn) || (gamePhase==='playing' && canBuildNow && ['main','specialBuild'].includes(turnPhase))) && (() => {
@@ -1063,6 +1062,7 @@ function HexBoard({
             </g>}
           </g>;
         })()}
+      </g>
       </svg>
 
       <div className="board-zoom-controls" aria-label="Controles de zoom do tabuleiro">
