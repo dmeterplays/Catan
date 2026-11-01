@@ -460,3 +460,16 @@
   font-size: 1.2rem;
 }
 
+
+.trade-partner-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:10px 0;}
+.trade-partner-list button{border:1px solid #b89c68;background:#233e4c;color:#fff1d1;padding:9px 6px;border-radius:7px;text-align:left;min-width:0;}
+.trade-partner-list button.selected{outline:2px solid #f7d17c;background:#395e65;}
+.trade-partner-list button:disabled{opacity:.65;cursor:not-allowed;}
+.port-badge{white-space:nowrap;}
+@media(max-width:650px){
+ .trade-modal{width:calc(100vw - 16px);max-height:88dvh;overflow-y:auto;padding:10px;}
+ .trade-partner-list{grid-template-columns:1fr;}
+ .bank-trade-builder,.dnd-top-row{min-width:0;max-width:100%;}
+ .bank-options{display:flex;flex-wrap:wrap;justify-content:center;}
+ .trade-modal button{touch-action:manipulation;}
+}
