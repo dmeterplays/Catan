@@ -167,7 +167,7 @@ function syncTurnTimer(game) {
       ? `setup:${owner}:${game.setupPhase}:${game.setupSettlementKey || 'settlement'}`
       : `${phase}:${owner}`;
   const seconds = phase === 'roll' ? 5
-    : phase === 'discard' ? 15
+    : phase === 'discard' ? 20
     : phase === 'setup' ? 45
     : phase === 'specialBuild' ? 45
     : phase === 'main' ? game.turnTimeLimit : 30;
