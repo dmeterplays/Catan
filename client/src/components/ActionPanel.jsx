@@ -43,9 +43,9 @@ function ActionPanel({
 }) {
   const canRoll = isMyTurn && turnPhase === 'roll';
   
-  // During special build phase, the player can build but not trade or roll
+  // During special build, only construction and bank/port trading are allowed
   const canBuild = (isMyTurn && turnPhase === 'main') || isMySpecialBuild;
-  const canTrade = isMyTurn && turnPhase === 'main' && !isSpecialBuildPhase;
+  const canTrade = (isMyTurn && turnPhase === 'main') || isMySpecialBuild;
   const canEnd = isMyTurn && turnPhase === 'main' && !isSpecialBuildPhase;
   
   // Can play dev cards on your own turn before or after rolling (but not during special build)
@@ -258,7 +258,7 @@ function ActionPanel({
 
       {/* Trade Section */}
       <div className="action-section">
-        <h4>Troca {isMySpecialBuild && <span className="disabled-hint">(desativada)</span>}</h4>
+        <h4>Troca {isMySpecialBuild && <span className="disabled-hint">(somente banco/portos)</span>}</h4>
         
         <button
           className="action-btn trade-btn"
