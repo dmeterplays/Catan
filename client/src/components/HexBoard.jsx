@@ -778,18 +778,6 @@ function HexBoard({
           </g>
         ))}
 
-        {/* Available builds are always visible, independent of selected toolbar action. */}
-        {((gamePhase === 'setup' && isMyTurn) ||
-          (gamePhase === 'playing' && canBuildNow && ['main','specialBuild'].includes(turnPhase))) &&
-          clickableEdges.map(({key,v1,v2})=>{
-            const types=legalActions.filter(a=>a.edgeKey===key && ['placeRoad','placeShip'].includes(a.type));
-            if(!types.length)return null;
-            const x=(v1.x+v2.x)/2,y=(v1.y+v2.y)/2;
-            return <g key={`build-edge-${key}`} onClick={event=>{event.stopPropagation();setBuildPreview({kind:'edge',key,x,y});}} style={{cursor:'pointer'}}>
-              <circle cx={x} cy={y} r="13" fill="#fff5d9" fillOpacity=".6" stroke="#17455b" strokeWidth="2" strokeDasharray="4 3"/>
-              <circle cx={x} cy={y} r="20" fill="transparent"/>
-            </g>;
-          })}
         {/* Vertices (settlements/cities) */}
         {uniqueVertices.map(({ key, vertex, pos }) => {
           const canPlace = canPlaceAtVertex(key) && !vertex.building;
