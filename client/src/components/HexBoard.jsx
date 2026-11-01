@@ -179,6 +179,7 @@ function HexBoard({
   onKnightDestination = () => {}
 }) {
   const [zoom, setZoom] = useState(1);
+  const [buildPreview, setBuildPreview] = useState(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragState, setDragState] = useState(null);
   const dragMoved = useRef(false);
@@ -748,22 +749,6 @@ function HexBoard({
           );
         })}
 
-        {/* Clickable edge areas (only shown when placing roads and no road exists) */}
-        {clickableEdges.filter(({ key }) => canPlaceAtEdge(key)).map(({ key, v1, v2 }) => (
-          <line
-            key={`click-${key}`}
-            x1={v1.x}
-            y1={v1.y}
-            x2={v2.x}
-            y2={v2.y}
-            stroke="rgba(255, 255, 255, 0.3)"
-            strokeWidth="22"
-            strokeLinecap="round"
-            className="edge-placeholder"
-            onClick={() => selectedAction === 'moveShip' ? onShipSelect(key) : selectedAction === 'ship' ? onPlaceShip(key) : onPlaceRoad(key)}
-          />
-        ))}
-
         {/* Roads - rendered separately from clickable areas */}
         {roads.map(({ key, owner, isShip, v1, v2 }) => (
           <g key={`road-${key}`} className={newPieces.roads.includes(key) ? "piece-road-appear" : ""}
@@ -793,6 +778,18 @@ function HexBoard({
           </g>
         ))}
 
+        {/* Available builds are always visible, independent of selected toolbar action. */}
+        {((gamePhase === 'setup' && isMyTurn) ||
+          (gamePhase === 'playing' && canBuildNow && ['main','specialBuild'].includes(turnPhase))) &&
+          clickableEdges.map(({key,v1,v2})=>{
+            const types=legalActions.filter(a=>a.edgeKey===key && ['placeRoad','placeShip'].includes(a.type));
+            if(!types.length)return null;
+            const x=(v1.x+v2.x)/2,y=(v1.y+v2.y)/2;
+            return <g key={`build-edge-${key}`} onClick={event=>{event.stopPropagation();setBuildPreview({kind:'edge',key,x,y});}} style={{cursor:'pointer'}}>
+              <circle cx={x} cy={y} r="13" fill="#fff5d9" fillOpacity=".6" stroke="#17455b" strokeWidth="2" strokeDasharray="4 3"/>
+              <circle cx={x} cy={y} r="20" fill="transparent"/>
+            </g>;
+          })}
         {/* Vertices (settlements/cities) */}
         {uniqueVertices.map(({ key, vertex, pos }) => {
           const canPlace = canPlaceAtVertex(key) && !vertex.building;
@@ -802,7 +799,7 @@ function HexBoard({
             <g key={key} className={`vertex-group ${newPieces.buildings.includes(key + ":" + vertex.building) ? "piece-building-appear" : ""}`}>
               {/* Compact settlement with distinct 45° roof, wall and door. */}
               {vertex.building === 'settlement' && (
-                <g className={`settlement ${canUpgrade ? 'upgradeable' : ''}`} onClick={() => canUpgrade && onUpgradeToCity(key)}>
+                <g className={`settlement ${canUpgrade ? 'upgradeable' : ''}`} onClick={() => { if (canUpgrade) setBuildPreview({kind:'city',key,x:pos.x,y:pos.y}); }}>
                   <path d={settlementBodyPath(pos.x, pos.y + 2)} fill="#0005" />
                   <path d={settlementRoofPath(pos.x, pos.y + 2)} fill="#0005" />
                   <path d={settlementBodyPath(pos.x, pos.y)} fill={players[vertex.owner]?.color || '#e63946'} stroke="#252321" strokeWidth="1.7" strokeLinejoin="round" />
@@ -834,16 +831,7 @@ function HexBoard({
                 </g>
               )}
 
-              {/* Clickable placeholder for placing settlements */}
-              {canPlace && (
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r="16"
-                  className="vertex-placeholder"
-                  onClick={() => onPlaceSettlement(key)}
-                />
-              )}
+
             </g>
           );
         })}
