@@ -1178,3 +1178,79 @@
 @media(max-width:900px),(pointer:coarse) and (max-width:1200px){
   .game-board.mobile-panel-players .right-sidebar .roster-panel{display:flex;flex-direction:column;overflow-y:auto;}
 }
+
+
+/* Player lobby controls must remain reachable even with eight tall player cards. */
+.game-main > .right-sidebar {
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.right-sidebar .roster-panel {
+  min-height:0;
+  max-height:100%;
+  flex:1 1 auto;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#c49c59 #1c3547;
+  padding-bottom:18px;
+}
+.right-sidebar .roster-panel .waiting-controls {
+  flex:0 0 auto;
+  width:100%;
+  min-height:min-content;
+  padding-bottom:18px;
+}
+.right-sidebar .roster-panel .waiting-controls button {max-width:100%;}
+.right-sidebar .roster-panel .player-panel-compact {
+  position:relative;
+  border:1px solid color-mix(in srgb,var(--portrait-color,#d4ae71) 35%,#bba47b);
+  background:linear-gradient(112deg,#344857 0%,#182e3e 100%);
+  border-radius:10px;
+  padding:9px 9px 11px;
+  box-shadow:inset 3px 0 0 var(--portrait-color,#9b8e7b),0 3px 9px #0005;
+  transition:border-color .2s,background .2s;
+}
+.right-sidebar .roster-panel .player-panel-compact.is-me {
+  background:linear-gradient(115deg,#f3e8d2,#c4d4d8);
+  box-shadow:inset 3px 0 0 #c69f47,0 3px 9px #0005;
+}
+.right-sidebar .roster-panel .player-panel-compact.current-turn {
+  outline:2px solid #f1c55c;
+  outline-offset:-2px;
+}
+.right-sidebar .roster-panel .compact-player-name {
+  font-family:'Cinzel',Georgia,serif;font-size:14px;
+  text-shadow:0 1px 2px #0005;
+}
+.right-sidebar .roster-panel .player-panel-compact.is-me .compact-player-name {text-shadow:none;}
+.right-sidebar .roster-panel .compact-player-portrait {
+  border-radius:50%;height:50px;width:50px;
+  background:radial-gradient(circle at 35% 20%,color-mix(in srgb,var(--portrait-color) 65%,white),var(--portrait-color) 75%);
+  box-shadow:inset 0 0 8px #0006,0 2px 5px #0005;
+}
+.right-sidebar .roster-panel .compact-stat-card {
+  width:35px;height:43px;flex-basis:35px;
+  background:transparent!important;border:0;box-shadow:none;
+}
+.right-sidebar .roster-panel .compact-stat-card .catan-card-art {width:34px;}
+.right-sidebar .roster-panel .compact-stat-card b {
+  top:-3px;right:-4px;border:1px solid #e4d5a7;border-radius:8px;
+  padding:1px 4px;background:#214f7c;
+}
+.right-sidebar .roster-panel .compact-player-stats {justify-content:flex-start;gap:12px;}
+.right-sidebar .roster-panel .compact-stat-symbol {
+  min-width:30px;padding:3px;border-radius:6px;background:#0002;
+}
+.right-sidebar .roster-panel .compact-player-extras {opacity:.85;}
+@media (max-width:900px), (pointer:coarse) and (max-width:1200px) {
+  .game-board.mobile-panel-players .game-main > .right-sidebar {overflow-y:auto;min-height:0;}
+  .game-board.mobile-panel-players .right-sidebar .roster-panel {
+    flex:1 1 auto!important;max-height:100%!important;min-height:0!important;
+    overflow-y:auto!important;touch-action:pan-y;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:calc(55px + env(safe-area-inset-bottom));
+  }
+}
