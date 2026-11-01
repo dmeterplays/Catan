@@ -807,7 +807,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
               <div className="bank-resource" data-bank-resource="development"><CardArt type="development" count={gameState.devCardDeck} className="small" /></div>
             </div>
           </div>
-          <h3>Jogadores</h3>
+          <h3 className="roster-players-heading">Jogadores</h3>
           {gameState.players.map((player, idx) => (
             <div key={player.id} data-player-target={player.id} className="player-roster-target">
             <PlayerPanel 
@@ -819,6 +819,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
               largestArmy={gameState.largestArmyPlayer === idx}
               gameOver={gameState.phase === 'finished'}
               isCitiesAndKnights={gameState.isCitiesAndKnights}
+              compact
               onRightClick={(e, key, extra) => {
                 if (extra) {
                   // Custom info passed
