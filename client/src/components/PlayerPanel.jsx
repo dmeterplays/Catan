@@ -1,6 +1,6 @@
 import './PlayerPanel.css';
 
-function PlayerPanel({ player, isCurrentTurn, isMe, longestRoad, largestArmy, gameOver = false, isCitiesAndKnights, onRightClick }) {
+function PlayerPanel({ player, isCurrentTurn, isMe, longestRoad, largestArmy, gameOver = false, isCitiesAndKnights, onRightClick, compact = false }) {
   let totalCards = typeof player.resources === 'number' 
     ? player.resources 
     : Object.values(player.resources || {}).reduce((a, b) => a + b, 0);
@@ -28,6 +28,45 @@ function PlayerPanel({ player, isCurrentTurn, isMe, longestRoad, largestArmy, ga
       onRightClick(e, infoKey);
     }
   };
+
+  if (compact) {
+    return (
+      <div className={`player-panel player-panel-compact ${isCurrentTurn ? 'current-turn' : ''} ${isMe ? 'is-me' : ''}`}>
+        <div className="compact-player-portrait" style={{ '--portrait-color': player.color }} aria-hidden="true">
+          <span>{player.isBot ? '🤖' : '♟️'}</span>
+          <b>{gameOver ? player.victoryPoints + hiddenVP : player.victoryPoints || 0}</b>
+        </div>
+        <div className="compact-player-content">
+          <div className="compact-player-name" title={player.name}>
+            <span style={{ background: player.color }} className="compact-player-dot" />
+            {player.name}
+            {isMe && <small>VOCÊ</small>}
+          </div>
+          <div className="compact-player-stats">
+            <div className="compact-stat-card" title="Total de cartas de recursos e mercadorias" onContextMenu={e=>handleRightClick(e,'resourceCards')}>
+              <span>🃏</span><b>{totalCards}</b>
+            </div>
+            <div className="compact-stat-card" title={isCitiesAndKnights ? 'Cartas de progresso' : 'Cartas de desenvolvimento'} onContextMenu={e=>handleRightClick(e,'devCards')}>
+              <span>{isCitiesAndKnights ? '📚' : '🔮'}</span>
+              <b>{isCitiesAndKnights ? scienceCards + politicsCards + tradeCards : devCardCount}</b>
+            </div>
+            <div className="compact-stat-symbol" title="Aldeias e cidades">🏘️<b>{(player.settlements || 0) + (player.cities || 0)}</b></div>
+            <div className="compact-stat-symbol" title="Comprimento da maior estrada">🛤️<b>{player.roadLength || 0}</b></div>
+            <div className="compact-stat-symbol" title="Cavaleiros utilizados">⚔️<b>{player.knightsPlayed || 0}</b></div>
+          </div>
+          {isCitiesAndKnights && player.cityImprovements && (
+            <div className="compact-player-extras" title="Melhorias da cidade">
+              📗 {player.cityImprovements.science || 0} · 📘 {player.cityImprovements.politics || 0} · 📒 {player.cityImprovements.trade || 0}
+            </div>
+          )}
+          {(longestRoad || largestArmy) && <div className="compact-player-extras">
+            {longestRoad && '🛤️ Maior estrada  '}
+            {largestArmy && '⚔️ Maior exército'}
+          </div>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`player-panel ${isCurrentTurn ? 'current-turn' : ''} ${isMe ? 'is-me' : ''}`}>
