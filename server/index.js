@@ -1115,6 +1115,20 @@ io.on('connection', (socket) => {
     callback(result);
   });
   
+  socket.on('finalizeTrade', ({partnerId},callback=()=>{})=>{
+    const info=playerSockets.get(socket.id);
+    const game=info && games.get(info.gameId);
+    if(!game)return callback({success:false,error:'Partida não encontrada'});
+    const proposed=game.tradeOffer?{from:game.tradeOffer.from,offer:{...game.tradeOffer.offer},request:{...game.tradeOffer.request}}:null;
+    const result=GameLogic.finalizeTrade(game,info.playerId,partnerId);
+    if(result.success){
+      if(proposed)logTrade(game,proposed.from,partnerId,proposed.offer,proposed.request);
+      broadcastToGame(info.gameId,'tradeAccepted',{by:partnerId});
+      broadcastGameState(info.gameId);
+    }
+    callback(result);
+  });
+
   /** Cancel an active trade offer */
   socket.on('cancelTrade', (callback) => {
     const playerInfo = playerSockets.get(socket.id);
