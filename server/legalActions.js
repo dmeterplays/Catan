@@ -102,7 +102,7 @@ export function getLegalActions(game, playerId) {
       const v = game.vertices[vertexKey];
       if (v?.owner === index && v?.building === 'settlement') add('upgradeToCity', { vertexKey });
     });
-  if (!special && !game.tradeOffer) {
+  if (!game.tradeOffer) {
     for (const giveResource of RESOURCES) {
       const ratio = Game.getTradeRatio(game, index, giveResource);
       if ((player.resources?.[giveResource] || 0) < ratio) continue;
