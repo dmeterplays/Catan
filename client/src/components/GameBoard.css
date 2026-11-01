@@ -1102,3 +1102,79 @@
     min-height:35px;touch-action:manipulation;
   }
 }
+
+
+/* Reference-style bank and player roster, stacked vertically. */
+.right-sidebar .roster-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 48%;
+  padding: 5px;
+  align-content: initial;
+}
+.right-sidebar .roster-panel .bank-summary {
+  display: block;
+  flex: 0 0 auto;
+  background: linear-gradient(180deg,#f4efe0,#d9c5a3);
+  color: #3b2b1a;
+  border: 1px solid #987447;
+  padding: 6px;
+}
+.right-sidebar .roster-panel .bank-title {color:#4b3723;margin-bottom:5px;}
+.right-sidebar .roster-panel .bank-title small {color:#67513a;}
+.right-sidebar .roster-panel .bank-resources {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;}
+.right-sidebar .roster-panel .bank-resource {background:transparent;border:0;min-width:0;padding:0;}
+.right-sidebar .roster-panel .bank-resource .card-art {max-width:100%;}
+.right-sidebar .roster-panel > .roster-players-heading {margin:2px 0 0;font-size:11px;letter-spacing:.1em;}
+.right-sidebar .roster-panel .player-roster-target {width:100%;min-width:0;flex-shrink:0;}
+.right-sidebar .roster-panel .player-panel-compact {
+  display:grid;
+  grid-template-columns:55px minmax(0,1fr);
+  gap:7px;
+  padding:7px;
+  min-width:0;
+  margin:0;
+  color:#eae3d5;
+  background:#354d5c;
+  border:1px solid #ad905a;
+  border-radius:5px;
+  box-shadow:none;
+}
+.right-sidebar .roster-panel .player-panel-compact.is-me {background:linear-gradient(135deg,#e9e0cc,#b7c9ce);color:#252b2e;}
+.right-sidebar .roster-panel .player-panel-compact.current-turn {outline:2px solid #e0bb57;outline-offset:-2px;}
+.right-sidebar .roster-panel .compact-player-portrait {
+  width:50px;height:55px;position:relative;display:flex;justify-content:center;align-items:center;
+  color:#fff;border-radius:50% 50% 8px 8px;
+  background:radial-gradient(circle at 30% 25%,var(--portrait-color),#253846 75%);
+  border:2px solid #e2d2aa;font-size:27px;
+}
+.right-sidebar .roster-panel .compact-player-portrait b {
+  position:absolute;bottom:-7px;left:9px;right:9px;text-align:center;
+  color:#3d2a19;background:#eee1bd;border:1px solid #7f633e;
+  border-radius:3px;font-size:13px;line-height:17px;
+}
+.right-sidebar .roster-panel .compact-player-content {min-width:0;display:flex;flex-direction:column;gap:5px;}
+.right-sidebar .roster-panel .compact-player-name {
+  display:flex;align-items:center;gap:5px;font-size:13px;line-height:18px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:bold;
+}
+.right-sidebar .roster-panel .compact-player-dot {width:10px;height:10px;border:1px solid #ffffff9c;border-radius:50%;flex:none;}
+.right-sidebar .roster-panel .compact-player-name small {font-size:9px;color:#b17c22;}
+.right-sidebar .roster-panel .compact-player-stats {display:flex;gap:5px;align-items:center;justify-content:space-between;min-width:0;}
+.right-sidebar .roster-panel .compact-stat-card {
+  position:relative;display:flex;align-items:center;justify-content:center;
+  width:36px;height:42px;flex:0 0 36px;background:linear-gradient(145deg,#438ec4,#163e81);
+  border:2px solid #d6c18f;border-radius:3px;font-size:22px;
+  box-shadow:1px 2px 2px #0005;
+}
+.right-sidebar .roster-panel .compact-stat-card:nth-child(2){background:linear-gradient(145deg,#9c7dd3,#494092);}
+.right-sidebar .roster-panel .compact-stat-card b {position:absolute;top:0;right:1px;font-size:12px;color:#fff;text-shadow:0 1px #000;}
+.right-sidebar .roster-panel .compact-stat-symbol {display:flex;flex-direction:column;align-items:center;gap:0;min-width:19px;font-size:18px;opacity:.95;}
+.right-sidebar .roster-panel .compact-stat-symbol b {font-size:12px;font-weight:600;}
+.right-sidebar .roster-panel .compact-player-extras {font-size:10px;line-height:1.3;}
+@media(max-width:900px),(pointer:coarse) and (max-width:1200px){
+  .game-board.mobile-panel-players .right-sidebar .roster-panel{display:flex;flex-direction:column;overflow-y:auto;}
+}
