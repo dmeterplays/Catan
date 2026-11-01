@@ -2,7 +2,7 @@ import { useState } from 'react';
 import RulesModal from './RulesModal';
 import './Lobby.css';
 
-function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServerUrl, connected }) {
+function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServerUrl, connected, connectionError = '' }) {
   const [mode, setMode] = useState(null); // null, 'create', 'join'
   const [playerName, setPlayerName] = useState('');
   const [gameCode, setGameCode] = useState('');
@@ -82,6 +82,8 @@ function Lobby({ onCreateGame, onJoinGame, error, setError, serverUrl, setServer
           <h1>CATAN</h1>
           <p className="subtitle">Multijogador Online</p>
         </div>
+
+        {!connected && connectionError && <div role="alert" style={{background:'#5d2222',color:'#fff',padding:'10px 14px',borderRadius:8,margin:'10px auto',maxWidth:440,fontSize:13,overflowWrap:'anywhere'}}><strong>⚠️ Falha na conexão</strong><div>{connectionError}</div><small>Servidor: {serverUrl}</small><div style={{marginTop:6}}>O site tentará reconectar automaticamente. Confira o endereço em Configurações do Servidor.</div></div>}
 
         {mode === null ? (
           <div className="lobby-menu fade-in">
