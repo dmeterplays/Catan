@@ -236,3 +236,17 @@
 .command-actions .action-panel > .end-turn-btn {order:6;}
 .command-actions .action-panel .action-section {display:contents;}
 .command-actions .action-panel .special-action,.command-actions .action-panel .city-improvements,.command-actions .action-panel .special-build-indicator {order:8;}
+
+
+/* Personal inventory counter stays visible on compact construction controls. */
+.action-panel .build-btn { position:relative; }
+.action-panel .build-btn .piece-remaining {
+  display:inline-flex;align-items:center;justify-content:center;
+  margin-left:auto;min-width:19px;height:19px;padding:0 4px;
+  border:1px solid #f5dda2;border-radius:11px;
+  background:#1b334a;color:#fff0cc;font:700 11px/1 sans-serif;
+}
+.command-actions .action-panel .build-btn .piece-remaining {
+  display:flex;position:absolute;top:-7px;right:-6px;margin:0;
+  z-index:2;box-shadow:0 2px 4px #0009;pointer-events:none;
+}
