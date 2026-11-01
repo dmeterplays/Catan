@@ -2659,11 +2659,8 @@ export function endTurn(game, playerId) {
   if (game.isExtended && game.players.length > 4 && game.enableSpecialBuild) {
     game.specialBuildingPhase = true;
     // Start with the player after the current player
-    game.specialBuildIndex = (playerIndex + 1) % game.players.length;
-    // Skip the current player (they just ended their turn)
-    if (game.specialBuildIndex === playerIndex) {
-      game.specialBuildIndex = (game.specialBuildIndex + 1) % game.players.length;
-    }
+    game.specialBuildIndex = (playerIndex + 2) % game.players.length;
+    // Start at the third seat (roller + 2). The next roller is excluded.
     game.turnPhase = 'specialBuild';
     return { success: true, specialBuildingPhase: true };
   }
@@ -2698,7 +2695,7 @@ export function endSpecialBuild(game, playerId) {
   let nextIndex = (playerIndex + 1) % game.players.length;
   
   // Check if we've gone around to the original player
-  if (nextIndex === currentTurnPlayer) {
+  if (nextIndex === (currentTurnPlayer + 1) % game.players.length) {
     // Special building phase is over, move to next turn
     game.specialBuildingPhase = false;
     game.specialBuildIndex = 0;
