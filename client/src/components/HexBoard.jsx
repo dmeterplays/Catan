@@ -1019,6 +1019,62 @@ function HexBoard({
           });
         })()}
         </g>
+
+        {/* Tap a dotted target once to preview, then tap its costed action to confirm. */}
+        {((gamePhase==='setup' && isMyTurn) || (gamePhase==='playing' && canBuildNow && ['main','specialBuild'].includes(turnPhase))) && (() => {
+          const candidates = new Map();
+          for (const action of legalActions) {
+            if (!['placeSettlement','upgradeToCity','placeRoad','placeShip'].includes(action.type)) continue;
+            let x,y;
+            if (action.vertexKey) {
+              const parsed=parseVertexKey(action.vertexKey);
+              if(!parsed)continue;
+              ({x,y}=getVertexPosition(parsed.q,parsed.r,parsed.dir));
+            } else if (action.edgeKey) {
+              const parsed=parseEdgeKey(action.edgeKey);
+              if(!parsed)continue;
+              const {v1,v2}=getEdgeEndpoints(parsed.q,parsed.r,parsed.dir);
+              x=(v1.x+v2.x)/2;y=(v1.y+v2.y)/2;
+            }
+            const id=posKey(x,y);
+            if(!candidates.has(id))candidates.set(id,{x,y,actions:[]});
+            if(!candidates.get(id).actions.some(a=>a.type===action.type))
+              candidates.get(id).actions.push(action);
+          }
+          const options=[...candidates.values()];
+          const selected=buildPreview && options.find(v=>posKey(v.x,v.y)===buildPreview.position);
+          const details={
+            placeSettlement:['🏠','🧱1 🪵1 🐑1 🌾1'],
+            upgradeToCity:['🏰','⛏️3 🌾2'],
+            placeRoad:['🛤️','🧱1 🪵1'],
+            placeShip:['⛵','🪵1 🐑1']
+          };
+          const run=action=>{
+            setBuildPreview(null);
+            if(action.type==='placeSettlement')onPlaceSettlement(action.vertexKey);
+            else if(action.type==='upgradeToCity')onUpgradeToCity(action.vertexKey);
+            else if(action.type==='placeRoad')onPlaceRoad(action.edgeKey);
+            else if(action.type==='placeShip')onPlaceShip(action.edgeKey);
+          };
+          return <g className="build-target-layer">
+            {options.map(v=><g key={posKey(v.x,v.y)} style={{cursor:'pointer'}}
+              onClick={e=>{e.stopPropagation();setBuildPreview({position:posKey(v.x,v.y)});}}>
+              <circle cx={v.x} cy={v.y} r="13" fill="#fef5ca" fillOpacity=".65" stroke="#173f52" strokeWidth="2.3" strokeDasharray="3 3"/>
+              <circle cx={v.x} cy={v.y} r="22" fill="transparent"/>
+            </g>)}
+            {selected && <g transform={`translate(${selected.x},${selected.y-31})`}>
+              <rect x={-Math.max(44,selected.actions.length*51)/2} y="-48" width={Math.max(44,selected.actions.length*51)} height="46" rx="7" fill="#17354b" stroke="#ffe4a0" strokeWidth="2"/>
+              {selected.actions.map((action,i)=><g key={action.type}
+                transform={`translate(${i*51-(selected.actions.length-1)*25.5},0)`}
+                onClick={e=>{e.stopPropagation();run(action);}} style={{cursor:'pointer'}}>
+                <rect x="-23" y="-46" width="46" height="42" rx="5" fill="#fff2d1"/>
+                <text y="-27" textAnchor="middle" fontSize="17">{details[action.type][0]}</text>
+                <text y="-11" textAnchor="middle" fontSize="7.1" fontWeight="bold" fill="#273746">{gamePhase==='setup'?'GRÁTIS':details[action.type][1]}</text>
+              </g>)}
+              <path d="M -6 -2 L 0 7 L 6 -2" fill="#ffe4a0"/>
+            </g>}
+          </g>;
+        })()}
       </svg>
 
       <div className="board-zoom-controls" aria-label="Controles de zoom do tabuleiro">
