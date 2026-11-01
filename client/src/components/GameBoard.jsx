@@ -1036,7 +1036,7 @@ function GameBoard({ socket, gameState, playerId, gameCode, chatMessages, onLeav
         <div className="special-build-banner">
           <span className="special-build-icon">🏗️</span>
           <span className="special-build-text">
-            <strong>Fase de Construção Especial!</strong> Você pode construir estradas, aldeias, cidades ou comprar cartas de desenvolvimento. Trocas não são permitidas.
+            <strong>Fase de Construção Especial!</strong> Você pode construir e trocar com o banco ou seus portos. Trocas com jogadores e lançamento de dados não são permitidos.
           </span>
           <button className="special-build-done-btn" onClick={handleEndSpecialBuild}>
             Terminar Construção
