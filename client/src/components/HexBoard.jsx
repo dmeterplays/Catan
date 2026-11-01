@@ -1009,6 +1009,18 @@ function HexBoard({
 
         {/* Tap a dotted target once to preview, then tap its costed action to confirm. */}
         {((gamePhase==='setup' && isMyTurn) || (gamePhase==='playing' && canBuildNow && ['main','specialBuild'].includes(turnPhase))) && (() => {
+          // Only use real, rendered hex corners and sides. Some server action
+          // aliases reference coordinates outside the visible board.
+          const validVertices = new Set();
+          const validEdges = new Set();
+          Object.values(hexes).forEach(hex => {
+            for (let dir = 0; dir < 6; dir++) {
+              const vertex = getVertexPosition(hex.q, hex.r, dir);
+              validVertices.add(posKey(vertex.x, vertex.y));
+              const { v1, v2 } = getEdgeEndpoints(hex.q, hex.r, dir);
+              validEdges.add(posKey((v1.x + v2.x) / 2, (v1.y + v2.y) / 2));
+            }
+          });
           const candidates = new Map();
           for (const action of legalActions) {
             if (!['placeSettlement','upgradeToCity','placeRoad','placeShip'].includes(action.type)) continue;
@@ -1023,7 +1035,10 @@ function HexBoard({
               const {v1,v2}=getEdgeEndpoints(parsed.q,parsed.r,parsed.dir);
               x=(v1.x+v2.x)/2;y=(v1.y+v2.y)/2;
             }
+            if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
             const id=posKey(x,y);
+            // Never show build bubbles in ocean / imaginary off-board tiles.
+            if (action.vertexKey ? !validVertices.has(id) : !validEdges.has(id)) continue;
             if(!candidates.has(id))candidates.set(id,{x,y,actions:[]});
             if(!candidates.get(id).actions.some(a=>a.type===action.type))
               candidates.get(id).actions.push(action);
