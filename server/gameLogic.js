@@ -2505,28 +2505,11 @@ export function respondToTrade(game, playerId, accept) {
   const player = game.players[playerIndex];
   
   if (accept) {
-    // Verify player has requested resources
-    for (const [resource, amount] of Object.entries(game.tradeOffer.request)) {
-      if (player.resources[resource] < amount) {
-        return { success: false, error: `Not enough ${resource}` };
-      }
+    for (const [resource,amount] of Object.entries(game.tradeOffer.request)) {
+      if ((player.resources[resource]||0)<amount) return {success:false,error:'Recursos insuficientes para aceitar'};
     }
-    
-    // Execute trade
-    const offerer = game.players[game.tradeOffer.from];
-    
-    for (const [resource, amount] of Object.entries(game.tradeOffer.offer)) {
-      offerer.resources[resource] -= amount;
-      player.resources[resource] += amount;
-    }
-    
-    for (const [resource, amount] of Object.entries(game.tradeOffer.request)) {
-      player.resources[resource] -= amount;
-      offerer.resources[resource] += amount;
-    }
-    
-    game.tradeOffer = null;
-    return { success: true, traded: true };
+    game.tradeOffer.responses[playerId]='accept';
+    return {success:true,traded:false,accepted:true};
   } else {
     game.tradeOffer.responses[playerId] = 'decline';
     
@@ -2540,6 +2523,22 @@ export function respondToTrade(game, playerId, accept) {
     
     return { success: true, traded: false };
   }
+}
+
+/** The proposer chooses one of the players who accepted. */
+export function finalizeTrade(game,offererId,partnerId) {
+ const trade=game.tradeOffer;
+ if(!trade)return {success:false,error:'Não há troca pendente'};
+ const from=game.players[trade.from];
+ const partner=game.players.find(p=>p.id===partnerId);
+ if(from?.id!==offererId)return {success:false,error:'Somente quem propôs pode escolher'};
+ if(!partner||trade.responses[partnerId]!=='accept')return {success:false,error:'Este jogador não aceitou a troca'};
+ for(const [r,n] of Object.entries(trade.offer))if((from.resources[r]||0)<n)return {success:false,error:'O proponente não tem mais os recursos'};
+ for(const [r,n] of Object.entries(trade.request))if((partner.resources[r]||0)<n)return {success:false,error:'O parceiro não tem mais os recursos'};
+ for(const [r,n] of Object.entries(trade.offer)){from.resources[r]-=n;partner.resources[r]+=n;}
+ for(const [r,n] of Object.entries(trade.request)){partner.resources[r]-=n;from.resources[r]+=n;}
+ game.tradeOffer=null;
+ return {success:true,traded:true};
 }
 
 /** Execute a direct hotseat trade without proposal phase */
