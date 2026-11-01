@@ -13,7 +13,8 @@ const RESOURCE_ICONS = {
 };
 
 function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotification }) {
-  const [tradeType, setTradeType] = useState('player'); // 'player' or 'bank'
+  const isSpecialBankOnly = gameState.turnPhase === 'specialBuild';
+  const [tradeType, setTradeType] = useState(isSpecialBankOnly ? 'bank' : 'player'); // 'player' or 'bank'
   const [offer, setOffer] = useState({ brick: 0, lumber: 0, wool: 0, grain: 0, ore: 0 });
   const [request, setRequest] = useState({ brick: 0, lumber: 0, wool: 0, grain: 0, ore: 0 });
   const [bankGive, setBankGive] = useState(null);
@@ -210,6 +211,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
         <div className="trade-tabs">
           <button 
             className={tradeType === 'player' ? 'active' : ''}
+            disabled={isSpecialBankOnly}
             onClick={() => setTradeType('player')}
           >
             🤝 Com Jogadores
@@ -222,7 +224,7 @@ function TradeModal({ socket, gameState, myPlayer, isMyTurn, onClose, addNotific
           </button>
         </div>
 
-        {tradeType === 'player' ? (
+        {tradeType === 'player' && !isSpecialBankOnly ? (
           <>
             {/* Pending trade status */}
             {pendingTrade && isTradeFromMe && (
