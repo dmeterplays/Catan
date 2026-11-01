@@ -1,3 +1,4 @@
+import CardArt from './CardArt';
 import './PlayerPanel.css';
 
 function PlayerPanel({ player, isCurrentTurn, isMe, longestRoad, largestArmy, gameOver = false, isCitiesAndKnights, onRightClick, compact = false }) {
@@ -44,13 +45,12 @@ function PlayerPanel({ player, isCurrentTurn, isMe, longestRoad, largestArmy, ga
           </div>
           <div className="compact-player-stats">
             <div className="compact-stat-card" title="Total de cartas de recursos e mercadorias" onContextMenu={e=>handleRightClick(e,'resourceCards')}>
-              <span>🃏</span><b>{totalCards}</b>
+              <CardArt type="hidden" /><b>{totalCards}</b>
             </div>
             <div className="compact-stat-card" title={isCitiesAndKnights ? 'Cartas de progresso' : 'Cartas de desenvolvimento'} onContextMenu={e=>handleRightClick(e,'devCards')}>
-              <span>{isCitiesAndKnights ? '📚' : '🔮'}</span>
+              <CardArt type="development" />
               <b>{isCitiesAndKnights ? scienceCards + politicsCards + tradeCards : devCardCount}</b>
             </div>
-            <div className="compact-stat-symbol" title="Aldeias e cidades">🏘️<b>{(player.settlements || 0) + (player.cities || 0)}</b></div>
             <div className="compact-stat-symbol" title="Comprimento da maior estrada">🛤️<b>{player.roadLength || 0}</b></div>
             <div className="compact-stat-symbol" title="Cavaleiros utilizados">⚔️<b>{player.knightsPlayed || 0}</b></div>
           </div>
